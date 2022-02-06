@@ -20,7 +20,9 @@ window.addEventListener('DOMContentLoaded', () => {
         canvasMargin: 15,
         ballRadius: 13,
         paddleThickness: 25,
-        ballSpeed: 0.9
+        ballSpeed: 0.9,
+        brickWidth: 60,
+        brickHeight: 22
     }
 
     canvasElement.width = settings.canvasWidth;

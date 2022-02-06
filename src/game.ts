@@ -1,10 +1,11 @@
-import { Paddle, Ball, Settings, Vec2 } from './models';
+import { Paddle, Ball, Brick, Settings, Vec2 } from './models';
 
 export class Game {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     paddle: Paddle;
     balls: Ball[] = [];
+    bricks: Brick[] = [];
     settings: Settings
 
     lastRender: number;
@@ -25,10 +26,26 @@ export class Game {
     reset() {
         this.gameLost = false;
         this.balls.length = 0; // Why is there no clear method?!
+        this.bricks.length = 0;
+
+        this.initializeBricks();
 
         let ball = new Ball(new Vec2(), new Vec2(), "black");
         this.balls.push(ball);
         this.paddle.setStuckBall(ball);
+    }
+
+    initializeBricks() {
+        // Will be changed massively later.
+        // For now: 1280 px width total; bricks are 60 px wide. Save roughly 100 px left & right.
+        // We need SOME spacing between bricks, so say 17 bricks. 16 spaces; with 64 px for spacing that's 4 px each.
+        // So: Bricks + spacing = 17*60 + 16*4 = 1084 px; that leaves 196 px, or 98 px per side.
+        for (let y = 75; y < 75 + 12 * (this.settings.brickHeight + 4); y += (this.settings.brickHeight + 4)) {
+            for (let i = 0; i < 17; i++) {
+                const x = 98 + i * (this.settings.brickWidth + (i > 0 ? 4 : 0));
+                this.bricks.push(new Brick(new Vec2(x, y), 1));
+            }
+        }
     }
 
     mouseMoved(e: MouseEvent) {
@@ -68,6 +85,7 @@ export class Game {
                 ball.velocity.x = -ball.velocity.x;
             }
 
+            // Handle roof (and during testing, floor) collisions
             if (ball.position.y <= r) {
                 ball.position.y = r;
                 ball.velocity.y = -ball.velocity.y;
@@ -87,7 +105,8 @@ export class Game {
             if (ball.velocity.y > 0 &&
                 ball.position.y + r >= paddleMinY &&
                 ball.position.x >= paddleMinX &&
-                ball.position.x <= paddleMaxX && !this.gameLost) {
+                ball.position.x <= paddleMaxX &&
+                !this.gameLost) {
                     // Bounce angle depends on where the ball hits.
                     // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
                     // then calculate the bounce angle based on that location (0.5 = straight up),
@@ -98,12 +117,13 @@ export class Game {
                     const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
                     const speed = ball.velocity.mag();
                     ball.velocity.x = speed * Math.sin(angle);
-                    ball.velocity.y = -(speed * Math.cos(angle));
+                    ball.velocity.y = -speed * Math.cos(angle);
 
                     if (Math.abs(ball.velocity.mag() - speed) > 0.01)
                         alert("BUG: Math error in paddle bounce");
                 }
                 else if (ball.velocity.y > 0 && ball.position.y > this.paddle.position.y) {
+                    // Set up because it looks weird to end before the ball is out of view.
                     this.gameLost = true;
                 }
                 if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
@@ -147,6 +167,13 @@ export class Game {
         this.ctx.lineWidth = 1;
         this.ctx.stroke();
         */
+
+        // Draw the bricks
+        for (let brick of this.bricks) {
+            this.ctx.beginPath(); // TODO: is this needed here?
+            this.ctx.fillStyle = "#00cc00";
+            this.ctx.fillRect(brick.position.x, brick.position.y, this.settings.brickWidth, this.settings.brickHeight);
+        }
 
         // Draw the balls
         for (let ball of this.balls) {

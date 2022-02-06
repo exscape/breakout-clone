@@ -18,7 +18,9 @@ export type Settings = {
     canvasMargin: number,
     ballRadius: number,
     paddleThickness: number,
-    ballSpeed: number
+    ballSpeed: number,
+    brickWidth: number
+    brickHeight: number
 };
 
 export class Ball {
@@ -32,6 +34,16 @@ export class Ball {
         this.position = position;
         this.color = color;
         this.stuck = false;
+    }
+}
+
+export class Brick {
+    position: Vec2; // Upper-left corner
+    health: number; // How many hits until destroyed?
+
+    constructor(position: Vec2, health: number = 1) {
+        this.position = position;
+        this.health = health;
     }
 }
 
