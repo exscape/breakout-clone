@@ -1,5 +1,13 @@
 import { Paddle, Ball, Brick, Settings, Vec2 } from './models';
 
+enum Collision {
+    None,
+    Left,
+    Right,
+    Top,
+    Bottom
+}
+
 export class Game {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
@@ -97,6 +105,20 @@ export class Game {
             }
             */
 
+            // Handle brick collisions
+            // We'll try it the naive way first and see how it performs...
+            // With about 200 bricks (currently 17 * 12 = 204) surely this should be fine?
+            for (let i = 0; i < this.bricks.length; i++) {
+                let brick = this.bricks[i];
+                let collision = this.brickCollision(ball, brick);
+                if (collision != Collision.None) {
+                    // TODO: Bounce!
+                    brick.health = 0;
+                    this.bricks.splice(i, 1);
+                    break;
+                }
+            }
+
             // Handle paddle collisions
             const paddleMinY = this.paddle.position.y - this.settings.paddleThickness / 2;
             const paddleMinX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
@@ -132,6 +154,27 @@ export class Game {
 
             // TODO: handle collisions between balls -- if multiball is ever added
         }
+    }
+
+    brickCollision(ball: Ball, brick: Brick): Collision {
+        // Calculates whether the ball and brick are colliding, and if so, from which direction the ball is coming.
+        // TODO: Walk through this very carefully to ensure the ball can't slip through, e.g. on a corner pixel
+        // TODO: Return collision direction
+        let [x, y] = [ball.position.x, ball.position.y];
+        let direction: Collision;
+
+        if (ball.position.x <= brick.position.x) x = brick.position.x;
+        else if (ball.position.x > brick.position.x + this.settings.brickWidth) x = brick.position.x + this.settings.brickWidth;
+
+        if (ball.position.y <= brick.position.y) y = brick.position.y;
+        else if (ball.position.y > brick.position.y + this.settings.brickHeight) y = brick.position.y + this.settings.brickHeight;
+
+        let dist = Math.sqrt((ball.position.x - x)**2 + (ball.position.y - y)**2);
+
+        if (dist > this.settings.ballRadius)
+            return Collision.None;
+        else
+            return Collision.Left; // TODO:!
     }
 
     gameLoop(timestamp: number) {
