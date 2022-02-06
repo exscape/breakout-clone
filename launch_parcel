@@ -1,2 +1,2 @@
 #!/bin/bash
-npx parcel -p 1337 --no-hmr --public-url /game/ index.htm
+npx parcel -p 1337 --no-hmr --public-url /game/ $* index.htm 

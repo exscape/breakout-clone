@@ -1,66 +1,58 @@
-let canvasElement: HTMLCanvasElement | null = document.getElementById('canvas') as HTMLCanvasElement;
-let context: CanvasRenderingContext2D | null = canvasElement?.getContext('2d');
+import { Paddle, Ball, Settings } from './models';
 
-let posX = 100;
-let posY = 100;
+export class Game {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    paddle: Paddle;
+    balls: Ball[] = [];
+    settings: Settings
 
-window.addEventListener('DOMContentLoaded', () => {
-    if (!canvasElement || !context) {
-        alert("Unable to load game!");
-        return;
+    lastRender: number;
+
+    constructor(canvas: HTMLCanvasElement, settings: Settings) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d')!!;
+        this.paddle = new Paddle(settings);
+        this.settings = settings;
+
+        this.lastRender = 0;
+        window.requestAnimationFrame((dt) => this.gameLoop(dt));
     }
 
-    document.addEventListener('pointerlockchange', pointerLockChange, false);
-
-    canvasElement.onclick = () => {
-        canvasElement!!.requestPointerLock();
+    mouseMoved(e: MouseEvent) {
+        this.paddle.move(e.movementX, e.movementY);
     }
 
-    canvasElement.width = 1200;
-    canvasElement.height = 720;
+    update(dt: number) {
+    }
 
-});
+    gameLoop(timestamp: number) {
+        var dt = timestamp - this.lastRender
 
-function pointerLockChange() {
-    if (document.pointerLockElement === canvasElement)
-        document.addEventListener("mousemove", mouseMoved, false);
-    else
-        document.removeEventListener("mousemove", mouseMoved, false);
+        this.update(dt)
+        this.drawFrame()
+
+        this.lastRender = timestamp
+        window.requestAnimationFrame((dt) => this.gameLoop(dt));
+    }
+
+    drawFrame() {
+        // Clear the frame
+        /*
+        this.ctx.fillStyle = "white";
+        this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+        */
+        this.ctx.clearRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+
+        // Draw the paddle
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = "#101010";
+        this.ctx.fillStyle = "#4040f0";
+        this.ctx.lineCap = "round";
+        this.ctx.moveTo(this.paddle.x, this.paddle.y);
+        this.ctx.lineTo(this.paddle.x + this.paddle.width, this.paddle.y);
+        this.ctx.stroke();
+        this.ctx.lineWidth = 25;
+        this.ctx.fill();
+    }
 }
-
-function mouseMoved(e: MouseEvent) {
-    console.log(e);
-
-    posX += e.movementX;
-    posY += e.movementY;
-}
-
-function update(dt: number) {
-
-}
-
-let lastRender = 0;
-function gameLoop(timestamp: number) {
-    var progress = timestamp - lastRender
-
-    update(progress)
-    drawFrame()
-
-    lastRender = timestamp
-    window.requestAnimationFrame(gameLoop)
-}
-
-function drawFrame() {
-    if (!context || !canvasElement) return;
-    let ctx = context as CanvasRenderingContext2D;
-    let canvas = canvasElement as HTMLCanvasElement;
-
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#f00";
-    ctx.beginPath();
-    ctx.arc(posX, posY, 20, 0, 2*Math.PI, true);
-    ctx.fill();
-}
-
-window.requestAnimationFrame(gameLoop)
