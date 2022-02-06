@@ -14,20 +14,25 @@ window.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('pointerlockchange', pointerLockChange, false);
 
-    canvasElement.onclick = () => {
-        canvasElement!!.requestPointerLock();
-    }
-
     let settings: Settings = {
         canvasWidth: 1280,
         canvasHeight: 720,
-        canvasMargin: 15
+        canvasMargin: 15,
+        ballRadius: 13,
+        paddleThickness: 25,
+        ballSpeed: 1.1
     }
 
     canvasElement.width = settings.canvasWidth;
     canvasElement.height = settings.canvasHeight;
 
     game = new Game(canvasElement, settings);
+    canvasElement.onclick = () => {
+        if (document.pointerLockElement !== canvasElement)
+            canvasElement!!.requestPointerLock();
+        else
+            game?.click();
+    }
 });
 
 let mouseMovedHandler = (e: MouseEvent) => { game?.mouseMoved(e) };
