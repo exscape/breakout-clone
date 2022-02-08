@@ -9,7 +9,7 @@ enum CollisionType {
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
-    return colors[Math.floor(Math.random()*colors.length)];
+    return _.sample(colors)!;
 }
 
 export class Game {
@@ -156,7 +156,6 @@ export class Game {
             const paddleMinY = this.paddle.position.y - this.settings.paddleThickness / 2;
             const paddleMinX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
             const paddleMaxX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above
-            // TODO: BUG: if the ball falls through, and you move the paddle over it, it "bounces" back from below!
             if (ball.velocity.y > 0 &&
                 ball.position.y + r >= paddleMinY &&
                 ball.position.x >= paddleMinX &&
@@ -190,7 +189,7 @@ export class Game {
         // Calculates whether the ball and brick are colliding, and if so, from which direction the ball is coming.
         // TODO: Walk through this very carefully to ensure the ball can't slip through, e.g. on a corner pixel
         // TODO: Return collision direction
-        let [x, y] = [ball.position.x, ball.position.y];
+        let {x, y} = ball.position;
 
         // TODO: Use ball.velocity to figure out collision direction
 
@@ -219,6 +218,9 @@ export class Game {
             // We'll treat the ball as a point particle (or a pixel) here. The ball center has probably not reached the brick
             // yet (unless the framerate was low), so we can try to fire a ray from the center in the direction of its velocity.
             // ... but what if the center HAS actually crossed? Fire a ray backwards? Will be hard to test properly though.
+
+            // TODO: There's an additional possible issue at low framerates: the ball COULD have moved past one or more bricks prior to this collision,
+            // TODO: so it COULD have "teleported" inside. I'm considering simply ignoring this case though since this isn't exactly aiming to be an AAA game...
 
             // Brick left, brick right, brick top, brick bottom; short names to make the code a bit easier to read
             const bl = brick.position.x;
