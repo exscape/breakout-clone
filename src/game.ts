@@ -33,7 +33,7 @@ export class Game {
 
         this.reset();
 
-        var img = new Image();   // Create new img element
+        var img = new Image();
         img.addEventListener('load', () => {
             this.brickImage = img;
             console.log("brick.png loaded");
@@ -41,7 +41,6 @@ export class Game {
         img.onload = () => { console.log("img onload");}
         img.src = 'brick.png';
         console.log("Starting load for brick.png");
-
 
         this.lastRender = 0;
         window.requestAnimationFrame((dt) => this.gameLoop(dt));
@@ -66,12 +65,11 @@ export class Game {
 
     initializeBricks() {
         // Will be changed massively later.
-        // For now: 1280 px width total; bricks are 60 px wide. Save roughly 100 px left & right.
-        // We need SOME spacing between bricks, so say 17 bricks. 16 spaces; with 64 px for spacing that's 4 px each.
-        // So: Bricks + spacing = 17*60 + 16*4 = 1084 px; that leaves 196 px, or 98 px per side.
-        for (let y = 75; y < 75 + 12 * (this.settings.brickHeight + 4); y += (this.settings.brickHeight + 4)) {
-            for (let i = 0; i < 17; i++) {
-                const x = 98 + i * (this.settings.brickWidth + (i > 0 ? 4 : 0));
+        const numBricksX = 12;
+        const numBricksY = 10;
+        for (let y = 100; y < 100 + numBricksY * (this.settings.brickHeight + 4); y += (this.settings.brickHeight + 4)) {
+            for (let i = 0; i < numBricksX; i++) {
+                const x = 102 + i * (this.settings.brickWidth + (i > 0 ? 4 : 0));
                 this.bricks.push(new Brick(new Vec2(x, y), randomColor(), 1));
             }
         }
@@ -290,7 +288,7 @@ export class Game {
 
         // Draw the bricks
         for (let brick of this.bricks) {
-            this.ctx.drawImage(this.brickImage, brick.position.x, brick.position.y);
+            this.ctx.drawImage(this.brickImage, brick.position.x, brick.position.y, this.settings.brickWidth, this.settings.brickHeight);
         }
 
         // Draw the balls
