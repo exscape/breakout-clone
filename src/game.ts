@@ -1,4 +1,5 @@
 import { Paddle, Ball, Brick, Settings, Vec2 } from './models';
+import _ from 'lodash';
 
 enum CollisionType {
     None,
@@ -172,9 +173,6 @@ export class Game {
                     const speed = ball.velocity.mag();
                     ball.velocity.x = speed * Math.sin(angle);
                     ball.velocity.y = -speed * Math.cos(angle);
-
-                    if (Math.abs(ball.velocity.mag() - speed) > 0.01)
-                        alert("BUG: Math error in paddle bounce");
                 }
                 else if (ball.velocity.y > 0 && ball.position.y > this.paddle.position.y) {
                     // Set up because it looks weird to end before the ball is out of view.

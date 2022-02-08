@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 export class Vec2 {
     x: number;
     y: number;
@@ -74,11 +76,20 @@ export class Paddle {
             return;
         }
 
+        const launchStraightUp = false;
+
         let ball = this.stuckBall;
         this.stuckBall = null;
         ball.stuck = false;
-        ball.velocity.x = 0;
-        ball.velocity.y = -this.settings.ballSpeed;
+        if (launchStraightUp) {
+            ball.velocity.x = 0;
+            ball.velocity.y = -this.settings.ballSpeed;
+        }
+        else {
+            let angle = _.random(-Math.PI/4, Math.PI/4);
+            ball.velocity.x = Math.sin(angle) * this.settings.ballSpeed;
+            ball.velocity.y = -Math.cos(angle) * this.settings.ballSpeed;
+        }
     }
 
     move(deltaX: number, deltaY: number) {
