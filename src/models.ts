@@ -40,10 +40,12 @@ export class Ball {
 export class Brick {
     position: Vec2; // Upper-left corner
     health: number; // How many hits until destroyed?
+    color: string;
 
-    constructor(position: Vec2, health: number = 1) {
+    constructor(position: Vec2, color: string, health: number = 1) {
         this.position = position;
         this.health = health;
+        this.color = color;
     }
 }
 

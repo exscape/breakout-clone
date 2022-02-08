@@ -1,11 +1,14 @@
 import { Paddle, Ball, Brick, Settings, Vec2 } from './models';
 
-enum Collision {
+enum CollisionType {
     None,
-    Left,
-    Right,
-    Top,
-    Bottom
+    X,
+    Y
+}
+
+function randomColor() {
+    let colors = ["#38c600", "#0082f0", "#f6091f"];
+    return colors[Math.floor(Math.random()*colors.length)];
 }
 
 export class Game {
@@ -14,10 +17,13 @@ export class Game {
     paddle: Paddle;
     balls: Ball[] = [];
     bricks: Brick[] = [];
-    settings: Settings
+    settings: Settings;
+    brickImage: HTMLImageElement | null = null;
 
     lastRender: number;
+    lastFPS: number = 0;
     gameLost: boolean = false;
+    gameWon: boolean = false;
 
     constructor(canvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -27,12 +33,23 @@ export class Game {
 
         this.reset();
 
+        var img = new Image();   // Create new img element
+        img.addEventListener('load', () => {
+            this.brickImage = img;
+            console.log("brick.png loaded");
+        }, false);
+        img.onload = () => { console.log("img onload");}
+        img.src = 'brick.png';
+        console.log("Starting load for brick.png");
+
+
         this.lastRender = 0;
         window.requestAnimationFrame((dt) => this.gameLoop(dt));
     }
 
     reset() {
         this.gameLost = false;
+        this.gameWon = false;
         this.balls.length = 0; // Why is there no clear method?!
         this.bricks.length = 0;
 
@@ -43,6 +60,10 @@ export class Game {
         this.paddle.setStuckBall(ball);
     }
 
+    win() {
+        this.gameWon = true;
+    }
+
     initializeBricks() {
         // Will be changed massively later.
         // For now: 1280 px width total; bricks are 60 px wide. Save roughly 100 px left & right.
@@ -51,7 +72,7 @@ export class Game {
         for (let y = 75; y < 75 + 12 * (this.settings.brickHeight + 4); y += (this.settings.brickHeight + 4)) {
             for (let i = 0; i < 17; i++) {
                 const x = 98 + i * (this.settings.brickWidth + (i > 0 ? 4 : 0));
-                this.bricks.push(new Brick(new Vec2(x, y), 1));
+                this.bricks.push(new Brick(new Vec2(x, y), randomColor(), 1));
             }
         }
     }
@@ -66,6 +87,9 @@ export class Game {
     }
 
     update(dt: number) {
+        if (this.gameWon) // if gameLost, update() should still run, so the ball is drawn to exit the game area
+            return;
+
         for (let ball of this.balls) {
             if (ball.stuck) {
                 if (ball.velocity.x != 0 || ball.velocity.y != 0)
@@ -111,12 +135,22 @@ export class Game {
             for (let i = 0; i < this.bricks.length; i++) {
                 let brick = this.bricks[i];
                 let collision = this.brickCollision(ball, brick);
-                if (collision != Collision.None) {
-                    // TODO: Bounce!
-                    brick.health = 0;
+                if (collision == CollisionType.None)
+                    continue;
+
+                brick.health--;
+                if (brick.health <= 0)
                     this.bricks.splice(i, 1);
-                    break;
-                }
+
+                if (this.bricks.length == 0)
+                    this.win();
+
+                if (collision == CollisionType.Y)
+                    ball.velocity.y = -ball.velocity.y;
+                else
+                    ball.velocity.x = -ball.velocity.x;
+
+                break; // Limit collisions to the first block tested
             }
 
             // Handle paddle collisions
@@ -156,25 +190,50 @@ export class Game {
         }
     }
 
-    brickCollision(ball: Ball, brick: Brick): Collision {
+    brickCollision(ball: Ball, brick: Brick): CollisionType {
         // Calculates whether the ball and brick are colliding, and if so, from which direction the ball is coming.
         // TODO: Walk through this very carefully to ensure the ball can't slip through, e.g. on a corner pixel
         // TODO: Return collision direction
         let [x, y] = [ball.position.x, ball.position.y];
-        let direction: Collision;
 
-        if (ball.position.x <= brick.position.x) x = brick.position.x;
-        else if (ball.position.x > brick.position.x + this.settings.brickWidth) x = brick.position.x + this.settings.brickWidth;
+        // TODO: Use ball.velocity to figure out collision direction
 
-        if (ball.position.y <= brick.position.y) y = brick.position.y;
-        else if (ball.position.y > brick.position.y + this.settings.brickHeight) y = brick.position.y + this.settings.brickHeight;
+        if (ball.position.x <= brick.position.x) {
+            x = brick.position.x;
+        }
+        else if (ball.position.x > brick.position.x + this.settings.brickWidth) {
+            x = brick.position.x + this.settings.brickWidth;
+        }
+
+        if (ball.position.y <= brick.position.y) {
+            y = brick.position.y;
+        }
+        else if (ball.position.y > brick.position.y + this.settings.brickHeight) {
+            y = brick.position.y + this.settings.brickHeight;
+        }
 
         let dist = Math.sqrt((ball.position.x - x)**2 + (ball.position.y - y)**2);
 
         if (dist > this.settings.ballRadius)
-            return Collision.None;
-        else
-            return Collision.Left; // TODO:!
+            return CollisionType.None;
+        else {
+            // There was a collision. We need to figure out which side was hit (first), so the ball can bounce properly.
+            // To be more precise, what we really need to know is whether to flip the velocity in the X direction, or in the Y direction.
+            // So we only need to know whether it hit left/right or top/bottom, but left vs right is irrelevant, and top vs bottom is irrelevant.
+            // We'll treat the ball as a point particle (or a pixel) here. The ball center has probably not reached the brick
+            // yet (unless the framerate was low), so we can try to fire a ray from the center in the direction of its velocity.
+            // ... but what if the center HAS actually crossed? Fire a ray backwards? Will be hard to test properly though.
+
+            // Brick left, brick right, brick top, brick bottom; short names to make the code a bit easier to read
+            const bl = brick.position.x;
+            const br = brick.position.x + this.settings.brickWidth;
+            const bt = brick.position.y;
+            const bb = brick.position.y + this.settings.brickHeight;
+            const [ballX, ballY] = [ball.position.x, ball.position.y];
+
+
+            return CollisionType.Y;
+        }
     }
 
     gameLoop(timestamp: number) {
@@ -184,12 +243,31 @@ export class Game {
         this.drawFrame()
 
         this.lastRender = timestamp
+        this.lastFPS = 1000/dt;
         window.requestAnimationFrame((dt) => this.gameLoop(dt));
     }
 
     drawFrame() {
         // Clear the frame
         this.ctx.clearRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+
+        if (this.gameWon) {
+            this.ctx.font = "30px Arial";
+            this.ctx.fillStyle = "#ee3030";
+            this.ctx.fillText("A WINNER IS YOU!", 300, 300);
+            return;
+        }
+        this.ctx.font = "14px Arial";
+        this.ctx.fillStyle = "#ee3030";
+        this.ctx.fillText("FPS: " + Math.round(this.lastFPS), 15, 15);
+
+        // Ensure the image has loaded
+        if (!this.brickImage) {
+            this.ctx.font = "30px Arial";
+            this.ctx.fillStyle = "#ee3030";
+            this.ctx.fillText("Loading images...", 300, 300);
+            return;
+        }
 
         // Draw the paddle
         this.ctx.beginPath();
@@ -199,7 +277,6 @@ export class Game {
         this.ctx.lineTo(this.paddle.position.x + this.paddle.width, this.paddle.position.y);
         this.ctx.lineWidth = this.settings.paddleThickness;
         this.ctx.stroke();
-  //      this.ctx.fill();
 
         /*
         // Draw the paddle centerline
@@ -213,9 +290,7 @@ export class Game {
 
         // Draw the bricks
         for (let brick of this.bricks) {
-            this.ctx.beginPath(); // TODO: is this needed here?
-            this.ctx.fillStyle = "#00cc00";
-            this.ctx.fillRect(brick.position.x, brick.position.y, this.settings.brickWidth, this.settings.brickHeight);
+            this.ctx.drawImage(this.brickImage, brick.position.x, brick.position.y);
         }
 
         // Draw the balls
