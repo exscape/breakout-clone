@@ -28,26 +28,37 @@ export type Settings = {
 export class Ball {
     velocity: Vec2;
     position: Vec2;
+    prevPosition: Vec2;
     color: string;
     stuck: boolean;
 
     constructor(velocity: Vec2, position: Vec2, color: string) {
         this.velocity = velocity;
         this.position = position;
+        this.prevPosition = position;
         this.color = color;
         this.stuck = false;
     }
 }
 
 export class Brick {
-    position: Vec2; // Upper-left corner
     health: number; // How many hits until destroyed?
     color: string;
 
-    constructor(position: Vec2, color: string, health: number = 1) {
-        this.position = position;
+    upperLeft: Vec2;
+    upperRight: Vec2;
+    bottomLeft: Vec2;
+    bottomRight: Vec2;
+
+    constructor(position: Vec2, color: string, settings: Settings, health: number = 1) {
         this.health = health;
         this.color = color;
+
+        // The other corners are used by the collision checking code
+        this.upperLeft = position;
+        this.upperRight = new Vec2(position.x + settings.brickWidth, position.y);
+        this.bottomLeft = new Vec2(position.x, position.y + settings.brickHeight);
+        this.bottomRight = new Vec2(position.x + settings.brickWidth, position.y + settings.brickHeight);
     }
 }
 
@@ -76,7 +87,7 @@ export class Paddle {
             return;
         }
 
-        const launchStraightUp = false;
+        const launchStraightUp = true;
 
         let ball = this.stuckBall;
         this.stuckBall = null;

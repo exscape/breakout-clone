@@ -1,15 +1,21 @@
 import { Paddle, Ball, Brick, Settings, Vec2 } from './models';
 import _ from 'lodash';
 
-enum CollisionType {
+enum CollisionFrom {
     None,
-    X,
-    Y
+    Left,
+    Right,
+    Top,
+    Bottom
 }
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
     return _.sample(colors)!;
+}
+
+function isAboveLine(corner: Vec2, oppositeCorner: Vec2, ballCenter: Vec2) {
+    return ((oppositeCorner.x - corner.x) * (ballCenter.y - corner.y) - (oppositeCorner.y - corner.y) * (ballCenter.x - corner.x)) > 0;
 }
 
 export class Game {
@@ -71,7 +77,7 @@ export class Game {
         for (let y = 100; y < 100 + numBricksY * (this.settings.brickHeight + 4); y += (this.settings.brickHeight + 4)) {
             for (let i = 0; i < numBricksX; i++) {
                 const x = 102 + i * (this.settings.brickWidth + (i > 0 ? 4 : 0));
-                this.bricks.push(new Brick(new Vec2(x, y), randomColor(), 1));
+                this.bricks.push(new Brick(new Vec2(x, y), randomColor(), this.settings, 1));
             }
         }
     }
@@ -100,6 +106,9 @@ export class Game {
             if (ball.position.y < 640 || ball.velocity.y < 0) ball.velocity.y = 1.5 * Math.sign(ball.velocity.y);
             else ball.velocity.y = 0.04 * Math.sign(ball.velocity.y);
             */
+
+            ball.prevPosition.x = ball.position.x;
+            ball.prevPosition.y = ball.position.y;
 
             ball.position.x += ball.velocity.x * dt;
             ball.position.y += ball.velocity.y * dt;
@@ -130,12 +139,14 @@ export class Game {
 
             // Handle brick collisions
             // We'll try it the naive way first and see how it performs...
-            // With about 200 bricks (currently 17 * 12 = 204) surely this should be fine?
+            // With less than 200 bricks surely this should be fine?
             for (let i = 0; i < this.bricks.length; i++) {
                 let brick = this.bricks[i];
                 let collision = this.brickCollision(ball, brick);
-                if (collision == CollisionType.None)
+                if (collision == CollisionFrom.None)
                     continue;
+
+                // console.log(`Brick collision! Type = ${(collision == CollisionFrom.Left || CollisionFrom.Right) ? "X" : "Y"}, bouncing`);
 
                 brick.health--;
                 if (brick.health <= 0)
@@ -144,10 +155,14 @@ export class Game {
                 if (this.bricks.length == 0)
                     this.win();
 
-                if (collision == CollisionType.Y)
+                if (collision == CollisionFrom.Top || collision == CollisionFrom.Bottom) {
                     ball.velocity.y = -ball.velocity.y;
-                else
+                    ball.position.y += 2* ball.velocity.y * dt; // TODO: HACK! Restore the ball position properly!
+                }
+                else {
                     ball.velocity.x = -ball.velocity.x;
+                    ball.position.x += 2* ball.velocity.x * dt; // TODO: HACK! Restore the ball position properly!
+                }
 
                 break; // Limit collisions to the first block tested
             }
@@ -185,7 +200,7 @@ export class Game {
         }
     }
 
-    brickCollision(ball: Ball, brick: Brick): CollisionType {
+    brickCollision(ball: Ball, brick: Brick): CollisionFrom {
         // Calculates whether the ball and brick are colliding, and if so, from which direction the ball is coming.
         // TODO: Walk through this very carefully to ensure the ball can't slip through, e.g. on a corner pixel
         // TODO: Return collision direction
@@ -193,45 +208,41 @@ export class Game {
 
         // TODO: Use ball.velocity to figure out collision direction
 
-        if (ball.position.x <= brick.position.x) {
-            x = brick.position.x;
+        if (ball.position.x <= brick.upperLeft.x) {
+            x = brick.upperLeft.x;
         }
-        else if (ball.position.x > brick.position.x + this.settings.brickWidth) {
-            x = brick.position.x + this.settings.brickWidth;
-        }
-
-        if (ball.position.y <= brick.position.y) {
-            y = brick.position.y;
-        }
-        else if (ball.position.y > brick.position.y + this.settings.brickHeight) {
-            y = brick.position.y + this.settings.brickHeight;
+        else if (ball.position.x > brick.upperLeft.x + this.settings.brickWidth) {
+            x = brick.upperLeft.x + this.settings.brickWidth;
         }
 
+        if (ball.position.y <= brick.upperLeft.y) {
+            y = brick.upperLeft.y;
+        }
+        else if (ball.position.y > brick.upperLeft.y + this.settings.brickHeight) {
+            y = brick.upperLeft.y + this.settings.brickHeight;
+        }
+
+        // Note: If the ball (center) is inside the brick, i.e. the above if statements aren't run,
+        // the default x/y values will make this expression zero, and so still register a collision.
         let dist = Math.sqrt((ball.position.x - x)**2 + (ball.position.y - y)**2);
 
         if (dist > this.settings.ballRadius)
-            return CollisionType.None;
-        else {
-            // There was a collision. We need to figure out which side was hit (first), so the ball can bounce properly.
-            // To be more precise, what we really need to know is whether to flip the velocity in the X direction, or in the Y direction.
-            // So we only need to know whether it hit left/right or top/bottom, but left vs right is irrelevant, and top vs bottom is irrelevant.
-            // We'll treat the ball as a point particle (or a pixel) here. The ball center has probably not reached the brick
-            // yet (unless the framerate was low), so we can try to fire a ray from the center in the direction of its velocity.
-            // ... but what if the center HAS actually crossed? Fire a ray backwards? Will be hard to test properly though.
+            return CollisionFrom.None;
+        else
+            return this.collisionDirection(ball, brick);
+    }
 
-            // TODO: There's an additional possible issue at low framerates: the ball COULD have moved past one or more bricks prior to this collision,
-            // TODO: so it COULD have "teleported" inside. I'm considering simply ignoring this case though since this isn't exactly aiming to be an AAA game...
+    collisionDirection(ball: Ball, brick: Brick): CollisionFrom {
+        // Based on:
+        // https://stackoverflow.com/questions/19198359/how-to-determine-which-side-of-a-rectangle-collides-with-a-circle/19202228#19202228
 
-            // Brick left, brick right, brick top, brick bottom; short names to make the code a bit easier to read
-            const bl = brick.position.x;
-            const br = brick.position.x + this.settings.brickWidth;
-            const bt = brick.position.y;
-            const bb = brick.position.y + this.settings.brickHeight;
-            const [ballX, ballY] = [ball.position.x, ball.position.y];
+        let isAboveAC = isAboveLine(brick.bottomRight, brick.upperLeft, ball.position);
+        let isAboveDB = isAboveLine(brick.upperRight, brick.bottomLeft, ball.position);
 
-
-            return CollisionType.Y;
-        }
+        if (isAboveAC)
+            return isAboveDB ? CollisionFrom.Top : CollisionFrom.Right;
+        else
+            return isAboveDB ? CollisionFrom.Left : CollisionFrom.Bottom;
     }
 
     gameLoop(timestamp: number) {
@@ -286,9 +297,19 @@ export class Game {
         this.ctx.stroke();
         */
 
+        /*
+        // Draw aim line
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = "#ff0000";
+        this.ctx.moveTo(this.paddle.position.x + this.paddle.width / 2, this.paddle.position.y);
+        this.ctx.lineTo(this.paddle.position.x + this.paddle.width / 2, 0);
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
+        */
+
         // Draw the bricks
         for (let brick of this.bricks) {
-            this.ctx.drawImage(this.brickImage, brick.position.x, brick.position.y, this.settings.brickWidth, this.settings.brickHeight);
+            this.ctx.drawImage(this.brickImage, brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
         }
 
         // Draw the balls
