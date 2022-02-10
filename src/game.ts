@@ -35,6 +35,7 @@ export class Game {
     gamePaused: boolean = false;
 
     livesRemaining: number = 0;
+    score: number = 0;
 
     constructor(canvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -72,6 +73,7 @@ export class Game {
             this.initializeBricks();
 
             this.livesRemaining = 3;
+            this.score = 0;
         }
 
         let ball = new Ball(new Vec2(), new Vec2(), "black");
@@ -90,7 +92,7 @@ export class Game {
         for (let y = 100; y < 100 + numBricksY * (this.settings.brickHeight + 4); y += (this.settings.brickHeight + 4)) {
             for (let i = 0; i < numBricksX; i++) {
                 const x = 102 + i * (this.settings.brickWidth + (i > 0 ? 4 : 0));
-                this.bricks.push(new Brick(new Vec2(x, y), randomColor(), this.settings, 1));
+                this.bricks.push(new Brick(new Vec2(x, y), randomColor(), this.settings, 10, 1));
             }
         }
     }
@@ -176,8 +178,10 @@ export class Game {
                 // console.log(`Brick collision! Type = ${(collision == CollisionFrom.Left || CollisionFrom.Right) ? "X" : "Y"}, bouncing`);
 
                 brick.health--;
-                if (brick.health <= 0)
+                if (brick.health <= 0) {
+                    this.score += brick.score;
                     this.bricks.splice(i, 1);
+                }
 
                 if (this.bricks.length == 0)
                     this.win();
@@ -299,7 +303,7 @@ export class Game {
         if (this.gameWon) {
             this.ctx.font = "30px Arial";
             this.ctx.fillStyle = "#ee3030";
-            this.ctx.fillText("A WINNER IS YOU!", 300, 300);
+            this.ctx.fillText(`A WINNER IS YOU! Score: ${this.score}`, 300, 300);
             return;
         }
 
@@ -367,13 +371,16 @@ export class Game {
         // Draw the current framerate
         this.ctx.font = "14px Arial";
         this.ctx.fillStyle = "#ee3030";
-        this.ctx.fillText("FPS: " + Math.round(this.lastFPS), 15, 35);
+        this.ctx.fillText("FPS: " + Math.round(this.lastFPS), 15, 57);
         */
 
-        // Draw the number of lives remaining
+        // Draw player stats
         this.ctx.font = "18px Arial";
         this.ctx.fillStyle = "black";
-        this.ctx.fillText(`Lives remaining: ${this.livesRemaining}`, 10, 25);
+        this.ctx.fillText(`Score: ${this.score}`, 10, 25);
+        this.ctx.font = "18px Arial";
+        this.ctx.fillStyle = "black";
+        this.ctx.fillText(`Lives remaining: ${this.livesRemaining}`, 10, 42);
 
         if (this.gamePaused) {
             this.ctx.font = "100px Arial Bold";
@@ -386,7 +393,9 @@ export class Game {
             this.ctx.font = "60px Arial";
             this.ctx.fillStyle = "#ee3030";
             this.ctx.textAlign = "center";
-            this.ctx.fillText("Sorry, you lost! Click to restart the game.", this.settings.canvasWidth / 2, 540);
+            this.ctx.fillText(`Sorry, you lost! Score: ${this.score}`, this.settings.canvasWidth / 2, 540);
+            this.ctx.font = "40px Arial";
+            this.ctx.fillText(`Click to restart the game.`, this.settings.canvasWidth / 2, 600);
             this.ctx.textAlign = "left";
             return;
         }
