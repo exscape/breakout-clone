@@ -29,9 +29,12 @@ export class Game {
 
     lastRender: number;
     lastFPS: number = 0;
+    lifeLost: boolean = false;
     gameLost: boolean = false;
     gameWon: boolean = false;
     gamePaused: boolean = false;
+
+    livesRemaining: number = 0;
 
     constructor(canvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -55,13 +58,21 @@ export class Game {
     }
 
     reset() {
+        // If the game isn't lost and lives remain, we do a partial reset.
+        let partialReset = !this.gameLost && this.livesRemaining > 0;
+
+        this.lifeLost = false;
         this.gameLost = false;
         this.gameWon = false;
         this.gamePaused = false;
         this.balls.length = 0; // Why is there no clear method?!
-        this.bricks.length = 0;
 
-        this.initializeBricks();
+        if (!partialReset) {
+            this.bricks.length = 0;
+            this.initializeBricks();
+
+            this.livesRemaining = 3;
+        }
 
         let ball = new Ball(new Vec2(), new Vec2(), "black");
         this.balls.push(ball);
@@ -85,11 +96,16 @@ export class Game {
     }
 
     mouseMoved(e: MouseEvent) {
-        if (!this.gamePaused && !this.gameLost && !this.gameWon)
+        if (!this.gamePaused && !this.gameLost && !this.gameWon && !this.lifeLost)
             this.paddle.move(e.movementX, e.movementY);
     }
 
     click() {
+        if (this.gameLost) {
+            this.reset();
+            return;
+        }
+
         if (this.paddle.stuckBall && !this.gamePaused)
             this.paddle.launch();
     }
@@ -178,7 +194,7 @@ export class Game {
                 break; // Limit collisions to the first block tested
             }
 
-            // Handle paddle collisions
+            // Handle paddle collisions and lost lives/lost games
             const paddleMinY = this.paddle.position.y - this.settings.paddleThickness / 2;
             const paddleMinX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
             const paddleMaxX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above
@@ -186,7 +202,8 @@ export class Game {
                 ball.position.y + r >= paddleMinY &&
                 ball.position.x >= paddleMinX &&
                 ball.position.x <= paddleMaxX &&
-                !this.gameLost) {
+                !this.gameLost &&
+                !this.lifeLost) {
                     // Bounce angle depends on where the ball hits.
                     // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
                     // then calculate the bounce angle based on that location (0.5 = straight up),
@@ -200,11 +217,19 @@ export class Game {
                     ball.velocity.y = -speed * Math.cos(angle);
                 }
                 else if (ball.velocity.y > 0 && ball.position.y > this.paddle.position.y) {
-                    // Set up because it looks weird to end before the ball is out of view.
-                    this.gameLost = true;
+                    // Only subtract if lifeLost == false, since we will subtract a life every frame otherwise.
+                    if (!this.lifeLost) {
+                        this.livesRemaining--;
+                        this.lifeLost = true;
+                    }
+                    if (this.livesRemaining <= 0)
+                        this.gameLost = true;
                 }
                 if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
-                    this.reset();
+                    // If livesRemaining == 0, we display the "you lost" screen and wait for user input
+                    // to reset.
+                    if (this.livesRemaining > 0)
+                        this.reset();
                 }
 
             // TODO: handle collisions between balls -- if multiball is ever added
@@ -278,10 +303,6 @@ export class Game {
             return;
         }
 
-        this.ctx.font = "14px Arial";
-        this.ctx.fillStyle = "#ee3030";
-        this.ctx.fillText("FPS: " + Math.round(this.lastFPS), 15, 15);
-
         // Ensure the image has loaded
         if (!this.brickImage) {
             this.ctx.font = "30px Arial";
@@ -340,8 +361,19 @@ export class Game {
                 this.ctx.lineTo(ball.position.x + ball.velocity.x * 100, ball.position.y + ball.velocity.y * 100);
                 this.ctx.stroke();
             }
-
         }
+
+        /*
+        // Draw the current framerate
+        this.ctx.font = "14px Arial";
+        this.ctx.fillStyle = "#ee3030";
+        this.ctx.fillText("FPS: " + Math.round(this.lastFPS), 15, 35);
+        */
+
+        // Draw the number of lives remaining
+        this.ctx.font = "18px Arial";
+        this.ctx.fillStyle = "black";
+        this.ctx.fillText(`Lives remaining: ${this.livesRemaining}`, 10, 25);
 
         if (this.gamePaused) {
             this.ctx.font = "100px Arial Bold";
@@ -350,5 +382,14 @@ export class Game {
             this.ctx.fillText("PAUSED", this.settings.canvasWidth / 2, 520);
             this.ctx.textAlign = "left";
         }
+        else if (this.gameLost) {
+            this.ctx.font = "60px Arial";
+            this.ctx.fillStyle = "#ee3030";
+            this.ctx.textAlign = "center";
+            this.ctx.fillText("Sorry, you lost! Click to restart the game.", this.settings.canvasWidth / 2, 540);
+            this.ctx.textAlign = "left";
+            return;
+        }
+
     }
 }
