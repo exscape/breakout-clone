@@ -43,16 +43,15 @@ export class Game {
         this.paddle = new Paddle(settings);
         this.settings = settings;
 
-        this.reset();
-
         var img = new Image();
         img.addEventListener('load', () => {
             this.brickImage = img;
             console.log("brick.png loaded");
         }, false);
-        img.onload = () => { console.log("img onload");}
         img.src = 'brick.png';
         console.log("Starting load for brick.png");
+
+        this.reset();
 
         this.lastRender = 0;
         window.requestAnimationFrame((dt) => this.gameLoop(dt));
@@ -215,7 +214,7 @@ export class Game {
                     // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
                     const hitLocation = (ball.position.x - paddleMinX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
                     const distanceOffCenter = Math.abs(0.5 - hitLocation);
-                    const maxAngle = 85 * Math.PI/180;
+                    const maxAngle = 80 * Math.PI/180;
                     const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
                     const speed = ball.velocity.mag();
                     ball.velocity.x = speed * Math.sin(angle);
