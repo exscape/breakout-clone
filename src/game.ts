@@ -119,6 +119,7 @@ export class Game {
 
     keyUp(ev: KeyboardEvent) {}
     togglePause() { this.gamePaused = !this.gamePaused; }
+    pause() { this.gamePaused = true; }
 
     update(dt: number) {
         if (this.gameWon || this.gamePaused) // if gameLost, update() should still run, so the ball is drawn to exit the game area

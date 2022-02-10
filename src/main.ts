@@ -52,6 +52,8 @@ let mouseMovedHandler = (e: MouseEvent) => { game?.mouseMoved(e) };
 function pointerLockChange() {
     if (document.pointerLockElement === canvasElement)
         document.addEventListener("mousemove", mouseMovedHandler, false);
-    else
+    else {
         document.removeEventListener("mousemove", mouseMovedHandler, false);
+        game?.pause();
+    }
 }
