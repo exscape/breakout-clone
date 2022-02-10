@@ -31,6 +31,7 @@ export class Game {
     lastFPS: number = 0;
     gameLost: boolean = false;
     gameWon: boolean = false;
+    gamePaused: boolean = false;
 
     constructor(canvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -56,6 +57,7 @@ export class Game {
     reset() {
         this.gameLost = false;
         this.gameWon = false;
+        this.gamePaused = false;
         this.balls.length = 0; // Why is there no clear method?!
         this.bricks.length = 0;
 
@@ -83,16 +85,25 @@ export class Game {
     }
 
     mouseMoved(e: MouseEvent) {
-        this.paddle.move(e.movementX, e.movementY);
+        if (!this.gamePaused && !this.gameLost && !this.gameWon)
+            this.paddle.move(e.movementX, e.movementY);
     }
 
     click() {
-        if (this.paddle.stuckBall)
+        if (this.paddle.stuckBall && !this.gamePaused)
             this.paddle.launch();
     }
 
+    keyDown(ev: KeyboardEvent) {
+        if (ev.key == "p" || ev.key == "P")
+            this.togglePause();
+    }
+
+    keyUp(ev: KeyboardEvent) {}
+    togglePause() { this.gamePaused = !this.gamePaused; }
+
     update(dt: number) {
-        if (this.gameWon) // if gameLost, update() should still run, so the ball is drawn to exit the game area
+        if (this.gameWon || this.gamePaused) // if gameLost, update() should still run, so the ball is drawn to exit the game area
             return;
 
         for (let ball of this.balls) {
@@ -266,6 +277,7 @@ export class Game {
             this.ctx.fillText("A WINNER IS YOU!", 300, 300);
             return;
         }
+
         this.ctx.font = "14px Arial";
         this.ctx.fillStyle = "#ee3030";
         this.ctx.fillText("FPS: " + Math.round(this.lastFPS), 15, 15);
@@ -318,6 +330,25 @@ export class Game {
             this.ctx.fillStyle = ball.color;
             this.ctx.arc(ball.position.x, ball.position.y, this.settings.ballRadius, 0, 2*Math.PI);
             this.ctx.fill();
+
+            // Draw the velocity vector(s)
+            if (this.gamePaused) {
+                this.ctx.beginPath();
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeStyle = "#60ff60";
+                this.ctx.moveTo(ball.position.x, ball.position.y);
+                this.ctx.lineTo(ball.position.x + ball.velocity.x * 100, ball.position.y + ball.velocity.y * 100);
+                this.ctx.stroke();
+            }
+
+        }
+
+        if (this.gamePaused) {
+            this.ctx.font = "100px Arial Bold";
+            this.ctx.fillStyle = "black";
+            this.ctx.textAlign = "center";
+            this.ctx.fillText("PAUSED", this.settings.canvasWidth / 2, 520);
+            this.ctx.textAlign = "left";
         }
     }
 }

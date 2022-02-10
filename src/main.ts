@@ -35,6 +35,17 @@ window.addEventListener('DOMContentLoaded', () => {
         else
             game?.click();
     }
+
+    canvasElement.onkeydown = (ev: KeyboardEvent) => {
+        game?.keyDown(ev);
+    }
+
+    canvasElement.onkeyup = (ev: KeyboardEvent) => {
+        game?.keyUp(ev);
+    }
+
+    canvasElement.tabIndex = 0
+    canvasElement.focus();
 });
 
 let mouseMovedHandler = (e: MouseEvent) => { game?.mouseMoved(e) };
