@@ -54,6 +54,7 @@ export class Game {
 
     reset() {
         // If the game isn't lost and lives remain, we do a partial reset.
+        // Otherwise, reset everything -- i.e. restart the game entirely.
         let partialReset = !this.gameLost && this.livesRemaining > 0;
 
         this.lifeLost = false;
@@ -83,7 +84,7 @@ export class Game {
         // Will be changed massively later.
         // For now, we have "brick spots" along the entire canvas width, but the 1st map has the leftmost and rightmost columns empty.
         // Previously, those spots were empty and coded such that they must ALWAYS BE empty, but I don't want that to be the case later.
-        // We moved from 12 x 10 bricks when making this change.
+        // We moved from 12 x 10 fixed bricks when making this change.
         const numBricksX = 14;
         const numBricksY = 14;
         const firstRow = 3;
@@ -145,7 +146,7 @@ export class Game {
             ball.position.x += ball.velocity.x * dt;
             ball.position.y += ball.velocity.y * dt;
 
-            // Handle wall collisions
+            // Handle wall collisions; reflects the ball if necessary
             this.collisionHandler.handleWallCollisions(ball);
 
             // Handle brick collisions
@@ -167,11 +168,11 @@ export class Game {
 
                 if (collision == CollisionFrom.Top || collision == CollisionFrom.Bottom) {
                     ball.velocity.y = -ball.velocity.y;
-                    ball.position.y += 2* ball.velocity.y * dt; // TODO: HACK! Restore the ball position properly!
+                    ball.position.y += ball.velocity.y * dt; // TODO: HACK! Restore the ball position properly!
                 }
                 else {
                     ball.velocity.x = -ball.velocity.x;
-                    ball.position.x += 2* ball.velocity.x * dt; // TODO: HACK! Restore the ball position properly!
+                    ball.position.x += ball.velocity.x * dt; // TODO: HACK! Restore the ball position properly!
                 }
 
                 break; // Limit collisions to the first block tested
@@ -210,7 +211,7 @@ export class Game {
                         this.gameLost = true;
                 }
                 if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
-                    // If livesRemaining == 0, we display the "you lost" screen and wait for user input
+                    // If livesRemaining == 0, we instead display the "you lost" screen and wait for user input
                     // to reset.
                     if (this.livesRemaining > 0)
                         this.reset();
@@ -238,7 +239,9 @@ export class Game {
         if (this.gameWon) {
             this.ctx.font = "30px Arial";
             this.ctx.fillStyle = "#ee3030";
-            this.ctx.fillText(`A WINNER IS YOU! Score: ${this.score}`, 300, 300);
+            this.ctx.textAlign = "center";
+            this.ctx.fillText(`A WINNER IS YOU! Score: ${this.score}`, this.settings.canvasWidth / 2, 300);
+            this.ctx.textAlign = "left";
             return;
         }
 
