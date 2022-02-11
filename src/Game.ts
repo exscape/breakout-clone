@@ -1,4 +1,8 @@
-import { Paddle, Ball, Brick, Settings, Vec2 } from './models';
+import { Settings } from './Settings';
+import { Paddle } from "./Paddle";
+import { Brick } from "./Brick";
+import { Ball } from "./Ball";
+import { Vec2 } from "./Vec2";
 import _ from 'lodash';
 
 enum CollisionFrom {

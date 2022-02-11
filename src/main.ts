@@ -1,5 +1,5 @@
-import { Game } from './game';
-import { Settings } from './models';
+import { Game } from './Game';
+import { Settings } from './Settings';
 
 let canvasElement: HTMLCanvasElement | null = document.getElementById('canvas') as HTMLCanvasElement;
 let context: CanvasRenderingContext2D | null = canvasElement?.getContext('2d');
