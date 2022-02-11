@@ -15,7 +15,7 @@ window.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('pointerlockchange', pointerLockChange, false);
 
     let settings: Settings = {
-        canvasWidth: 1280,
+        canvasWidth: 1264,
         canvasHeight: 720,
         canvasMargin: 15,
         ballRadius: 13,

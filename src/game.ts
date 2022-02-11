@@ -86,12 +86,20 @@ export class Game {
 
     initializeBricks() {
         // Will be changed massively later.
-        const numBricksX = 12;
-        const numBricksY = 10;
-        for (let y = 100; y < 100 + numBricksY * (this.settings.brickHeight + 4); y += (this.settings.brickHeight + 4)) {
-            for (let i = 0; i < numBricksX; i++) {
-                const x = 102 + i * (this.settings.brickWidth + (i > 0 ? 4 : 0));
-                this.bricks.push(new Brick(new Vec2(x, y), randomColor(), this.settings, 10, 1));
+        // For now, we have "brick spots" along the entire canvas width, but the 1st map has the leftmost and rightmost columns empty.
+        // Previously, those spots were empty and coded such that they must ALWAYS BE empty, but I don't want that to be the case later.
+        // We moved from 12 x 10 bricks when making this change.
+        const numBricksX = 14;
+        const numBricksY = 14;
+        const firstRow = 3;
+        const xMargin = 1;
+        const spacing = 4;
+
+        for (let y = firstRow; y < numBricksY; y++) {
+            for (let x = xMargin; x < numBricksX - xMargin; x++) {
+                let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
+                let yCoord = spacing + y * (this.settings.brickHeight + (y > 0 ? spacing : 0));
+                this.bricks.push(new Brick(new Vec2(xCoord, yCoord), randomColor(), this.settings, 10, 1));
             }
         }
     }
