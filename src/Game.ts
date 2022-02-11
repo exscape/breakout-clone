@@ -153,8 +153,7 @@ export class Game {
             // Naive, but it performs just fine. I can even run it 500 times per brick and still have 165 fps.
             for (let i = 0; i < this.bricks.length; i++) {
                 let brick = this.bricks[i];
-                let collision = this.collisionHandler.brickCollision(ball, brick);
-                if (collision == CollisionFrom.None)
+                if (!this.collisionHandler.brickCollision(ball, brick, dt))
                     continue;
 
                 brick.health--;
@@ -165,15 +164,6 @@ export class Game {
 
                 if (this.bricks.length == 0)
                     this.win();
-
-                if (collision == CollisionFrom.Top || collision == CollisionFrom.Bottom) {
-                    ball.velocity.y = -ball.velocity.y;
-                    ball.position.y += ball.velocity.y * dt; // TODO: HACK! Restore the ball position properly!
-                }
-                else {
-                    ball.velocity.x = -ball.velocity.x;
-                    ball.position.x += ball.velocity.x * dt; // TODO: HACK! Restore the ball position properly!
-                }
 
                 break; // Limit collisions to the first block tested
             }

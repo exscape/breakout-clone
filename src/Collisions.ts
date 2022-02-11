@@ -41,13 +41,9 @@ export class CollisionHandler {
         }
     }
 
-    brickCollision(ball: Ball, brick: Brick): CollisionFrom {
-        // Calculates whether the ball and brick are colliding, and if so, from which direction the ball is coming.
-        // TODO: Walk through this very carefully to ensure the ball can't slip through, e.g. on a corner pixel
-        // TODO: Return collision direction
+    brickCollision(ball: Ball, brick: Brick, dt: number): boolean {
+        // Calculates whether the ball and brick are colliding.
         let {x, y} = ball.position;
-
-        // TODO: Use ball.velocity to figure out collision direction
 
         if (ball.position.x <= brick.upperLeft.x) {
             x = brick.upperLeft.x;
@@ -67,10 +63,24 @@ export class CollisionHandler {
         // the default x/y values will make this expression zero, and so still register a collision.
         let dist = Math.sqrt((ball.position.x - x)**2 + (ball.position.y - y)**2);
 
+        // If true, there was no collision.
         if (dist > this.settings.ballRadius)
-            return CollisionFrom.None;
-        else
-            return this.collisionDirection(ball, brick);
+            return false;
+
+        // There was a collision. Figure out the direction and bounce the ball.
+        let direction = this.collisionDirection(ball, brick);
+        if (direction == CollisionFrom.Top || direction == CollisionFrom.Bottom) {
+            ball.velocity.y = -ball.velocity.y;
+            // TODO: This (and the one below) restores the ball to the pre-collision position.
+            // TODO: It would be better to restore it so that it's one pixel away from colliding, instead.
+            ball.position.y += ball.velocity.y * dt;
+        }
+        else {
+            ball.velocity.x = -ball.velocity.x;
+            ball.position.x += ball.velocity.x * dt;
+        }
+
+        return true;
     }
 
     collisionDirection(ball: Ball, brick: Brick): CollisionFrom {
