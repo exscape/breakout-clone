@@ -140,9 +140,6 @@ export class Game {
             else ball.velocity.y = 0.04 * Math.sign(ball.velocity.y);
             */
 
-            ball.prevPosition.x = ball.position.x;
-            ball.prevPosition.y = ball.position.y;
-
             ball.position.x += ball.velocity.x * dt;
             ball.position.y += ball.velocity.y * dt;
 
