@@ -145,40 +145,16 @@ export class Game {
             ball.position.x += ball.velocity.x * dt;
             ball.position.y += ball.velocity.y * dt;
 
-            const r = this.settings.ballRadius;
-
             // Handle wall collisions
-            if (ball.position.x <= r) {
-                ball.position.x = r;
-                ball.velocity.x = -ball.velocity.x;
-            }
-            else if (ball.position.x + r >= this.settings.canvasWidth) {
-                ball.position.x = this.settings.canvasWidth - r;
-                ball.velocity.x = -ball.velocity.x;
-            }
-
-            // Handle roof (and during testing, floor) collisions
-            if (ball.position.y <= r) {
-                ball.position.y = r;
-                ball.velocity.y = -ball.velocity.y;
-            }
-            /*
-            else if (ball.position.y + r >= this.settings.canvasHeight) {
-                ball.position.y = this.settings.canvasHeight - r;
-                ball.velocity.y = -ball.velocity.y;
-            }
-            */
+            this.collisionHandler.handleWallCollisions(ball);
 
             // Handle brick collisions
-            // We'll try it the naive way first and see how it performs...
-            // With less than 200 bricks surely this should be fine?
+            // Naive, but it performs just fine. I can even run it 500 times per brick and still have 165 fps.
             for (let i = 0; i < this.bricks.length; i++) {
                 let brick = this.bricks[i];
                 let collision = this.collisionHandler.brickCollision(ball, brick);
                 if (collision == CollisionFrom.None)
                     continue;
-
-                // console.log(`Brick collision! Type = ${(collision == CollisionFrom.Left || CollisionFrom.Right) ? "X" : "Y"}, bouncing`);
 
                 brick.health--;
                 if (brick.health <= 0) {
@@ -202,6 +178,7 @@ export class Game {
             }
 
             // Handle paddle collisions and lost lives/lost games
+            const r = this.settings.ballRadius;
             const paddleMinY = this.paddle.position.y - this.settings.paddleThickness / 2;
             const paddleMinX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
             const paddleMaxX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above

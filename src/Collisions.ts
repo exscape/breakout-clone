@@ -22,6 +22,25 @@ export class CollisionHandler {
         this.settings = settings;
     }
 
+    handleWallCollisions(ball: Ball) {
+        const r = this.settings.ballRadius;
+
+        if (ball.position.x <= r) {
+            ball.position.x = r;
+            ball.velocity.x = -ball.velocity.x;
+        }
+        else if (ball.position.x + r >= this.settings.canvasWidth) {
+            ball.position.x = this.settings.canvasWidth - r;
+            ball.velocity.x = -ball.velocity.x;
+        }
+
+        // Handle roof collisions
+        if (ball.position.y <= r) {
+            ball.position.y = r;
+            ball.velocity.y = -ball.velocity.y;
+        }
+    }
+
     brickCollision(ball: Ball, brick: Brick): CollisionFrom {
         // Calculates whether the ball and brick are colliding, and if so, from which direction the ball is coming.
         // TODO: Walk through this very carefully to ensure the ball can't slip through, e.g. on a corner pixel
