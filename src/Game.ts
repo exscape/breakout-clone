@@ -232,24 +232,27 @@ export class Game {
         window.requestAnimationFrame((dt) => this.gameLoop(dt));
     }
 
+    drawText(text: string, font: string, fillStyle: string, textAlign: CanvasTextAlign, x: number, y: number) {
+            this.ctx.font = font;
+            this.ctx.fillStyle = fillStyle;
+            this.ctx.textAlign = textAlign;
+            if (textAlign == "center")
+                x = this.settings.canvasWidth / 2;
+            this.ctx.fillText(text, x, y);
+    }
+
     drawFrame() {
         // Clear the frame
         this.ctx.clearRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
 
         if (this.gameWon) {
-            this.ctx.font = "30px Arial";
-            this.ctx.fillStyle = "#ee3030";
-            this.ctx.textAlign = "center";
-            this.ctx.fillText(`A WINNER IS YOU! Score: ${this.score}`, this.settings.canvasWidth / 2, 300);
-            this.ctx.textAlign = "left";
+            this.drawText(`A WINNER IS YOU! Score: ${this.score}`, "30px Arial", "#ee3030", "center", 0, 300);
             return;
         }
 
         // Ensure the image has loaded
         if (!this.brickImage) {
-            this.ctx.font = "30px Arial";
-            this.ctx.fillStyle = "#ee3030";
-            this.ctx.fillText("Loading images...", 300, 300);
+            this.drawText("Loading images...", "30px Arial", "#ee3030", "center", 0, 400);
             return;
         }
 
@@ -307,36 +310,20 @@ export class Game {
 
         /*
         // Draw the current framerate
-        this.ctx.font = "14px Arial";
-        this.ctx.fillStyle = "#ee3030";
-        this.ctx.fillText("FPS: " + Math.round(this.lastFPS), 15, 57);
+        this.drawText(`FPS: ${Math.floor(this.lastFPS)}`, "18px Arial", "#ee3030", "left", 10, 59);
         */
 
         // Draw player stats
-        this.ctx.font = "18px Arial";
-        this.ctx.fillStyle = "black";
-        this.ctx.fillText(`Score: ${this.score}`, 10, 25);
-        this.ctx.font = "18px Arial";
-        this.ctx.fillStyle = "black";
-        this.ctx.fillText(`Lives remaining: ${this.livesRemaining}`, 10, 42);
+        this.drawText(`Score: ${this.score}`, "18px Arial", "black", "left", 10, 25)
+        this.drawText(`Lives remaining: ${this.livesRemaining}`, "18px Arial", "black", "left", 10, 42);
 
         if (this.gamePaused) {
-            this.ctx.font = "100px Arial Bold";
-            this.ctx.fillStyle = "black";
-            this.ctx.textAlign = "center";
-            this.ctx.fillText("PAUSED", this.settings.canvasWidth / 2, 520);
-            this.ctx.textAlign = "left";
+            this.drawText("PAUSED", "100px Arial Bold", "black", "center", 0, 520);
         }
         else if (this.gameLost) {
-            this.ctx.font = "60px Arial";
-            this.ctx.fillStyle = "#ee3030";
-            this.ctx.textAlign = "center";
-            this.ctx.fillText(`Sorry, you lost! Score: ${this.score}`, this.settings.canvasWidth / 2, 540);
-            this.ctx.font = "40px Arial";
-            this.ctx.fillText(`Click to restart the game.`, this.settings.canvasWidth / 2, 600);
-            this.ctx.textAlign = "left";
+            this.drawText(`Sorry, you lost! Score: ${this.score}`, "60px Arial", "#ee3030", "center", 0, 540);
+            this.drawText("Click to restart the game.", "40px Arial", "#ee3030", "center", 0, 600);
             return;
         }
-
     }
 }
