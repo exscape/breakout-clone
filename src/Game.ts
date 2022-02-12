@@ -4,7 +4,8 @@ import { Paddle } from "./Paddle";
 import { Brick } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
-import { CollisionHandler, CollisionFrom } from './Collisions';
+import { CollisionHandler } from './Collisions';
+import { generatePairs } from './Utils';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
@@ -113,6 +114,13 @@ export class Game {
 
         if (this.paddle.stuckBall && !this.gamePaused)
             this.paddle.launch();
+        else {
+            // TODO: TEMPORARY CODE to test multiball
+            let b = new Ball(new Vec2(), new Vec2(), randomColor());
+            this.balls.push(b);
+            this.paddle.setStuckBall(b);
+            this.paddle.launch();
+        }
     }
 
     keyDown(ev: KeyboardEvent) {
@@ -128,6 +136,7 @@ export class Game {
         if (this.gameWon || this.gamePaused) // if gameLost, update() should still run, so the ball is drawn to exit the game area
             return;
 
+        // Update the position of all balls first...
         for (let ball of this.balls) {
             if (ball.stuck) {
                 if (ball.velocity.x != 0 || ball.velocity.y != 0)
@@ -143,8 +152,17 @@ export class Game {
             ball.position.x += ball.velocity.x * dt;
             ball.position.y += ball.velocity.y * dt;
 
+            ball.collided = false;
+        }
+
+        // ... *then* handle collisions
+        for (let ball of this.balls) {
             // Handle wall collisions; reflects the ball if necessary
             this.collisionHandler.handleWallCollisions(ball);
+
+            // Limit to one collision per ball and frame
+            if (ball.collided)
+                continue;
 
             // Handle brick collisions
             // Naive, but it performs just fine. I can even run it 500 times per brick and still have 165 fps.
@@ -152,6 +170,8 @@ export class Game {
                 let brick = this.bricks[i];
                 if (!this.collisionHandler.brickCollision(ball, brick, dt))
                     continue;
+
+                ball.collided = true;
 
                 brick.health--;
                 if (brick.health <= 0) {
@@ -174,37 +194,83 @@ export class Game {
                 ball.position.y + r >= paddleMinY &&
                 ball.position.x >= paddleMinX &&
                 ball.position.x <= paddleMaxX &&
+                ball.position.y + r < this.paddle.position.y + this.settings.paddleThickness / 2 && // + thickness/2 to reduce risk of fall-through at lower fps
                 !this.gameLost &&
                 !this.lifeLost) {
-                    // Bounce angle depends on where the ball hits.
-                    // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
-                    // then calculate the bounce angle based on that location (0.5 = straight up),
-                    // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
-                    const hitLocation = (ball.position.x - paddleMinX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
-                    const distanceOffCenter = Math.abs(0.5 - hitLocation);
-                    const maxAngle = 80 * Math.PI/180;
-                    const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
-                    const speed = ball.velocity.mag();
-                    ball.velocity.x = speed * Math.sin(angle);
-                    ball.velocity.y = -speed * Math.cos(angle);
-                }
-                else if (ball.velocity.y > 0 && ball.position.y > this.paddle.position.y) {
-                    // Only subtract if lifeLost == false, since we will subtract a life every frame otherwise.
+                // Bounce angle depends on where the ball hits.
+                // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
+                // then calculate the bounce angle based on that location (0.5 = straight up),
+                // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
+                const hitLocation = (ball.position.x - paddleMinX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
+                const distanceOffCenter = Math.abs(0.5 - hitLocation);
+                const maxAngle = 80 * Math.PI/180;
+                const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
+                const speed = ball.velocity.mag();
+                ball.velocity.x = speed * Math.sin(angle);
+                ball.velocity.y = -speed * Math.cos(angle);
+                ball.collided = true;
+            }
+            else if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
+                // Only subtract if lifeLost == false, since we will subtract a life every frame otherwise.
+                let i = this.balls.indexOf(ball);
+                this.balls.splice(i, 1);
+
+                if (this.balls.length === 0) {
                     if (!this.lifeLost) {
                         this.livesRemaining--;
                         this.lifeLost = true;
                     }
                     if (this.livesRemaining <= 0)
                         this.gameLost = true;
-                }
-                if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
-                    // If livesRemaining == 0, we instead display the "you lost" screen and wait for user input
-                    // to reset.
-                    if (this.livesRemaining > 0)
+                    else
                         this.reset();
                 }
+            }
+            if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
+                // If livesRemaining == 0, we instead display the "you lost" screen and wait for user input
+                // to reset.
+                if (this.balls.length == 0 && this.livesRemaining > 0)
+                    this.reset();
+            }
+        }
 
-            // TODO: handle collisions between balls -- if multiball is ever added
+        // Handle ball-to-ball collisions (um...).
+        // Build a list of all unique pairs (e.g. A+B, A+C, B+C -- but not also B+A, C+A, C+B), and check each for collisions.
+        let ballPairs = generatePairs(this.balls);
+        for (let pair of ballPairs) {
+            // This only runs if there are at least two balls present.
+            let [firstBall, secondBall]: Ball[] = [pair[0], pair[1]];
+
+            // Ignore multiple collisions the same frame
+            if (firstBall.collided || secondBall.collided)
+                continue;
+
+            let distance = Math.sqrt(
+                ((firstBall.position.x - secondBall.position.x) * (firstBall.position.x - secondBall.position.x))
+              + ((firstBall.position.y - secondBall.position.y) * (firstBall.position.y - secondBall.position.y))
+               );
+            if (distance < 2 * this.settings.ballRadius)
+            {
+
+                // TODO:
+                // TODO: DENNA KOD ÄR FELAKTIG! Om två bollar med velocity -y och +y krockar med offset på X så studsar de ändå som om de träffade mitt på.
+                // TODO: Rätta till och använd vektorer!
+                // TODO:
+                let newVelocityFirst = new Vec2(secondBall.velocity.x, secondBall.velocity.y);
+                let newVelocitySecond = new Vec2(firstBall.velocity.x, firstBall.velocity.y);
+                firstBall.velocity = newVelocityFirst;
+                secondBall.velocity = newVelocitySecond;
+
+                // TODO: meant to help balls not get stuck, but they still do!
+                firstBall.position.x += firstBall.velocity.x * dt;
+                firstBall.position.y += firstBall.velocity.y * dt;
+                secondBall.position.x += secondBall.velocity.x * dt;
+                secondBall.position.y += secondBall.velocity.y * dt;
+
+                // TODO: This as well...
+                firstBall.collided = true;
+                secondBall.collided = true;
+            }
         }
     }
 
@@ -233,8 +299,9 @@ export class Game {
         this.ctx.clearRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
 
         if (this.gameWon) {
-            this.drawText(`A WINNER IS YOU! Score: ${this.score}`, "30px Arial", "#ee3030", "center", 0, 300);
-            return;
+            this.drawText(`A WINNER IS YOU!`, "60px Arial", "#ee3030", "center", 0, 520);
+            this.drawText(`Score: ${this.score}`, "60px Arial", "#ee3030", "center", 0, 580);
+            this.drawText("Click to restart the game.", "40px Arial", "#ee3030", "center", 0, 635);
         }
 
         // Ensure the image has loaded
@@ -308,8 +375,9 @@ export class Game {
             this.drawText("PAUSED", "100px Arial Bold", "black", "center", 0, 520);
         }
         else if (this.gameLost) {
-            this.drawText(`Sorry, you lost! Score: ${this.score}`, "60px Arial", "#ee3030", "center", 0, 540);
-            this.drawText("Click to restart the game.", "40px Arial", "#ee3030", "center", 0, 600);
+            this.drawText(`Sorry, you lost!`, "60px Arial", "#ee3030", "center", 0, 520);
+            this.drawText(`Score: ${this.score}`, "60px Arial", "#ee3030", "center", 0, 580);
+            this.drawText("Click to restart the game.", "40px Arial", "#ee3030", "center", 0, 635);
             return;
         }
     }
