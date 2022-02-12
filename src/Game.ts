@@ -4,7 +4,7 @@ import { Paddle } from "./Paddle";
 import { Brick } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
-import { CollisionHandler } from './Collisions';
+import { CollisionHandler } from './CollisionHandler';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
