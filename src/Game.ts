@@ -54,9 +54,9 @@ export class Game {
     }
 
     reset() {
-        // If the game isn't lost and lives remain, we do a partial reset.
+        // If the game is still active and lives remain, we do a partial reset.
         // Otherwise, reset everything -- i.e. restart the game entirely.
-        let partialReset = !this.gameLost && this.livesRemaining > 0;
+        let partialReset = !this.gameLost && !this.gameWon && this.livesRemaining > 0;
 
         this.lifeLost = false;
         this.gameLost = false;
@@ -107,7 +107,7 @@ export class Game {
     }
 
     click() {
-        if (this.gameLost) {
+        if (this.gameLost || this.gameWon) {
             this.reset();
             return;
         }
@@ -130,6 +130,7 @@ export class Game {
 
     keyUp(ev: KeyboardEvent) {}
     togglePause() { this.gamePaused = !this.gamePaused; }
+    focusLost() { if (!this.gameWon && !this.gameLost) this.pause(); }
     pause() { this.gamePaused = true; }
 
     update(dt: number) {

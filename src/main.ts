@@ -54,6 +54,6 @@ function pointerLockChange() {
         document.addEventListener("mousemove", mouseMovedHandler, false);
     else {
         document.removeEventListener("mousemove", mouseMovedHandler, false);
-        game?.pause();
+        game?.focusLost();
     }
 }
