@@ -335,12 +335,6 @@ export class Game {
         // Clear the frame
         this.ctx.clearRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
 
-        if (this.gameWon) {
-            this.drawText(`A WINNER IS YOU!`, "60px Arial", "#ee3030", "center", 0, 520);
-            this.drawText(`Score: ${this.score}`, "60px Arial", "#ee3030", "center", 0, 580);
-            this.drawText("Click to restart the game.", "40px Arial", "#ee3030", "center", 0, 635);
-        }
-
         // Ensure the image has loaded
         if (!this.brickImage) {
             this.drawText("Loading images...", "30px Arial", "#ee3030", "center", 0, 400);
@@ -407,6 +401,12 @@ export class Game {
         // Draw player stats
         this.drawText(`Score: ${this.score}`, "18px Arial", "black", "left", 10, 25)
         this.drawText(`Lives remaining: ${this.livesRemaining}`, "18px Arial", "black", "left", 10, 42);
+
+        if (this.gameWon) {
+            this.drawText(`A WINNER IS YOU!`, "60px Arial", "#ee3030", "center", 0, 520);
+            this.drawText(`Score: ${this.score}`, "60px Arial", "#ee3030", "center", 0, 580);
+            this.drawText("Click to restart the game.", "40px Arial", "#ee3030", "center", 0, 635);
+        }
 
         if (this.gamePaused) {
             this.drawText("PAUSED", "100px Arial Bold", "black", "center", 0, 520);
