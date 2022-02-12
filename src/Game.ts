@@ -320,7 +320,7 @@ export class Game {
             this.ctx.fill();
 
             // Draw the velocity vector(s)
-            if (this.gamePaused) {
+            if (this.gamePaused && ball.velocity.mag() > 0.1) {
                 this.ctx.beginPath();
                 this.ctx.lineWidth = 2;
                 this.ctx.strokeStyle = "#60ff60";
