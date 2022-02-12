@@ -7,6 +7,7 @@ export class Paddle {
     width: number;
     position: Vec2;
     settings: Settings;
+    sticky: Boolean = true; // Is the "sticky" powerup active?
     stuckBall: Ball | null;
 
     constructor(settings: Settings) {
@@ -18,8 +19,15 @@ export class Paddle {
 
     setStuckBall(ball: Ball) {
         this.stuckBall = ball;
-        this.stuckBall.position = new Vec2(this.position.x + this.width / 2, this.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1);
-        this.stuckBall.stuck = true;
+        if (ball) {
+            this.stuckBall.position = new Vec2(this.position.x + this.width / 2, this.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1);
+            this.stuckBall.stuck = true;
+        }
+    }
+
+    setSticky(sticky: boolean) {
+        // Used by the collision code
+        this.sticky = sticky;
     }
 
     launch() {

@@ -111,6 +111,14 @@ export class CollisionHandler {
             if (distance >= 2 * this.settings.ballRadius)
                 continue;
 
+            // If one of the balls is stuck, ensure it's firstBall, to make the rest of the code easier.
+            // Collisions with a stuck ball are treated like collisions with a wall, i.e. the velocity is reflected about the tangent axis
+            // (i.e along the axis connecting the ball centers) while the stuck ball is not affected at all.
+            if (secondBall.stuck)
+                [firstBall, secondBall] = [secondBall, firstBall];
+            if (secondBall.stuck)
+                alert("BUG: firstBall stuck despite swap -- multiple stuck balls!");
+
             // TODO: reduce allocation here?
 
             // Step 1
@@ -119,6 +127,7 @@ export class CollisionHandler {
             // Rare, but happens in testing when you launch a TON of balls straight up and let them bounce.
             // Causes major bugs if not handled. Ignoring the collision is not ideal, but this is SO unlikely to happen
             // in a normal gaming situation, *AND* if it happens it's not a big deal at all to skip the collision.
+            // Note that testing against exactly zero is intended; values near zero are fine, as we can normalize those vectors.
             if (normal.mag() == 0)
                 continue;
 
@@ -134,8 +143,9 @@ export class CollisionHandler {
             let v2_tangent = tangent.dot(secondBall.velocity);
 
             // Step 5 (for balls with equal mass)
+            // If one ball is stuck (always firstBall, in that case), reflect the ball as if it hit a wall instead of trading speeds.
             let v1_normal_post = v2_normal_pre;
-            let v2_normal_post = v1_normal_pre;
+            let v2_normal_post = firstBall.stuck ? -v2_normal_pre : v1_normal_pre;
 
             // Step 6
             let v1_normal_vec = new Vec2(normal);
@@ -165,12 +175,18 @@ export class CollisionHandler {
 
             while (Math.sqrt((firstBall.position.x - secondBall.position.x)**2 + (firstBall.position.y - secondBall.position.y)**2) < 2*this.settings.ballRadius) {
                 // Ensure the balls aren't still intersecting, to prevent them from getting stuck together
-                firstBall.position.x += firstBall.velocity.x * 3;
-                firstBall.position.y += firstBall.velocity.y * 3;
+                secondBall.position.x += secondBall.velocity.x * 3;
+                secondBall.position.y += secondBall.velocity.y * 3;
             }
 
             if (Math.abs(firstBall.velocity.mag() - this.settings.ballSpeed) > 0.01 || Math.abs(secondBall.velocity.mag() - this.settings.ballSpeed) > 0.01)
                 alert("MATH ERROR: Ball speed incorrect after collision")
+
+            // Handle the case of collisions in sticky + multiball combination. The stuck ball should stay stuck.
+            if (firstBall.stuck) {
+                firstBall.velocity.x = 0;
+                firstBall.velocity.y = 0;
+            }
         }
     }
 }

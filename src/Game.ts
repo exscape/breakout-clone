@@ -197,18 +197,27 @@ export class Game {
                 ball.position.y + r < this.paddle.position.y + this.settings.paddleThickness / 2 && // + thickness/2 to reduce risk of fall-through at lower fps
                 !this.gameLost &&
                 !this.lifeLost) {
-                // Bounce angle depends on where the ball hits.
-                // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
-                // then calculate the bounce angle based on that location (0.5 = straight up),
-                // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
-                const hitLocation = (ball.position.x - paddleMinX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
-                const distanceOffCenter = Math.abs(0.5 - hitLocation);
-                const maxAngle = 80 * Math.PI/180;
-                const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
-                const speed = ball.velocity.mag();
-                ball.velocity.x = speed * Math.sin(angle);
-                ball.velocity.y = -speed * Math.cos(angle);
-                ball.collided = true;
+                if (this.paddle.sticky && this.paddle.stuckBall == null) {
+                    // The ball should stick to the paddle.
+                    // If the paddle is sticky but HAS a stuck ball, we let it bounce as usual.
+                    this.paddle.setStuckBall(ball);
+                    ball.velocity.x = 0;
+                    ball.velocity.y = 0;
+                }
+                else {
+                    // Bounce angle depends on where the ball hits.
+                    // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
+                    // then calculate the bounce angle based on that location (0.5 = straight up),
+                    // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
+                    const hitLocation = (ball.position.x - paddleMinX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
+                    const distanceOffCenter = Math.abs(0.5 - hitLocation);
+                    const maxAngle = 80 * Math.PI/180;
+                    const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
+                    const speed = ball.velocity.mag();
+                    ball.velocity.x = speed * Math.sin(angle);
+                    ball.velocity.y = -speed * Math.cos(angle);
+                    ball.collided = true;
+                }
             }
             else if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
                 // Only subtract if lifeLost == false, since we will subtract a life every frame otherwise.
