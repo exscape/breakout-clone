@@ -235,7 +235,8 @@ export class Game {
         }
 
         // Handle ball-to-ball collisions
-        this.collisionHandler.handleBallBallCollisions(this.balls);
+        if (this.balls.length >= 2)
+            this.collisionHandler.handleBallBallCollisions(this.balls);
     }
 
     gameLoop(timestamp: number) {
