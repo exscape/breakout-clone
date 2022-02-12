@@ -283,6 +283,17 @@ export class Game {
                 firstBall.velocity.add(v1_tangent_vec);
                 secondBall.velocity = v2_normal_vec;
                 secondBall.velocity.add(v2_tangent_vec);
+
+                // Step 8, added by me: we can't really have 100% physically accurate collisions in this game.
+                // If the ball stops or moves extremely slowly, that just about ruins the gameplay, so we enforce a fixed
+                // speed for all balls.
+                firstBall.velocity = new Vec2(firstBall.velocity).normalized();
+                firstBall.velocity.scale(this.settings.ballSpeed);
+                secondBall.velocity = new Vec2(secondBall.velocity).normalized();
+                secondBall.velocity.scale(this.settings.ballSpeed);
+
+                if (Math.abs(firstBall.velocity.mag() - this.settings.ballSpeed) > 0.01 || Math.abs(secondBall.velocity.mag() - this.settings.ballSpeed) > 0.01)
+                    alert("MATH ERROR: Ball speed incorrect after collision")
             }
         }
     }

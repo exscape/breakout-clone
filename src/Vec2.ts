@@ -39,4 +39,11 @@ export class Vec2 {
         if (Math.abs(1 - this.mag()) > 0.01)
             alert("MATH ERROR: normalize() didn't yield a length-1 vector");
     }
+
+    // Like normalize(), but returns a copy instead
+    normalized(): Vec2 {
+        let v = new Vec2(this);
+        v.normalize();
+        return v;
+    }
 }
