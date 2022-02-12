@@ -19,7 +19,6 @@ export class Game {
     bricks: Brick[] = [];
     settings: Settings;
     collisionHandler: CollisionHandler;
-    brickImage: HTMLImageElement | null = null;
 
     lastRender: number;
     lastFPS: number = 0;
@@ -28,8 +27,13 @@ export class Game {
     gameWon: boolean = false;
     gamePaused: boolean = false;
 
+    loadingCompleted: boolean = false;
+
     livesRemaining: number = 0;
     score: number = 0;
+
+    images: Record<string, HTMLImageElement> = {};
+    readonly TOTAL_IMAGE_COUNT = 10;
 
     constructor(canvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -38,13 +42,26 @@ export class Game {
         this.settings = settings;
         this.collisionHandler = new CollisionHandler(settings);
 
-        var img = new Image();
-        img.addEventListener('load', () => {
-            this.brickImage = img;
-            console.log("brick.png loaded");
-        }, false);
-        img.src = 'brick.png';
-        console.log("Starting load for brick.png");
+        let brickImages = [];
+        brickImages.push("brick_indestructible");
+        for (let i = 1; i <= 9; i++)
+            brickImages.push(`brick${i}`);
+
+        for (let name of brickImages) {
+            var img = new Image();
+            let self = this;
+            img.addEventListener('load', function () {
+                self.images[name] = this;
+                console.log(`Image finished loading! ${name}.png, img.src = ${this.currentSrc}`);
+                    console.log(`    ${Object.keys(self.images).length} images loaded`);
+                if (Object.keys(self.images).length == self.TOTAL_IMAGE_COUNT)
+                    self.loadingCompleted = true;
+            }, false);
+            img.addEventListener('error', (ev: ErrorEvent) => {
+                alert("Failed to load image! Error: " + ev.message);
+            });
+            img.src = `img/${name}.png`;
+        }
 
         this.reset();
 
@@ -95,7 +112,7 @@ export class Game {
             for (let x = xMargin; x < numBricksX - xMargin; x++) {
                 let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
                 let yCoord = spacing + y * (this.settings.brickHeight + (y > 0 ? spacing : 0));
-                this.bricks.push(new Brick(new Vec2(xCoord, yCoord), randomColor(), this.settings, 10, 1));
+                this.bricks.push(new Brick(new Vec2(xCoord, yCoord), `brick${_.random(1, 9)}`, this.settings, 10, 1));
             }
         }
     }
@@ -268,12 +285,20 @@ export class Game {
             this.ctx.fillText(text, x, y);
     }
 
+    dim() {
+        // Draw a partially transparent overlay
+        this.ctx.globalAlpha = 0.3;
+        this.ctx.fillStyle = "black";
+        this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+        this.ctx.globalAlpha = 1.0;
+    }
+
     drawFrame() {
         // Clear the frame
-        this.ctx.clearRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+        this.ctx.fillStyle = "#eaeaea";
+        this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
 
-        // Ensure the image has loaded
-        if (!this.brickImage) {
+        if (!this.loadingCompleted) {
             this.drawText("Loading images...", "30px Arial", "#ee3030", "center", 0, 400);
             return;
         }
@@ -309,7 +334,7 @@ export class Game {
 
         // Draw the bricks
         for (let brick of this.bricks) {
-            this.ctx.drawImage(this.brickImage, brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
+            this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
         }
 
         // Draw the balls

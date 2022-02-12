@@ -3,7 +3,7 @@ import { Settings } from './Settings';
 
 export class Brick {
     health: number; // How many hits until destroyed?
-    color: string;
+    name: string;
     score: number;
 
     upperLeft: Vec2;
@@ -11,9 +11,9 @@ export class Brick {
     bottomLeft: Vec2;
     bottomRight: Vec2;
 
-    constructor(position: Vec2, color: string, settings: Settings, score: number, health: number = 1) {
+    constructor(position: Vec2, name: string, settings: Settings, score: number, health: number = 1) {
         this.health = health;
-        this.color = color;
+        this.name = name;
         this.score = score;
 
         // The other corners are used by the collision checking code
