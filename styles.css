@@ -1,0 +1,25 @@
+body {
+    background-color: #ddedff;
+    margin: 0;
+}
+
+#main-div {
+    display: grid;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+#break {
+    flex-basis: 100%;
+    height: 0;
+}
+
+#help-div {
+    display: flex;
+    justify-content: center;
+}
+
+canvas {
+    border: 2px solid black;
+}

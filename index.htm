@@ -16,16 +16,19 @@
     <link rel="icon" href="/favicon.ico">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-  <link rel="stylesheet" href="styles.css">
   -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <div>
-    <canvas id="canvas" style="border: 2px solid black"></canvas>
+  <div id="main-div">
+    <div id="inner-div">
+      <div id="canvas-div">
+        <canvas id="canvas"></canvas>
+      </div>
+      <script src="src/main.ts" type="module"></script>
+      <div id="help-div"><h2>Move the mouse to control the paddle. Click to launch. Press P to pause.</h2></div>
+    </div>
   </div>
-  <script src="src/main.ts" type="module"></script>
-  <div><h2>Move the mouse to control the paddle. Click to launch. Press P to pause.</h2></div>
 </body>
 </html>
