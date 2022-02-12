@@ -34,16 +34,21 @@ export class Vec2 {
 
     normalize(): void {
         const m = this.mag();
+        if (m == 0)
+            return; // A normalized 0-length vector is a 0-length vector
         this.x /= m;
         this.y /= m;
         if (Math.abs(1 - this.mag()) > 0.01)
             alert("MATH ERROR: normalize() didn't yield a length-1 vector");
     }
 
-    // Like normalize(), but returns a copy instead
-    normalized(): Vec2 {
-        let v = new Vec2(this);
-        v.normalize();
-        return v;
+    setMagnitude(mag: number): void {
+        // Scale this vector such that the direction is unchanged, but the magnitude mathes the argument.
+        this.normalize();
+        this.x *= mag;
+        this.y *= mag;
+        if (Math.abs(this.mag() - mag) > 0.01)
+            alert("MATH ERROR: setMagnitude failed");
     }
+
 }

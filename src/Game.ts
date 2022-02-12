@@ -242,17 +242,21 @@ export class Game {
             // This only runs if there are at least two balls present.
             let [firstBall, secondBall] = pair;
 
-            // Ignore multiple collisions the same frame
-            if (firstBall.collided || secondBall.collided)
-                continue;
-
             let distance = Math.sqrt((firstBall.position.x - secondBall.position.x)**2 + (firstBall.position.y - secondBall.position.y)**2);
+
             if (distance < 2 * this.settings.ballRadius) {
                 // TODO: reduce allocation here?
                 // Based on: https://imada.sdu.dk/~rolf/Edu/DM815/E10/2dcollisions.pdf
 
                 // Step 1
                 let normal = new Vec2(firstBall.position.x - secondBall.position.x, firstBall.position.y - secondBall.position.y);
+
+                // Rare, but happens in testing when you launch a TON of balls straight up and let them bounce.
+                // Causes major bugs if not handled. Ignoring the collision is not ideal, but this is SO unlikely to happen
+                // in a normal gaming situation, *AND* if it happens it's not a big deal at all to skip the collision.
+                if (normal.mag() == 0)
+                    continue;
+
                 normal.normalize();
                 let tangent = new Vec2(-normal.y, normal.x);
                 if (Math.abs(1-tangent.mag()) > 0.01)
@@ -287,10 +291,19 @@ export class Game {
                 // Step 8, added by me: we can't really have 100% physically accurate collisions in this game.
                 // If the ball stops or moves extremely slowly, that just about ruins the gameplay, so we enforce a fixed
                 // speed for all balls.
-                firstBall.velocity = new Vec2(firstBall.velocity).normalized();
-                firstBall.velocity.scale(this.settings.ballSpeed);
-                secondBall.velocity = new Vec2(secondBall.velocity).normalized();
-                secondBall.velocity.scale(this.settings.ballSpeed);
+                firstBall.velocity.setMagnitude(this.settings.ballSpeed);
+                secondBall.velocity.setMagnitude(this.settings.ballSpeed);
+
+                // TODO: remove if not needed any longer
+                firstBall.collided = true;
+                secondBall.collided = true;
+
+                while (Math.sqrt((firstBall.position.x - secondBall.position.x)**2 + (firstBall.position.y - secondBall.position.y)**2) < 2*this.settings.ballRadius) {
+                    // Ensure the balls aren't still intersecting, to prevent them from getting stuck together
+                    // TODO: this doesn't work -- if the balls are moving together yet intersecting this is an infinite loop!
+                    firstBall.position.x += firstBall.velocity.x * 3;
+                    firstBall.position.y += firstBall.velocity.y * 3;
+                }
 
                 if (Math.abs(firstBall.velocity.mag() - this.settings.ballSpeed) > 0.01 || Math.abs(secondBall.velocity.mag() - this.settings.ballSpeed) > 0.01)
                     alert("MATH ERROR: Ball speed incorrect after collision")

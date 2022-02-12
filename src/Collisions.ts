@@ -71,7 +71,7 @@ export class CollisionHandler {
         let direction = this.collisionDirection(ball, brick);
         if (direction == CollisionFrom.Top || direction == CollisionFrom.Bottom) {
             ball.velocity.y = -ball.velocity.y;
-            // TODO: This (and the one below) restores the ball to the pre-collision position.
+            // TODO: This (and the one below) restores the ball to the pre-collision position (on this axis).
             // TODO: It would be better to restore it so that it's one pixel away from colliding, instead.
             ball.position.y += ball.velocity.y * dt;
         }
