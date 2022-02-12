@@ -7,7 +7,7 @@ export class Paddle {
     width: number;
     position: Vec2;
     settings: Settings;
-    sticky: Boolean = true; // Is the "sticky" powerup active?
+    sticky: Boolean = false; // Is the "sticky" powerup active?
     stuckBall: Ball | null;
 
     constructor(settings: Settings) {
@@ -36,7 +36,7 @@ export class Paddle {
             return;
         }
 
-        const launchStraightUp = true;
+        const launchStraightUp = this.sticky;
 
         let ball = this.stuckBall;
         this.stuckBall = null;
