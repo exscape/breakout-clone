@@ -240,37 +240,49 @@ export class Game {
         let ballPairs = generatePairs(this.balls);
         for (let pair of ballPairs) {
             // This only runs if there are at least two balls present.
-            let [firstBall, secondBall]: Ball[] = [pair[0], pair[1]];
+            let [firstBall, secondBall] = pair;
 
             // Ignore multiple collisions the same frame
             if (firstBall.collided || secondBall.collided)
                 continue;
 
-            let distance = Math.sqrt(
-                ((firstBall.position.x - secondBall.position.x) * (firstBall.position.x - secondBall.position.x))
-              + ((firstBall.position.y - secondBall.position.y) * (firstBall.position.y - secondBall.position.y))
-               );
-            if (distance < 2 * this.settings.ballRadius)
-            {
+            let distance = Math.sqrt((firstBall.position.x - secondBall.position.x)**2 + (firstBall.position.y - secondBall.position.y)**2);
+            if (distance < 2 * this.settings.ballRadius) {
+                // TODO: reduce allocation here?
+                // Based on: https://imada.sdu.dk/~rolf/Edu/DM815/E10/2dcollisions.pdf
 
-                // TODO:
-                // TODO: DENNA KOD ÄR FELAKTIG! Om två bollar med velocity -y och +y krockar med offset på X så studsar de ändå som om de träffade mitt på.
-                // TODO: Rätta till och använd vektorer!
-                // TODO:
-                let newVelocityFirst = new Vec2(secondBall.velocity.x, secondBall.velocity.y);
-                let newVelocitySecond = new Vec2(firstBall.velocity.x, firstBall.velocity.y);
-                firstBall.velocity = newVelocityFirst;
-                secondBall.velocity = newVelocitySecond;
+                // Step 1
+                let normal = new Vec2(firstBall.position.x - secondBall.position.x, firstBall.position.y - secondBall.position.y);
+                normal.normalize();
+                let tangent = new Vec2(-normal.y, normal.x);
+                if (Math.abs(1-tangent.mag()) > 0.01)
+                    alert("MATH ERROR: tangent vector not a unit vector");
 
-                // TODO: meant to help balls not get stuck, but they still do!
-                firstBall.position.x += firstBall.velocity.x * dt;
-                firstBall.position.y += firstBall.velocity.y * dt;
-                secondBall.position.x += secondBall.velocity.x * dt;
-                secondBall.position.y += secondBall.velocity.y * dt;
+                // Step 3 and 4 (step 2 is not necessary)
+                let v1_normal_pre = normal.dot(firstBall.velocity);
+                let v1_tangent = tangent.dot(firstBall.velocity);
+                let v2_normal_pre = normal.dot(secondBall.velocity);
+                let v2_tangent = tangent.dot(secondBall.velocity);
 
-                // TODO: This as well...
-                firstBall.collided = true;
-                secondBall.collided = true;
+                // Step 5 (for balls with equal mass)
+                let v1_normal_post = v2_normal_pre;
+                let v2_normal_post = v1_normal_pre;
+
+                // Step 6
+                let v1_normal_vec = new Vec2(normal);
+                v1_normal_vec.scale(v1_normal_post);
+                let v1_tangent_vec = new Vec2(tangent);
+                v1_tangent_vec.scale(v1_tangent);
+                let v2_normal_vec = new Vec2(normal);
+                v2_normal_vec.scale(v2_normal_post);
+                let v2_tangent_vec = new Vec2(tangent);
+                v2_tangent_vec.scale(v2_tangent);
+
+                // Step 7
+                firstBall.velocity = v1_normal_vec;
+                firstBall.velocity.add(v1_tangent_vec);
+                secondBall.velocity = v2_normal_vec;
+                secondBall.velocity.add(v2_tangent_vec);
             }
         }
     }
