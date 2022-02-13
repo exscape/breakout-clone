@@ -33,7 +33,7 @@ export class Game {
     score: number = 0;
 
     images: Record<string, HTMLImageElement> = {};
-    readonly TOTAL_IMAGE_COUNT = 10;
+    readonly TOTAL_IMAGE_COUNT = 12;
 
     constructor(canvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -42,12 +42,11 @@ export class Game {
         this.settings = settings;
         this.collisionHandler = new CollisionHandler(settings);
 
-        let brickImages = [];
-        brickImages.push("brick_indestructible");
+        let imageFilenames = ["brick_indestructible", "paddle", "ball"];
         for (let i = 1; i <= 9; i++)
-            brickImages.push(`brick${i}`);
+            imageFilenames.push(`brick${i}`);
 
-        for (let name of brickImages) {
+        for (let name of imageFilenames) {
             var img = new Image();
             let self = this;
             img.addEventListener('load', function () {
@@ -304,6 +303,12 @@ export class Game {
         }
 
         // Draw the paddle
+        // paddleThickness/2 is also the end cap radius, so we need to subtract that from x as well
+        this.ctx.drawImage(this.images["paddle"], this.paddle.position.x - this.settings.paddleThickness / 2, this.paddle.position.y - this.settings.paddleThickness / 2);
+
+        /*
+        // Draw the paddle
+        this.ctx.globalAlpha = 0.7;
         this.ctx.beginPath();
         this.ctx.strokeStyle = "#5050d0";
         this.ctx.lineCap = "round";
@@ -311,6 +316,8 @@ export class Game {
         this.ctx.lineTo(this.paddle.position.x + this.paddle.width, this.paddle.position.y);
         this.ctx.lineWidth = this.settings.paddleThickness;
         this.ctx.stroke();
+        this.ctx.globalAlpha = 1.0;
+        */
 
         /*
         // Draw the paddle centerline
@@ -339,10 +346,16 @@ export class Game {
 
         // Draw the balls
         for (let ball of this.balls) {
+            this.ctx.drawImage(this.images["ball"], ball.position.x - this.settings.ballRadius, ball.position.y - this.settings.ballRadius);
+
+            /*
+            this.ctx.globalAlpha = 0.7;
             this.ctx.beginPath();
-            this.ctx.fillStyle = ball.color;
+            this.ctx.fillStyle = "red";
             this.ctx.arc(ball.position.x, ball.position.y, this.settings.ballRadius, 0, 2*Math.PI);
             this.ctx.fill();
+            this.ctx.globalAlpha = 1.0;
+            */
 
             // Draw the velocity vector(s)
             if (this.gamePaused && ball.velocity.mag() > 0.1) {
