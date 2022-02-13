@@ -6,5 +6,6 @@ export type Settings = {
     paddleThickness: number,
     ballSpeed: number,
     brickWidth: number
-    brickHeight: number
+    brickHeight: number,
+    canvasBackground: string
 };

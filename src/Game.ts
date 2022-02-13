@@ -294,7 +294,7 @@ export class Game {
 
     drawFrame() {
         // Clear the frame
-        this.ctx.fillStyle = "#eaeaea";
+        this.ctx.fillStyle = this.settings.canvasBackground;
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
 
         if (!this.loadingCompleted) {
