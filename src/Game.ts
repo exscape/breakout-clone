@@ -33,7 +33,7 @@ export class Game {
     score: number = 0;
 
     images: Record<string, HTMLImageElement> = {};
-    readonly TOTAL_IMAGE_COUNT = 12;
+    readonly TOTAL_IMAGE_COUNT = 14;
 
     constructor(canvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -42,7 +42,7 @@ export class Game {
         this.settings = settings;
         this.collisionHandler = new CollisionHandler(settings);
 
-        let imageFilenames = ["brick_indestructible", "paddle", "ball"];
+        let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right", "ball"];
         for (let i = 1; i <= 9; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -304,7 +304,9 @@ export class Game {
 
         // Draw the paddle
         // paddleThickness/2 is also the end cap radius, so we need to subtract that from x as well
-        this.ctx.drawImage(this.images["paddle"], this.paddle.position.x - this.settings.paddleThickness / 2, this.paddle.position.y - this.settings.paddleThickness / 2);
+        this.ctx.drawImage(this.images["paddle_left"], this.paddle.position.x - Math.floor(this.settings.paddleThickness / 2), this.paddle.position.y - this.settings.paddleThickness / 2);
+        this.ctx.drawImage(this.images["paddle_center"], this.paddle.position.x - Math.floor(this.settings.paddleThickness / 2) + 12, this.paddle.position.y - this.settings.paddleThickness / 2);
+        this.ctx.drawImage(this.images["paddle_right"], this.paddle.position.x + this.paddle.width, this.paddle.position.y - this.settings.paddleThickness / 2);
 
         /*
         // Draw the paddle
