@@ -26,6 +26,7 @@ export class Game {
     gameLost: boolean = false;
     gameWon: boolean = false;
     gamePaused: boolean = false;
+    bricksRemaining: number = 0;
 
     loadingCompleted: boolean = false;
 
@@ -82,6 +83,9 @@ export class Game {
         if (!partialReset) {
             this.bricks.length = 0;
             this.initializeBricks();
+            this.bricksRemaining = this.bricks
+                                       .filter(b => !b.indestructible)
+                                       .length;
 
             this.livesRemaining = 3;
             this.score = 0;
@@ -111,7 +115,10 @@ export class Game {
             for (let x = xMargin; x < numBricksX - xMargin; x++) {
                 let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
                 let yCoord = spacing + y * (this.settings.brickHeight + (y > 0 ? spacing : 0));
-                this.bricks.push(new Brick(new Vec2(xCoord, yCoord), `brick${_.random(1, 9)}`, this.settings, 10, 1));
+                if (_.random(1,100) > 90)
+                    this.bricks.push(new Brick(new Vec2(xCoord, yCoord), `brick_indestructible`, this.settings, 10, 1, true));
+                else
+                    this.bricks.push(new Brick(new Vec2(xCoord, yCoord), `brick${_.random(1, 9)}`, this.settings, 10, 1));
             }
         }
     }
@@ -189,13 +196,15 @@ export class Game {
 
                 ball.collided = true;
 
-                brick.health--;
+                if (!brick.indestructible)
+                    brick.health--;
                 if (brick.health <= 0) {
                     this.score += brick.score;
                     this.bricks.splice(i, 1);
+                    this.bricksRemaining--;
                 }
 
-                if (this.bricks.length == 0)
+                if (this.bricksRemaining <= 0)
                     this.win();
 
                 break; // Limit collisions to the first block tested

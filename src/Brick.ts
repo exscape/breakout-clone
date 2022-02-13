@@ -5,16 +5,18 @@ export class Brick {
     health: number; // How many hits until destroyed?
     name: string;
     score: number;
+    indestructible: boolean;
 
     upperLeft: Vec2;
     upperRight: Vec2;
     bottomLeft: Vec2;
     bottomRight: Vec2;
 
-    constructor(position: Vec2, name: string, settings: Settings, score: number, health: number = 1) {
+    constructor(position: Vec2, name: string, settings: Settings, score: number, health: number = 1, indestructible: boolean = false) {
         this.health = health;
         this.name = name;
         this.score = score;
+        this.indestructible = indestructible;
 
         // The other corners are used by the collision checking code
         this.upperLeft = position;

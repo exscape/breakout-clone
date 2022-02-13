@@ -70,15 +70,35 @@ export class CollisionHandler {
 
         // There was a collision. Figure out the direction and bounce the ball.
         let direction = this.collisionDirection(ball, brick);
+
+        // TODO: ensure we don't move the ball it into ANOTHER brick instead!!!
+        // TODO: though that SHOULD be impossible -- if we came from e.g. the right, surely the right has no brick?
+
         if (direction == CollisionFrom.Top || direction == CollisionFrom.Bottom) {
             ball.velocity.y = -ball.velocity.y;
-            // TODO: This (and the one below) restores the ball to the pre-collision position (on this axis).
-            // TODO: It would be better to restore it so that it's one pixel away from colliding, instead.
-            ball.position.y += ball.velocity.y * dt;
+
+            // *Subtract* this from the ball's position and it will no longer overlap
+            let verticalOverlap = (direction == CollisionFrom.Top) ? ball.position.y + this.settings.ballRadius - brick.upperLeft.y + 2   // e.g. 460 - 455 = 5
+                                                                   : ball.position.y - this.settings.ballRadius - brick.bottomLeft.y - 2; // e.g. 500 - 505 = -5
+            ball.position.y -= verticalOverlap;
+
+            if (direction == CollisionFrom.Top && Math.sign(ball.velocity.y) != -1)
+                alert("MATH ERROR: moving wrong direction after collision (top hit)");
+            else if (direction == CollisionFrom.Bottom && Math.sign(ball.velocity.y) != 1)
+                alert("MATH ERROR: moving wrong direction after collision (bottom hit)");
         }
         else {
             ball.velocity.x = -ball.velocity.x;
-            ball.position.x += ball.velocity.x * dt;
+
+            // *Subtract* this from the ball's position and it will no longer overlap
+            let horizontalOverlap = (direction == CollisionFrom.Left) ? ball.position.x + this.settings.ballRadius - brick.upperLeft.x + 2   // e.g. 460 - 455 = 5
+                                                                      : ball.position.x - this.settings.ballRadius - brick.upperRight.x - 2; // e.g. 500 - 505 = -5
+            ball.position.x -= horizontalOverlap;
+
+            if (direction == CollisionFrom.Left && Math.sign(ball.velocity.x) != -1)
+                alert("MATH ERROR: moving wrong direction after collision (left hit)");
+            else if (direction == CollisionFrom.Right && Math.sign(ball.velocity.x) != 1)
+                alert("MATH ERROR: moving wrong direction after collision (right hit)");
         }
 
         return true;
@@ -91,10 +111,32 @@ export class CollisionHandler {
         let isAboveAC = isAboveLine(brick.bottomRight, brick.upperLeft, ball.position);
         let isAboveDB = isAboveLine(brick.upperRight, brick.bottomLeft, ball.position);
 
+        let direction;
         if (isAboveAC)
-            return isAboveDB ? CollisionFrom.Top : CollisionFrom.Right;
+            direction = isAboveDB ? CollisionFrom.Top : CollisionFrom.Right;
         else
-            return isAboveDB ? CollisionFrom.Left : CollisionFrom.Bottom;
+            direction = isAboveDB ? CollisionFrom.Left : CollisionFrom.Bottom;
+
+        // The above code yields incorrect results in some cases, such as when hitting the upper-left corner from the left side, when the ball center is above a certain point.
+        // It will be detected as a collision from above, even through the ball may be moving upwards; it is therefore reflected downwards, *towards the block*.
+        // The code below fixes this issue by taking the direction into account properly.
+
+        if ((direction == CollisionFrom.Top && Math.sign(ball.velocity.y) != 1) || (direction == CollisionFrom.Bottom && Math.sign(ball.velocity.y) != -1)) {
+            if (ball.position.x < brick.upperLeft.x + this.settings.brickWidth / 2)
+                direction = CollisionFrom.Left;
+            else
+                direction = CollisionFrom.Right;
+        }
+        else if ((direction == CollisionFrom.Left && Math.sign(ball.velocity.x) != 1) || direction == CollisionFrom.Right && Math.sign(ball.velocity.x) != -1) {
+            if (ball.position.y < brick.upperLeft.y + this.settings.brickHeight / 2) {
+                direction = CollisionFrom.Top;
+            }
+            else {
+                direction = CollisionFrom.Bottom;
+            }
+        }
+
+        return direction;
     }
 
     handleBallBallCollisions(balls: Ball[]) {
