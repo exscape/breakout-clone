@@ -271,6 +271,11 @@ export class Game {
         // Handle ball-to-ball collisions
         if (this.balls.length >= 2)
             this.collisionHandler.handleBallBallCollisions(this.balls);
+
+
+        // Finally, ensure no ball is moving strictly horizontally or vertically to prevent them from getting stuck.
+        for (let ball of this.balls)
+            ball.correctVelocity(this.settings);
     }
 
     gameLoop(timestamp: number) {
