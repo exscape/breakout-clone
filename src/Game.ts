@@ -40,7 +40,6 @@ export class Game {
     score: number = 0;
 
     images: Record<string, HTMLImageElement> = {};
-    readonly TOTAL_IMAGE_COUNT = 15;
 
     constructor(canvas: HTMLCanvasElement, statusbarCanvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -62,9 +61,7 @@ export class Game {
             let self = this;
             img.addEventListener('load', function () {
                 self.images[name] = this;
-                console.log(`Image finished loading! ${name}.png, img.src = ${this.currentSrc}`);
-                    console.log(`    ${Object.keys(self.images).length} images loaded`);
-                if (Object.keys(self.images).length == self.TOTAL_IMAGE_COUNT)
+                if (Object.keys(self.images).length == imageFilenames.length)
                     self.loadingCompleted = true;
             }, false);
             img.addEventListener('error', (ev: ErrorEvent) => {
@@ -152,7 +149,7 @@ export class Game {
 
         if (this.paddle.stuckBall && !this.gamePaused)
             this.paddle.launch();
-        else {
+        else if (!this.gamePaused) {
             // TODO: TEMPORARY CODE to test multiball
             let b = new Ball(new Vec2(), new Vec2(), randomColor());
             this.balls.push(b);
