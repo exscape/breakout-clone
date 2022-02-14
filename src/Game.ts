@@ -89,6 +89,10 @@ export class Game {
         this.gameWon = false;
         this.gamePaused = false;
         this.balls.length = 0; // Why is there no clear method?!
+
+        for (let powerup of this.activePowerups) {
+            powerup.expire();
+        }
         this.activePowerups.length = 0;
 
         if (!partialReset) {
