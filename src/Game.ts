@@ -94,6 +94,7 @@ export class Game {
             powerup.expire();
         }
         this.activePowerups.length = 0;
+        this.visiblePowerups.length = 0;
 
         if (!partialReset) {
             this.bricks.length = 0;
@@ -431,7 +432,8 @@ export class Game {
 
         // Draw powerups
         for (let powerup of this.visiblePowerups) {
-            this.ctx.drawImage(this.images[powerup.image], powerup.position.x, powerup.position.y);
+            const r = this.settings.powerupImageRadius;
+            this.ctx.drawImage(this.images[powerup.image], powerup.position.x - r, powerup.position.y - r, r * 2, r * 2);
         }
 
         // Draw the balls
