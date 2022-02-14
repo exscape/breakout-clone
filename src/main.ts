@@ -34,7 +34,7 @@ window.addEventListener('DOMContentLoaded', () => {
         brickHeight: 25,
         canvasBackground: "#f7faff", //#ecf2ff" // "#ddedff" // #eaeaea
         powerupProbability: 15, // For development
-        powerupImageRadius: 16,
+        powerupImageRadius: 24,
         powerupFallSpeed: 0.1
     }
 
