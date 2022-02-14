@@ -23,7 +23,10 @@ window.addEventListener('DOMContentLoaded', () => {
         ballSpeed: 0.75,
         brickWidth: 86,
         brickHeight: 25,
-        canvasBackground: "#f7faff" //#ecf2ff" // "#ddedff" // #eaeaea
+        canvasBackground: "#f7faff", //#ecf2ff" // "#ddedff" // #eaeaea
+        powerupProbability: 15, // For development
+        powerupImageRadius: 16,
+        powerupFallSpeed: 0.1
     }
 
     canvasElement.width = settings.canvasWidth;

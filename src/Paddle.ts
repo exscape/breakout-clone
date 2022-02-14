@@ -7,7 +7,7 @@ export class Paddle {
     width: number;
     position: Vec2;
     settings: Settings;
-    sticky: Boolean = false; // Is the "sticky" powerup active?
+    sticky: number = 0; // Number of "sticky" powerups active
     stuckBall: Ball | null;
 
     constructor(settings: Settings) {
@@ -25,18 +25,13 @@ export class Paddle {
         }
     }
 
-    setSticky(sticky: boolean) {
-        // Used by the collision code
-        this.sticky = sticky;
-    }
-
     launch() {
         if (this.stuckBall == null) {
             alert("BUG: launch() called with stuckBall == null!");
             return;
         }
 
-        const launchStraightUp = this.sticky;
+        const launchStraightUp = this.sticky > 0;
 
         let ball = this.stuckBall;
         this.stuckBall = null;

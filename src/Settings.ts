@@ -7,5 +7,8 @@ export type Settings = {
     ballSpeed: number,
     brickWidth: number
     brickHeight: number,
-    canvasBackground: string
+    canvasBackground: string,
+    powerupProbability: number,
+    powerupFallSpeed: number,
+    powerupImageRadius: number
 };

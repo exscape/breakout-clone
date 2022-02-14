@@ -5,6 +5,7 @@ import { Brick } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
+import { Powerup, StickyPowerup } from './Powerups';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
@@ -28,13 +29,16 @@ export class Game {
     gamePaused: boolean = false;
     bricksRemaining: number = 0;
 
+    activePowerups: Powerup[] = []; // Powerups that have been picked up and have an effect
+    visiblePowerups: Powerup[] = []; // Powerups currently falling, yet to be picked up or lost
+
     loadingCompleted: boolean = false;
 
     livesRemaining: number = 0;
     score: number = 0;
 
     images: Record<string, HTMLImageElement> = {};
-    readonly TOTAL_IMAGE_COUNT = 14;
+    readonly TOTAL_IMAGE_COUNT = 15;
 
     constructor(canvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
@@ -43,7 +47,8 @@ export class Game {
         this.settings = settings;
         this.collisionHandler = new CollisionHandler(settings);
 
-        let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right", "ball"];
+        let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
+                              "ball", "powerup_sticky"];
         for (let i = 1; i <= 9; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -58,7 +63,7 @@ export class Game {
                     self.loadingCompleted = true;
             }, false);
             img.addEventListener('error', (ev: ErrorEvent) => {
-                alert("Failed to load image! Error: " + ev.message);
+                alert(`Failed to load image ${name}! Error: ${ev.message}`);
             });
             img.src = `img/${name}.png`;
         }
@@ -79,6 +84,7 @@ export class Game {
         this.gameWon = false;
         this.gamePaused = false;
         this.balls.length = 0; // Why is there no clear method?!
+        this.activePowerups.length = 0;
 
         if (!partialReset) {
             this.bricks.length = 0;
@@ -159,6 +165,22 @@ export class Game {
         if (this.gameWon || this.gamePaused) // if gameLost, update() should still run, so the ball is drawn to exit the game area
             return;
 
+        // Handle expiry of active powerups
+        for (let p of this.activePowerups) {
+            p.tick(dt);
+        }
+        this.activePowerups = this.activePowerups.filter(p => !p.expired);
+
+        // Animate powerups falling
+        for (let i = this.visiblePowerups.length - 1; i >= 0; i--) {
+            let p = this.visiblePowerups[i];
+            p.position.y += this.settings.powerupFallSpeed * dt;
+
+            if (p.position.y - this.settings.powerupImageRadius > this.settings.canvasHeight) {
+                this.visiblePowerups.splice(i, 1);
+            }
+        }
+
         // Update the position of all balls first...
         for (let ball of this.balls) {
             if (ball.stuck) {
@@ -177,6 +199,11 @@ export class Game {
 
             ball.collided = false;
         }
+
+        // Used for ball-paddle and powerup-paddle collisions, below
+        const paddleMinY = this.paddle.position.y - this.settings.paddleThickness / 2;
+        const paddleMinX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
+        const paddleMaxX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above
 
         // ... *then* handle collisions
         for (let ball of this.balls) {
@@ -202,6 +229,18 @@ export class Game {
                     this.score += brick.score;
                     this.bricks.splice(i, 1);
                     this.bricksRemaining--;
+
+                    if (_.random(1, 100) <= this.settings.powerupProbability) {
+                        // TODO: REWRITE THIS; only added for testing
+                        let powerup = new StickyPowerup(new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2));
+                        powerup.setActivatedCallback(() => {
+                            this.paddle.sticky++;
+                        });
+                        powerup.setDeactivatedCallback(() => {
+                            this.paddle.sticky--;
+                        });
+                        this.visiblePowerups.push(powerup);
+                    }
                 }
 
                 if (this.bricksRemaining <= 0)
@@ -212,9 +251,6 @@ export class Game {
 
             // Handle paddle collisions and lost lives/lost games
             const r = this.settings.ballRadius;
-            const paddleMinY = this.paddle.position.y - this.settings.paddleThickness / 2;
-            const paddleMinX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
-            const paddleMaxX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above
             if (ball.velocity.y > 0 &&
                 ball.position.y + r >= paddleMinY &&
                 ball.position.x >= paddleMinX &&
@@ -222,12 +258,17 @@ export class Game {
                 ball.position.y + r < this.paddle.position.y + this.settings.paddleThickness / 2 && // + thickness/2 to reduce risk of fall-through at lower fps
                 !this.gameLost &&
                 !this.lifeLost) {
-                if (this.paddle.sticky && this.paddle.stuckBall == null) {
+                if (this.paddle.sticky > 0 && this.paddle.stuckBall == null) {
                     // The ball should stick to the paddle.
                     // If the paddle is sticky but HAS a stuck ball, we let it bounce as usual.
                     this.paddle.setStuckBall(ball);
                     ball.velocity.x = 0;
                     ball.velocity.y = 0;
+
+                    // If there are multiple, this still works to give e.g. 10 launches per powerup
+                    let s = this.activePowerups.filter(p => p.type == "sticky");
+                    if (s.length >= 1)
+                        (s[0] as StickyPowerup).trigger();
                 }
                 else {
                     // Bounce angle depends on where the ball hits.
@@ -272,10 +313,26 @@ export class Game {
         if (this.balls.length >= 2)
             this.collisionHandler.handleBallBallCollisions(this.balls);
 
-
         // Finally, ensure no ball is moving strictly horizontally or vertically to prevent them from getting stuck.
         for (let ball of this.balls)
             ball.correctVelocity(this.settings);
+
+        // Handle powerup pick-ups
+        const r = this.settings.powerupImageRadius;
+        for (let i = this.visiblePowerups.length - 1; i >= 0; i--) {
+            let powerup = this.visiblePowerups[i];
+            if (powerup.position.y + r >= paddleMinY &&
+                powerup.position.x >= paddleMinX &&
+                powerup.position.x <= paddleMaxX &&
+                powerup.position.y - r < this.paddle.position.y &&
+                !this.gameLost &&
+                !this.lifeLost) {
+                    powerup.activate();
+                    this.activePowerups.push(powerup);
+                    this.visiblePowerups.splice(i, 1);
+                    // TODO: animate the disappearance
+                }
+        }
     }
 
     gameLoop(timestamp: number) {
@@ -322,18 +379,18 @@ export class Game {
         this.ctx.drawImage(this.images["paddle_center"], this.paddle.position.x - Math.floor(this.settings.paddleThickness / 2) + 12, this.paddle.position.y - this.settings.paddleThickness / 2);
         this.ctx.drawImage(this.images["paddle_right"], this.paddle.position.x + this.paddle.width, this.paddle.position.y - this.settings.paddleThickness / 2);
 
-        /*
-        // Draw the paddle
-        this.ctx.globalAlpha = 0.7;
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = "#5050d0";
-        this.ctx.lineCap = "round";
-        this.ctx.moveTo(this.paddle.position.x, this.paddle.position.y);
-        this.ctx.lineTo(this.paddle.position.x + this.paddle.width, this.paddle.position.y);
-        this.ctx.lineWidth = this.settings.paddleThickness;
-        this.ctx.stroke();
-        this.ctx.globalAlpha = 1.0;
-        */
+        // Draw the paddle sticky effect
+        if (this.paddle.sticky) {
+            this.ctx.globalAlpha = 0.5;
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = "#45ff45";
+            this.ctx.lineCap = "round";
+            this.ctx.moveTo(this.paddle.position.x, this.paddle.position.y);
+            this.ctx.lineTo(this.paddle.position.x + this.paddle.width, this.paddle.position.y);
+            this.ctx.lineWidth = this.settings.paddleThickness;
+            this.ctx.stroke();
+            this.ctx.globalAlpha = 1.0;
+        }
 
         /*
         // Draw the paddle centerline
@@ -358,6 +415,11 @@ export class Game {
         // Draw the bricks
         for (let brick of this.bricks) {
             this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
+        }
+
+        // Draw powerups
+        for (let powerup of this.visiblePowerups) {
+            this.ctx.drawImage(this.images[powerup.image], powerup.position.x, powerup.position.y);
         }
 
         // Draw the balls
