@@ -2,6 +2,7 @@ export type Settings = {
     canvasWidth: number,
     canvasHeight: number,
     canvasMargin: number,
+    statusbarHeight: number,
     ballRadius: number,
     paddleThickness: number,
     ballSpeed: number,

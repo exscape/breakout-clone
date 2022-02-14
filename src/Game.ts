@@ -14,7 +14,9 @@ function randomColor() {
 
 export class Game {
     canvas: HTMLCanvasElement;
+    statusbarCanvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
+    sctx: CanvasRenderingContext2D;
     paddle: Paddle;
     balls: Ball[] = [];
     bricks: Brick[] = [];
@@ -40,9 +42,12 @@ export class Game {
     images: Record<string, HTMLImageElement> = {};
     readonly TOTAL_IMAGE_COUNT = 15;
 
-    constructor(canvas: HTMLCanvasElement, settings: Settings) {
+    constructor(canvas: HTMLCanvasElement, statusbarCanvas: HTMLCanvasElement, settings: Settings) {
         this.canvas = canvas;
+        this.statusbarCanvas = statusbarCanvas;
         this.ctx = canvas.getContext('2d')!!;
+        this.sctx = statusbarCanvas.getContext('2d')!!;
+
         this.paddle = new Paddle(settings);
         this.settings = settings;
         this.collisionHandler = new CollisionHandler(settings);
@@ -364,6 +369,9 @@ export class Game {
     }
 
     drawFrame() {
+        // Draw the status bar
+        this.drawStatusBar();
+
         // Clear the frame
         this.ctx.fillStyle = this.settings.canvasBackground;
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
@@ -470,5 +478,10 @@ export class Game {
             this.drawText("Click to restart the game.", "40px Arial", "#ee3030", "center", 0, 635);
             return;
         }
+    }
+
+    drawStatusBar() {
+        this.sctx.fillStyle = "red";
+        this.sctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
     }
 }

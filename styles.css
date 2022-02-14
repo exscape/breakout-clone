@@ -21,6 +21,27 @@ body {
     justify-content: center;
 }
 
-canvas {
+#main-canvas {
     border: 2px solid black;
+    border-bottom: none;
+}
+
+#statusbar-canvas {
+    border: 2px solid black;
+    border-top: none;
+}
+
+div {
+    margin: 0;
+    padding: 0;
+}
+
+#statusbar-canvas-div {
+    margin-top: -4px;
+}
+
+canvas {
+    visibility: hidden; /* Updated by the game on load */
+    margin: 0;
+    padding: 0;
 }

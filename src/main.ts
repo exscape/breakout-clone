@@ -1,13 +1,21 @@
 import { Game } from './Game';
 import { Settings } from './Settings';
 
-let canvasElement: HTMLCanvasElement | null = document.getElementById('canvas') as HTMLCanvasElement;
-let context: CanvasRenderingContext2D | null = canvasElement?.getContext('2d');
+let gameCanvasElement: HTMLCanvasElement | null = null;
+//let gameContext: CanvasRenderingContext2D | null = null;
+let statusCanvasElement: HTMLCanvasElement | null = null;
+//let statusContext: CanvasRenderingContext2D | null = null;
 
 let game: Game | undefined;
 
 window.addEventListener('DOMContentLoaded', () => {
-    if (!canvasElement || !context) {
+    gameCanvasElement = document.getElementById('main-canvas') as HTMLCanvasElement;
+    // gameContext = gameCanvasElement?.getContext('2d');
+
+    statusCanvasElement = document.getElementById('statusbar-canvas') as HTMLCanvasElement;
+    // statusContext = statusCanvasElement?.getContext('2d');
+
+    if (!gameCanvasElement || !statusCanvasElement /*|| !gameContext || !statusContext */) {
         alert("Unable to load game!");
         return;
     }
@@ -18,6 +26,7 @@ window.addEventListener('DOMContentLoaded', () => {
         canvasWidth: 1264,
         canvasHeight: 720,
         canvasMargin: 15,
+        statusbarHeight: 40,
         ballRadius: 13,
         paddleThickness: 25,
         ballSpeed: 0.75,
@@ -29,32 +38,45 @@ window.addEventListener('DOMContentLoaded', () => {
         powerupFallSpeed: 0.1
     }
 
-    canvasElement.width = settings.canvasWidth;
-    canvasElement.height = settings.canvasHeight;
+    gameCanvasElement.width = settings.canvasWidth;
+    gameCanvasElement.height = settings.canvasHeight;
 
-    game = new Game(canvasElement, settings);
-    canvasElement.onclick = () => {
-        if (document.pointerLockElement !== canvasElement)
-            canvasElement!!.requestPointerLock();
+    statusCanvasElement.width = settings.canvasWidth;
+    statusCanvasElement.height = settings.statusbarHeight;
+
+    gameCanvasElement.style.visibility = "visible";
+    statusCanvasElement.style.visibility = "visible";
+
+    let onclickHandler = () => {
+        if (document.pointerLockElement !== gameCanvasElement) {
+            gameCanvasElement!!.tabIndex = 0;
+            gameCanvasElement!!.focus();
+            gameCanvasElement!!.requestPointerLock();
+        }
         else
             game?.click();
-    }
+    };
 
-    canvasElement.onkeydown = (ev: KeyboardEvent) => {
+    game = new Game(gameCanvasElement, statusCanvasElement, settings);
+
+    gameCanvasElement.onclick = onclickHandler;
+    statusCanvasElement.onclick = onclickHandler;
+
+    gameCanvasElement.onkeydown = (ev: KeyboardEvent) => {
         game?.keyDown(ev);
     }
 
-    canvasElement.onkeyup = (ev: KeyboardEvent) => {
+    gameCanvasElement.onkeyup = (ev: KeyboardEvent) => {
         game?.keyUp(ev);
     }
 
-    canvasElement.tabIndex = 0
-    canvasElement.focus();
+    gameCanvasElement.tabIndex = 0
+    gameCanvasElement.focus();
 });
 
 let mouseMovedHandler = (e: MouseEvent) => { game?.mouseMoved(e) };
 function pointerLockChange() {
-    if (document.pointerLockElement === canvasElement)
+    if (document.pointerLockElement === gameCanvasElement)
         document.addEventListener("mousemove", mouseMovedHandler, false);
     else {
         document.removeEventListener("mousemove", mouseMovedHandler, false);
