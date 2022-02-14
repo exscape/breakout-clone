@@ -211,9 +211,9 @@ export class Game {
         }
 
         // Used for ball-paddle and powerup-paddle collisions, below
-        const paddleMinY = this.paddle.position.y - this.settings.paddleThickness / 2;
-        const paddleMinX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
-        const paddleMaxX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above
+        const paddleTopY = this.paddle.position.y - this.settings.paddleThickness / 2;
+        const paddleLeftmostX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
+        const paddleRightmostX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above
 
         // ... *then* handle collisions
         for (let ball of this.balls) {
@@ -262,9 +262,9 @@ export class Game {
             // Handle paddle collisions and lost lives/lost games
             const r = this.settings.ballRadius;
             if (ball.velocity.y > 0 &&
-                ball.position.y + r >= paddleMinY &&
-                ball.position.x >= paddleMinX &&
-                ball.position.x <= paddleMaxX &&
+                ball.position.y + r >= paddleTopY &&
+                ball.position.x >= paddleLeftmostX &&
+                ball.position.x <= paddleRightmostX &&
                 ball.position.y + r < this.paddle.position.y + this.settings.paddleThickness / 2 && // + thickness/2 to reduce risk of fall-through at lower fps
                 !this.gameLost &&
                 !this.lifeLost) {
@@ -285,7 +285,7 @@ export class Game {
                     // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
                     // then calculate the bounce angle based on that location (0.5 = straight up),
                     // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
-                    const hitLocation = (ball.position.x - paddleMinX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
+                    const hitLocation = (ball.position.x - paddleLeftmostX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
                     const distanceOffCenter = Math.abs(0.5 - hitLocation);
                     const maxAngle = 80 * Math.PI/180;
                     const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
@@ -331,9 +331,17 @@ export class Game {
         const r = this.settings.powerupImageRadius;
         for (let i = this.visiblePowerups.length - 1; i >= 0; i--) {
             let powerup = this.visiblePowerups[i];
-            if (powerup.position.y + r >= paddleMinY &&
-                powerup.position.x >= paddleMinX &&
-                powerup.position.x <= paddleMaxX &&
+            /*
+                ball.position.y + r >= paddleTopY &&
+                ball.position.x >= paddleLeftmostX &&
+                ball.position.x <= paddleRightmostX &&
+                ball.position.y + r < this.paddle.position.y + this.settings.paddleThickness / 2 && // + thickness/2 to reduce risk of fall-through at lower fps
+                !this.gameLost &&
+                !this.lifeLost) {
+            */
+            if (powerup.position.y + r >= paddleTopY &&
+                powerup.position.x >= paddleLeftmostX &&
+                powerup.position.x <= paddleRightmostX &&
                 powerup.position.y - r < this.paddle.position.y &&
                 !this.gameLost &&
                 !this.lifeLost) {
