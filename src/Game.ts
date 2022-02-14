@@ -5,7 +5,7 @@ import { Brick } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
-import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup } from './Powerups';
+import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType } from './Powerups';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
@@ -161,9 +161,7 @@ export class Game {
             this.paddle.setStuckBall(b);
             this.paddle.launch();
 
-            let s = this.activePowerups.filter(p => p.type == "multiball");
-            if (s.length >= 1)
-                (s[0] as MultiballPowerup).trigger();
+            (this.getPowerup("multiball") as MultiballPowerup)?.trigger();
 
             return true;
         }
@@ -180,6 +178,17 @@ export class Game {
     togglePause() { this.gamePaused = !this.gamePaused; }
     focusLost() { if (!this.gameWon && !this.gameLost) this.pause(); }
     pause() { this.gamePaused = true; }
+
+    getPowerup(type: PowerupType): Powerup | null {
+        let s = this.activePowerups.filter(p => p.type == type);
+        if (s.length > 1)
+            alert(`BUG: Multiple powerups of type ${type.toString()} active!`);
+        return (s.length >= 1) ? s[0] : null;
+    }
+
+    isPowerupActive(type: PowerupType) {
+        return this.getPowerup(type) !== null;
+    }
 
     update(dt: number) {
         if (this.gameWon || this.gamePaused) // if gameLost, update() should still run, so the ball is drawn to exit the game area
@@ -304,10 +313,7 @@ export class Game {
                     ball.velocity.x = 0;
                     ball.velocity.y = 0;
 
-                    // If there are multiple, this still works to give e.g. 10 launches per powerup
-                    let s = this.activePowerups.filter(p => p.type == "sticky");
-                    if (s.length >= 1)
-                        (s[0] as StickyPowerup).trigger();
+                    (this.getPowerup("sticky") as StickyPowerup)?.trigger();
                 }
                 else {
                     // Bounce angle depends on where the ball hits.
@@ -374,9 +380,9 @@ export class Game {
                 powerup.position.y - r < this.paddle.position.y &&
                 !this.gameLost &&
                 !this.lifeLost) {
-                    let s = this.activePowerups.filter(p => p.type == powerup.type);
-                    if (s.length >= 1)
-                        s[0].addInstance();
+                    let existingPowerup = this.getPowerup(powerup.type);
+                    if (existingPowerup)
+                        existingPowerup.addInstance();
                     else {
                         powerup.activate();
                         this.activePowerups.push(powerup);
