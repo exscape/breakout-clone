@@ -475,6 +475,25 @@ export class Game {
             this.ctx.drawImage(this.images[powerup.image], powerup.position.x - r, powerup.position.y - r, r * 2, r * 2);
         }
 
+        // Draw the aim line, if in sticky mode
+        if (this.isPowerupActive("sticky") && (this.paddle.stuckBall || this.isPowerupActive("multiball"))) {
+            let originX = this.paddle.position.x + this.paddle.width / 2;
+            //let originY = this.paddle.position.y - this.settings.paddleThickness / 2;
+            let originY = this.paddle.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1;
+            let targetX = originX + this.settings.aimLineLength * Math.sin(this.paddle.aimAngle);
+            let targetY = originY - this.settings.aimLineLength * Math.cos(this.paddle.aimAngle);
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = "#ff3030";
+            this.ctx.lineCap = "round";
+            this.ctx.moveTo(originX, originY);
+            this.ctx.lineTo(targetX, targetY);
+            this.ctx.lineWidth = 2 * this.settings.ballRadius;
+            this.ctx.globalAlpha = 0.6;
+            this.ctx.stroke();
+            this.ctx.lineCap = "butt";
+            this.ctx.globalAlpha = 1.0;
+        }
+
         // Draw the balls
         for (let ball of this.balls) {
             this.ctx.drawImage(this.images["ball"], ball.position.x - this.settings.ballRadius, ball.position.y - this.settings.ballRadius);
@@ -497,20 +516,6 @@ export class Game {
                 this.ctx.lineTo(ball.position.x + ball.velocity.x * 100, ball.position.y + ball.velocity.y * 100);
                 this.ctx.stroke();
             }
-        }
-
-        // Draw the aim line, if in sticky mode
-        if (this.isPowerupActive("sticky") && (this.paddle.stuckBall || this.isPowerupActive("multiball"))) {
-            let originX = this.paddle.position.x + this.paddle.width / 2;
-            let originY = this.paddle.position.y - this.settings.paddleThickness / 2;
-            let targetX = originX + this.settings.aimLineLength * Math.sin(this.paddle.aimAngle);
-            let targetY = originY - this.settings.aimLineLength * Math.cos(this.paddle.aimAngle)
-            this.ctx.beginPath();
-            this.ctx.strokeStyle = "#ff0000";
-            this.ctx.moveTo(originX, originY);
-            this.ctx.lineTo(targetX, targetY);
-            this.ctx.lineWidth = 2;
-            this.ctx.stroke();
         }
 
         /*
