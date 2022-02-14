@@ -82,6 +82,9 @@ export class CollisionHandler {
                                                                    : ball.position.y - this.settings.ballRadius - brick.bottomLeft.y - 2; // e.g. 500 - 505 = -5
             ball.position.y -= verticalOverlap;
 
+            // TODO: These (and almost certainly the ones for left/right) can trigger occasionally, but very rarely.
+            // TODO: I'm not sure when, but possibly when multiple balls are near each other and colliding, pushing eachother into bricks?
+            // TODO: Not sure if it's an actual issue or whether it can be ignored yet. I suppose it does mean there's a risk balls get stuck in indestructible bricks?
             if (direction == CollisionFrom.Top && Math.sign(ball.velocity.y) != -1)
                 alert("MATH ERROR: moving wrong direction after collision (top hit)");
             else if (direction == CollisionFrom.Bottom && Math.sign(ball.velocity.y) != 1)
