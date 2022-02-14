@@ -34,18 +34,11 @@ export class Paddle {
             return;
         }
 
-        const randomLaunchAngle = this.sticky === 0;
-
         let ball = this.stuckBall;
         this.stuckBall = null;
         ball.stuck = false;
 
-        let launchAngle;
-        if (randomLaunchAngle)
-            launchAngle = _.random(-Math.PI/4, Math.PI/4, true);
-        else
-            launchAngle = this.aimAngle;
-
+        let launchAngle = this.aimAngle;
         ball.velocity.x = Math.sin(launchAngle) * this.settings.ballSpeed;
         ball.velocity.y = -Math.cos(launchAngle) * this.settings.ballSpeed;
     }

@@ -100,7 +100,7 @@ export abstract class RepetitionLimitedPowerup extends Powerup {
 
 export class StickyPowerup extends RepetitionLimitedPowerup {
     constructor(position: Vec2) {
-        super("sticky", position, 10);
+        super("sticky", position, 5);
     }
 }
 

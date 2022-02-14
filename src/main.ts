@@ -37,7 +37,7 @@ window.addEventListener('DOMContentLoaded', () => {
         powerupImageRadius: 24,
         powerupFallSpeed: 0.1,
         multiballSpawnInterval: 1000,
-        aimLineLength: 100
+        aimLineLength: 150
     }
 
     gameCanvasElement.width = settings.canvasWidth;

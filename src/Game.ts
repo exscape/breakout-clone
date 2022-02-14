@@ -34,6 +34,7 @@ export class Game {
     activePowerups: Powerup[] = []; // Powerups that have been picked up and have an effect
     visiblePowerups: Powerup[] = []; // Powerups currently falling, yet to be picked up or lost
     multiballTimer: number = 0; // The timer ID of the ball-spawner setInterval call, used to cancel it later.
+    aimDashOffset: number = 0; // Used to animate the aiming line for the sticky powerup
 
     loadingCompleted: boolean = false;
 
@@ -194,6 +195,8 @@ export class Game {
         if (this.gameWon || this.gamePaused) // if gameLost, update() should still run, so the ball is drawn to exit the game area
             return;
 
+        this.aimDashOffset -= 0.1 * dt;
+
         // Handle expiry of active powerups
         for (let p of this.activePowerups) {
             if (p instanceof TimeLimitedPowerup)
@@ -278,7 +281,6 @@ export class Game {
                             // Multiball powerup
                             powerup = new MultiballPowerup(spawnPosition);
                             powerup.setActivatedCallback(() => {
-                                this.spawnExtraBall();
                                 this.multiballTimer = window.setInterval(() => { this.spawnExtraBall(); }, this.settings.multiballSpawnInterval);
                             });
                             powerup.setDeactivatedCallback(() => {
@@ -476,7 +478,8 @@ export class Game {
         }
 
         // Draw the aim line, if in sticky mode
-        if (this.isPowerupActive("sticky") && (this.paddle.stuckBall || this.isPowerupActive("multiball"))) {
+        if (this.paddle.stuckBall || this.isPowerupActive("multiball")) {
+
             let originX = this.paddle.position.x + this.paddle.width / 2;
             //let originY = this.paddle.position.y - this.settings.paddleThickness / 2;
             let originY = this.paddle.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1;
