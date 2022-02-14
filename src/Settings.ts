@@ -12,5 +12,6 @@ export type Settings = {
     powerupProbability: number,
     powerupFallSpeed: number,
     powerupImageRadius: number,
-    multiballSpawnInterval: number
+    multiballSpawnInterval: number,
+    aimLineLength: number
 };

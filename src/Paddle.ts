@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { Ball } from './Ball';
 import { Vec2 } from './Vec2';
 import { Settings } from './Settings';
+import { clamp } from './Utils';
 
 export class Paddle {
     width: number;
@@ -9,12 +10,14 @@ export class Paddle {
     settings: Settings;
     sticky: number = 0; // Number of "sticky" powerups active
     stuckBall: Ball | null;
+    aimAngle: number = 0; // In radians, 0 meaning straight up
 
     constructor(settings: Settings) {
         this.width = 100;
         this.position = new Vec2((settings.canvasWidth - this.width) / 2, settings.canvasHeight * 0.97);
         this.stuckBall = null;
         this.settings = settings;
+        this.aimAngle = 0;
     }
 
     setStuckBall(ball: Ball) {
@@ -31,20 +34,20 @@ export class Paddle {
             return;
         }
 
-        const launchStraightUp = this.sticky > 0;
+        const randomLaunchAngle = this.sticky === 0;
 
         let ball = this.stuckBall;
         this.stuckBall = null;
         ball.stuck = false;
-        if (launchStraightUp) {
-            ball.velocity.x = 0;
-            ball.velocity.y = -this.settings.ballSpeed;
-        }
-        else {
-            let angle = _.random(-Math.PI / 4, Math.PI / 4);
-            ball.velocity.x = Math.sin(angle) * this.settings.ballSpeed;
-            ball.velocity.y = -Math.cos(angle) * this.settings.ballSpeed;
-        }
+
+        let launchAngle;
+        if (randomLaunchAngle)
+            launchAngle = _.random(-Math.PI/4, Math.PI/4, true);
+        else
+            launchAngle = this.aimAngle;
+
+        ball.velocity.x = Math.sin(launchAngle) * this.settings.ballSpeed;
+        ball.velocity.y = -Math.cos(launchAngle) * this.settings.ballSpeed;
     }
 
     move(deltaX: number, deltaY: number) {
@@ -59,5 +62,8 @@ export class Paddle {
         let actualDeltaX = this.position.x - orig;
         if (this.stuckBall)
             this.stuckBall.position.x += actualDeltaX;
+
+        this.aimAngle -= deltaY * 0.015;
+        this.aimAngle = clamp(this.aimAngle, -Math.PI/4, Math.PI/4);
     }
 }

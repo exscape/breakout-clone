@@ -464,16 +464,6 @@ export class Game {
         this.ctx.stroke();
         */
 
-        /*
-        // Draw aim line
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = "#ff0000";
-        this.ctx.moveTo(this.paddle.position.x + this.paddle.width / 2, this.paddle.position.y);
-        this.ctx.lineTo(this.paddle.position.x + this.paddle.width / 2, 0);
-        this.ctx.lineWidth = 1;
-        this.ctx.stroke();
-        */
-
         // Draw the bricks
         for (let brick of this.bricks) {
             this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
@@ -509,12 +499,28 @@ export class Game {
             }
         }
 
+        // Draw the aim line, if in sticky mode
+        if (this.isPowerupActive("sticky") && (this.paddle.stuckBall || this.isPowerupActive("multiball"))) {
+            let originX = this.paddle.position.x + this.paddle.width / 2;
+            let originY = this.paddle.position.y - this.settings.paddleThickness / 2;
+            let targetX = originX + this.settings.aimLineLength * Math.sin(this.paddle.aimAngle);
+            let targetY = originY - this.settings.aimLineLength * Math.cos(this.paddle.aimAngle)
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = "#ff0000";
+            this.ctx.moveTo(originX, originY);
+            this.ctx.lineTo(targetX, targetY);
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+        }
+
         /*
         // Draw the current framerate
+        // TODO: Move to status bar (right-aligned?)
         this.drawText(`FPS: ${Math.floor(this.lastFPS)}`, "18px Arial", "#ee3030", "left", 10, 59);
         */
 
         // Draw player stats
+        // TODO: Move to status bar!
         this.drawText(`Score: ${this.score}`, "18px Arial", "black", "left", 10, 25)
         this.drawText(`Lives remaining: ${this.livesRemaining}`, "18px Arial", "black", "left", 10, 42);
 

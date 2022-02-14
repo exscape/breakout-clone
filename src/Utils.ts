@@ -11,3 +11,11 @@ export function generatePairs(list: any[]): any[] {
         return pairs;
     }
 }
+
+export function clamp(v: number, min: number, max: number) {
+    if (v < min)
+        v = min;
+    else if (v > max)
+        v = max;
+    return v;
+}
