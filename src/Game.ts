@@ -195,7 +195,7 @@ export class Game {
         if (this.gameWon || this.gamePaused) // if gameLost, update() should still run, so the ball is drawn to exit the game area
             return;
 
-        this.aimDashOffset -= 0.1 * dt;
+        this.aimDashOffset -= 0.07 * dt;
 
         // Handle expiry of active powerups
         for (let p of this.activePowerups) {
@@ -477,24 +477,25 @@ export class Game {
             this.ctx.drawImage(this.images[powerup.image], powerup.position.x - r, powerup.position.y - r, r * 2, r * 2);
         }
 
-        // Draw the aim line, if in sticky mode
+        // Draw the aim line
         if (this.paddle.stuckBall || this.isPowerupActive("multiball")) {
-
             let originX = this.paddle.position.x + this.paddle.width / 2;
-            //let originY = this.paddle.position.y - this.settings.paddleThickness / 2;
             let originY = this.paddle.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1;
             let targetX = originX + this.settings.aimLineLength * Math.sin(this.paddle.aimAngle);
             let targetY = originY - this.settings.aimLineLength * Math.cos(this.paddle.aimAngle);
             this.ctx.beginPath();
             this.ctx.strokeStyle = "#ff3030";
+            this.ctx.setLineDash([1.5, 20]);
+            this.ctx.lineDashOffset = this.aimDashOffset;
             this.ctx.lineCap = "round";
             this.ctx.moveTo(originX, originY);
             this.ctx.lineTo(targetX, targetY);
-            this.ctx.lineWidth = 2 * this.settings.ballRadius;
-            this.ctx.globalAlpha = 0.6;
+            this.ctx.lineWidth = 9;
+            this.ctx.globalAlpha = 0.35;
             this.ctx.stroke();
             this.ctx.lineCap = "butt";
             this.ctx.globalAlpha = 1.0;
+            this.ctx.setLineDash([]);
         }
 
         // Draw the balls
