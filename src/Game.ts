@@ -5,7 +5,7 @@ import { Brick } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
-import { Powerup, StickyPowerup } from './Powerups';
+import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup } from './Powerups';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
@@ -33,6 +33,7 @@ export class Game {
 
     activePowerups: Powerup[] = []; // Powerups that have been picked up and have an effect
     visiblePowerups: Powerup[] = []; // Powerups currently falling, yet to be picked up or lost
+    multiballTimer: number = 0; // The timer ID of the ball-spawner setInterval call, used to cancel it later.
 
     loadingCompleted: boolean = false;
 
@@ -52,7 +53,7 @@ export class Game {
         this.collisionHandler = new CollisionHandler(settings);
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
-                              "ball", "powerup_sticky"];
+                              "ball", "powerup_sticky", "powerup_multiball"];
         for (let i = 1; i <= 9; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -149,13 +150,25 @@ export class Game {
 
         if (this.paddle.stuckBall && !this.gamePaused)
             this.paddle.launch();
-        else if (!this.gamePaused) {
-            // TODO: TEMPORARY CODE to test multiball
+/*        else
+            this.spawnExtraBall(); */
+    }
+
+    spawnExtraBall(): boolean {
+        if (!this.gamePaused && !this.paddle.stuckBall) {
             let b = new Ball(new Vec2(), new Vec2(), randomColor());
             this.balls.push(b);
             this.paddle.setStuckBall(b);
             this.paddle.launch();
+
+            let s = this.activePowerups.filter(p => p.type == "multiball");
+            if (s.length >= 1)
+                (s[0] as MultiballPowerup).trigger();
+
+            return true;
         }
+        else
+            return false;
     }
 
     keyDown(ev: KeyboardEvent) {
@@ -174,7 +187,8 @@ export class Game {
 
         // Handle expiry of active powerups
         for (let p of this.activePowerups) {
-            p.tick(dt);
+            if (p instanceof TimeLimitedPowerup)
+                p.tick(dt);
         }
         this.activePowerups = this.activePowerups.filter(p => !p.expired);
 
@@ -238,14 +252,30 @@ export class Game {
                     this.bricksRemaining--;
 
                     if (_.random(1, 100) <= this.settings.powerupProbability) {
-                        // TODO: REWRITE THIS; only added for testing
-                        let powerup = new StickyPowerup(new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2));
-                        powerup.setActivatedCallback(() => {
-                            this.paddle.sticky++;
-                        });
-                        powerup.setDeactivatedCallback(() => {
-                            this.paddle.sticky--;
-                        });
+                        // Spawn a random powerup
+                        let powerup: Powerup;
+                        let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
+                        if (_.random(0,1) == 0) {
+                            powerup = new StickyPowerup(spawnPosition);
+                            powerup.setActivatedCallback(() => {
+                                this.paddle.sticky++;
+                            });
+                            powerup.setDeactivatedCallback(() => {
+                                this.paddle.sticky--;
+                            });
+                        }
+                        else {
+                            powerup = new MultiballPowerup(spawnPosition);
+                            powerup.setActivatedCallback(() => {
+                                this.spawnExtraBall();
+                                this.multiballTimer = window.setInterval(() => { this.spawnExtraBall(); }, this.settings.multiballSpawnInterval);
+                            });
+                            powerup.setDeactivatedCallback(() => {
+                                if (this.multiballTimer)
+                                    window.clearInterval(this.multiballTimer);
+                                this.multiballTimer = 0;
+                            });
+                        }
                         this.visiblePowerups.push(powerup);
                     }
                 }
@@ -361,13 +391,13 @@ export class Game {
         window.requestAnimationFrame((dt) => this.gameLoop(dt));
     }
 
-    drawText(text: string, font: string, fillStyle: string, textAlign: CanvasTextAlign, x: number, y: number) {
-            this.ctx.font = font;
-            this.ctx.fillStyle = fillStyle;
-            this.ctx.textAlign = textAlign;
-            if (textAlign == "center")
-                x = this.settings.canvasWidth / 2;
-            this.ctx.fillText(text, x, y);
+    drawText(text: string, font: string, fillStyle: string, textAlign: CanvasTextAlign, x: number, y: number, context = this.ctx) {
+        context.font = font;
+        context.fillStyle = fillStyle;
+        context.textAlign = textAlign;
+        if (textAlign == "center")
+            x = this.settings.canvasWidth / 2;
+        context.fillText(text, x, y);
     }
 
     dim() {
@@ -492,7 +522,16 @@ export class Game {
     }
 
     drawStatusBar() {
-        this.sctx.fillStyle = "red";
+        this.sctx.fillStyle = "white";
         this.sctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+
+        // Draw temporary powerup stats
+        let s = "";
+        for (let powerup of this.activePowerups) {
+            if (powerup instanceof RepetitionLimitedPowerup)
+                s += `[${powerup.name}: ${powerup.repetitions}/${powerup.maxRepetitions}] `;
+        }
+
+        this.drawText(s, "Arial 18 px", "black", "left", 25, 15, this.sctx);
     }
 }

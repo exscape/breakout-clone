@@ -35,7 +35,8 @@ window.addEventListener('DOMContentLoaded', () => {
         canvasBackground: "#f7faff", //#ecf2ff" // "#ddedff" // #eaeaea
         powerupProbability: 15, // For development
         powerupImageRadius: 24,
-        powerupFallSpeed: 0.1
+        powerupFallSpeed: 0.1,
+        multiballSpawnInterval: 1000
     }
 
     gameCanvasElement.width = settings.canvasWidth;

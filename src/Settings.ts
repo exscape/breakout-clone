@@ -11,5 +11,6 @@ export type Settings = {
     canvasBackground: string,
     powerupProbability: number,
     powerupFallSpeed: number,
-    powerupImageRadius: number
+    powerupImageRadius: number,
+    multiballSpawnInterval: number
 };
