@@ -256,6 +256,7 @@ export class Game {
                         let powerup: Powerup;
                         let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
                         if (_.random(0,1) == 0) {
+                            // Sticky powerup
                             powerup = new StickyPowerup(spawnPosition);
                             powerup.setActivatedCallback(() => {
                                 this.paddle.sticky++;
@@ -265,6 +266,7 @@ export class Game {
                             });
                         }
                         else {
+                            // Multiball powerup
                             powerup = new MultiballPowerup(spawnPosition);
                             powerup.setActivatedCallback(() => {
                                 this.spawnExtraBall();
@@ -372,8 +374,14 @@ export class Game {
                 powerup.position.y - r < this.paddle.position.y &&
                 !this.gameLost &&
                 !this.lifeLost) {
-                    powerup.activate();
-                    this.activePowerups.push(powerup);
+                    let s = this.activePowerups.filter(p => p.type == powerup.type);
+                    if (s.length >= 1)
+                        s[0].addInstance();
+                    else {
+                        powerup.activate();
+                        this.activePowerups.push(powerup);
+                    }
+
                     this.visiblePowerups.splice(i, 1);
                     // TODO: animate the disappearance
                 }

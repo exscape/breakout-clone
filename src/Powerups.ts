@@ -43,6 +43,10 @@ export abstract class Powerup {
     setDeactivatedCallback(callback: () => void) {
         this.deactivatedCallback = callback;
     }
+
+    addInstance() {
+        throw new Error("addInstance called when not overridden in subclass");
+    }
 }
 
 export abstract class TimeLimitedPowerup extends Powerup {
