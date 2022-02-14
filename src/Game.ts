@@ -33,7 +33,6 @@ export class Game {
 
     activePowerups: Powerup[] = []; // Powerups that have been picked up and have an effect
     visiblePowerups: Powerup[] = []; // Powerups currently falling, yet to be picked up or lost
-    multiballTimer: number = 0; // The timer ID of the ball-spawner setInterval call, used to cancel it later.
     aimDashOffset: number = 0; // Used to animate the aiming line for the sticky powerup
 
     loadingCompleted: boolean = false;
@@ -151,8 +150,8 @@ export class Game {
 
         if (this.paddle.stuckBall && !this.gamePaused)
             this.paddle.launch();
-/*        else
-            this.spawnExtraBall(); */
+        else if (this.isPowerupActive("multiball"))
+            this.spawnExtraBall();
     }
 
     spawnExtraBall(): boolean {
@@ -280,14 +279,6 @@ export class Game {
                         else {
                             // Multiball powerup
                             powerup = new MultiballPowerup(spawnPosition);
-                            powerup.setActivatedCallback(() => {
-                                this.multiballTimer = window.setInterval(() => { this.spawnExtraBall(); }, this.settings.multiballSpawnInterval);
-                            });
-                            powerup.setDeactivatedCallback(() => {
-                                if (this.multiballTimer)
-                                    window.clearInterval(this.multiballTimer);
-                                this.multiballTimer = 0;
-                            });
                         }
                         this.visiblePowerups.push(powerup);
                     }
