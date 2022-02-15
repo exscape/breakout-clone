@@ -212,42 +212,13 @@ export class Game {
 
         // Handle collisions with walls and bricks
         for (let ball of this.balls) {
-            // Handle wall collisions; reflects the ball if necessary
             this.collisionHandler.handleWallCollisions(ball);
 
             // Limit to one collision per ball and frame
             if (ball.collided)
                 continue;
 
-            // Handle brick collisions. Naive implementation, but it performs just fine.
-            for (let i = 0; i < this.bricks.length; i++) {
-                let brick = this.bricks[i];
-                if (!this.collisionHandler.brickCollision(ball, brick, dt))
-                    continue;
-
-                ball.collided = true;
-
-                if (!brick.indestructible && !ball.fireball)
-                    brick.health--;
-                else if (!brick.indestructible && ball.fireball)
-                    brick.health = 0;
-
-                if (brick.health <= 0) {
-                    this.score += Math.floor(brick.score * (ball.fireball ? 1.40 : 1));
-                    this.bricks.splice(i, 1);
-                    this.bricksRemaining--;
-
-                    if (_.random(1, 100) <= this.settings.powerupProbability) {
-                        let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
-                        this.spawnRandomPowerup(spawnPosition);
-                    }
-                }
-
-                if (this.bricksRemaining <= 0)
-                    this.win();
-
-                break; // Limit collisions to the first block tested
-            }
+            this.handleBrickCollisions(ball, dt);
 
             // Handle paddle collisions and lost lives/lost games
             const r = this.settings.ballRadius;
@@ -316,6 +287,37 @@ export class Game {
 
         // Handle powerup pick-ups
         this.handlePowerupPickups(paddleTopY, paddleLeftmostX, paddleRightmostX);
+    }
+
+    handleBrickCollisions(ball: Ball, dt: number) {
+        for (let i = 0; i < this.bricks.length; i++) {
+            let brick = this.bricks[i];
+            if (!this.collisionHandler.brickCollision(ball, brick, dt))
+                continue;
+
+            ball.collided = true;
+
+            if (!brick.indestructible && !ball.fireball)
+                brick.health--;
+            else if (!brick.indestructible && ball.fireball)
+                brick.health = 0;
+
+            if (brick.health <= 0) {
+                this.score += Math.floor(brick.score * (ball.fireball ? 1.40 : 1));
+                this.bricks.splice(i, 1);
+                this.bricksRemaining--;
+
+                if (_.random(1, 100) <= this.settings.powerupProbability) {
+                    let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
+                    this.spawnRandomPowerup(spawnPosition);
+                }
+            }
+
+            if (this.bricksRemaining <= 0)
+                this.win();
+
+            break; // Limit collisions to the first block tested
+        }
     }
 
     private handlePowerupPickups(paddleTopY: number, paddleLeftmostX: number, paddleRightmostX: number) {
