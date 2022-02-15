@@ -220,60 +220,17 @@ export class Game {
 
             this.handleBrickCollisions(ball, dt);
 
-            // Handle paddle collisions and lost lives/lost games
-            const r = this.settings.ballRadius;
-            if (ball.velocity.y > 0 &&
-                ball.position.y + r >= paddleTopY &&
-                ball.position.x >= paddleLeftmostX &&
-                ball.position.x <= paddleRightmostX &&
-                ball.position.y + r < this.paddle.position.y + this.settings.paddleThickness / 2 && // + thickness/2 to reduce risk of fall-through at lower fps
-                !this.gameLost &&
-                !this.lifeLost) {
-                if (this.paddle.sticky > 0 && this.paddle.stuckBall == null) {
-                    // The ball should stick to the paddle.
-                    // If the paddle is sticky but HAS a stuck ball, we let it bounce as usual.
-                    this.paddle.setStuckBall(ball);
-                    ball.velocity.x = 0;
-                    ball.velocity.y = 0;
+            this.handlePaddleCollisions(ball, paddleTopY, paddleLeftmostX, paddleRightmostX);
 
-                    (this.getPowerup("sticky") as StickyPowerup)?.trigger();
-                }
-                else {
-                    // Bounce angle depends on where the ball hits.
-                    // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
-                    // then calculate the bounce angle based on that location (0.5 = straight up),
-                    // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
-                    const hitLocation = (ball.position.x - paddleLeftmostX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
-                    const distanceOffCenter = Math.abs(0.5 - hitLocation);
-                    const maxAngle = 80 * Math.PI/180;
-                    const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
-                    const speed = ball.velocity.mag();
-                    ball.velocity.x = speed * Math.sin(angle);
-                    ball.velocity.y = -speed * Math.cos(angle);
-                    ball.collided = true;
-                }
-            }
-            else if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
-                // Only subtract if lifeLost == false, since we will subtract a life every frame otherwise.
-                let i = this.balls.indexOf(ball);
-                this.balls.splice(i, 1);
+            // Handle balls falling past the bottom edge
+            if (ball.velocity.y > 0 && ball.position.y - this.settings.ballRadius > this.settings.canvasHeight)
+                this.ballLost(ball);
 
-                if (this.balls.length === 0) {
-                    if (!this.lifeLost) {
-                        this.livesRemaining--;
-                        this.lifeLost = true;
-                    }
-                    if (this.livesRemaining <= 0)
-                        this.gameLost = true;
-                    else
-                        this.reset();
-                }
-            }
-            if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + r) {
+            if (ball.velocity.y > 0 && ball.position.y > this.settings.canvasHeight + this.settings.ballRadius &&
+                this.balls.length === 0 && this.livesRemaining > 0) {
                 // If livesRemaining == 0, we instead display the "you lost" screen and wait for user input
                 // to reset.
-                if (this.balls.length == 0 && this.livesRemaining > 0)
-                    this.reset();
+                this.reset();
             }
         }
 
@@ -281,12 +238,65 @@ export class Game {
         if (this.balls.length >= 2)
             this.collisionHandler.handleBallBallCollisions(this.balls);
 
-        // Finally, ensure no ball is moving strictly horizontally or vertically to prevent them from getting stuck.
+        // Ensure no ball is moving strictly horizontally or vertically to prevent them from getting stuck.
         for (let ball of this.balls)
             ball.correctVelocity(this.settings);
 
         // Handle powerup pick-ups
         this.handlePowerupPickups(paddleTopY, paddleLeftmostX, paddleRightmostX);
+    }
+
+    handlePaddleCollisions(ball: Ball, paddleTopY: number, paddleLeftmostX: number, paddleRightmostX: number) {
+        const r = this.settings.ballRadius;
+        if (ball.velocity.y > 0 &&
+            ball.position.y + r >= paddleTopY &&
+            ball.position.x >= paddleLeftmostX &&
+            ball.position.x <= paddleRightmostX &&
+            ball.position.y + r < this.paddle.position.y + this.settings.paddleThickness / 2 && // + thickness/2 to reduce risk of fall-through at lower fps
+            !this.gameLost &&
+            !this.lifeLost) {
+            if (this.paddle.sticky > 0 && this.paddle.stuckBall == null) {
+                // The ball should stick to the paddle.
+                // If the paddle is sticky but HAS a stuck ball, we let it bounce as usual.
+                this.paddle.setStuckBall(ball);
+                ball.velocity.x = 0;
+                ball.velocity.y = 0;
+
+                (this.getPowerup("sticky") as StickyPowerup)?.trigger();
+            }
+            else {
+                // Bounce angle depends on where the ball hits.
+                // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
+                // then calculate the bounce angle based on that location (0.5 = straight up),
+                // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
+                const hitLocation = (ball.position.x - paddleLeftmostX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
+                const distanceOffCenter = Math.abs(0.5 - hitLocation);
+                const maxAngle = 80 * Math.PI/180;
+                const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
+                const speed = ball.velocity.mag();
+                ball.velocity.x = speed * Math.sin(angle);
+                ball.velocity.y = -speed * Math.cos(angle);
+                ball.collided = true;
+            }
+        }
+    }
+
+
+    ballLost(ball: Ball) {
+        // Only subtract if lifeLost == false, since we will subtract a life every frame otherwise.
+        let i = this.balls.indexOf(ball);
+        this.balls.splice(i, 1);
+
+        if (this.balls.length === 0) {
+            if (!this.lifeLost) {
+                this.livesRemaining--;
+                this.lifeLost = true;
+            }
+            if (this.livesRemaining <= 0)
+                this.gameLost = true;
+            else
+                this.reset();
+        }
     }
 
     handleBrickCollisions(ball: Ball, dt: number) {
