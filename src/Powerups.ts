@@ -9,6 +9,7 @@ export abstract class Powerup {
     expired: boolean = false;
     image: string;
     position: Vec2;
+    phase: number; // Used for animation of the powerup icon
 
     activatedCallback: null | (() => void) = null;
     deactivatedCallback: null | (() => void) = null;
@@ -20,6 +21,7 @@ export abstract class Powerup {
         this.name = type.toString();
         this.image = `powerup_${type.toString()}`;
         this.position = position;
+        this.phase = 0;
     }
 
     activate() {

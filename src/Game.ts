@@ -211,6 +211,8 @@ export class Game {
             if (p.position.y - this.settings.powerupImageRadius > this.settings.canvasHeight) {
                 this.visiblePowerups.splice(i, 1);
             }
+
+            p.phase += Math.PI/2 * dt/300;
         }
 
         // Update the position of all balls first...
@@ -465,7 +467,8 @@ export class Game {
         // Draw powerups
         for (let powerup of this.visiblePowerups) {
             const r = this.settings.powerupImageRadius;
-            this.ctx.drawImage(this.images[powerup.image], powerup.position.x - r, powerup.position.y - r, r * 2, r * 2);
+            const osc = 3 * Math.sin(powerup.phase);
+            this.ctx.drawImage(this.images[powerup.image], powerup.position.x - r - osc/2, powerup.position.y - r, r * 2 + osc, r * 2);
         }
 
         // Draw the aim line
