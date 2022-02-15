@@ -8,6 +8,8 @@ export class Ball {
     color: string;
     stuck: boolean;
     collided: boolean; // Did this ball collide *this frame*?
+    fireball: boolean;
+    rotation: number;
 
     constructor(velocity: Vec2, position: Vec2, color: string) {
         this.velocity = velocity;
@@ -15,6 +17,8 @@ export class Ball {
         this.color = color;
         this.stuck = false;
         this.collided = false;
+        this.fireball = false;
+        this.rotation = 0;
     }
 
     correctVelocity(settings: Settings) {

@@ -67,6 +67,8 @@ export class CollisionHandler {
         // If true, there was no collision.
         if (dist > this.settings.ballRadius)
             return false;
+        else if (ball.fireball && !brick.indestructible) // Don't bother calculating anything further
+            return true;
 
         // There was a collision. Figure out the direction and bounce the ball.
         let direction = this.collisionDirection(ball, brick);

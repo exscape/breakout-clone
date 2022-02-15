@@ -5,7 +5,7 @@ import { Brick } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
-import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType } from './Powerups';
+import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup } from './Powerups';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
@@ -53,7 +53,7 @@ export class Game {
         this.collisionHandler = new CollisionHandler(settings);
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
-                              "ball", "powerup_sticky", "powerup_multiball"];
+                              "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "fireball"];
         for (let i = 1; i <= 9; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -157,6 +157,8 @@ export class Game {
     spawnExtraBall(): boolean {
         if (!this.gamePaused && !this.paddle.stuckBall) {
             let b = new Ball(new Vec2(), new Vec2(), randomColor());
+            if (this.isPowerupActive("fireball"))
+                b.fireball = true;
             this.balls.push(b);
             this.paddle.setStuckBall(b);
             this.paddle.launch();
@@ -223,6 +225,10 @@ export class Game {
                 continue;
             }
 
+            ball.rotation += Math.PI/200 * dt;
+            if (ball.rotation > 2 * Math.PI)
+                ball.rotation -= 2 * Math.PI;
+
             /*
             if (ball.position.y < 640 || ball.velocity.y < 0) ball.velocity.y = 1.5 * Math.sign(ball.velocity.y);
             else ball.velocity.y = 0.04 * Math.sign(ball.velocity.y);
@@ -257,10 +263,13 @@ export class Game {
 
                 ball.collided = true;
 
-                if (!brick.indestructible)
+                if (!brick.indestructible && !ball.fireball)
                     brick.health--;
+                else if (!brick.indestructible && ball.fireball)
+                    brick.health = 0;
+
                 if (brick.health <= 0) {
-                    this.score += brick.score;
+                    this.score += Math.floor(brick.score * (ball.fireball ? 1.40 : 1));
                     this.bricks.splice(i, 1);
                     this.bricksRemaining--;
 
@@ -268,7 +277,8 @@ export class Game {
                         // Spawn a random powerup
                         let powerup: Powerup;
                         let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
-                        if (_.random(0,1) == 0) {
+                        let rand = _.random(0, 2);
+                        if (rand == 0) {
                             // Sticky powerup
                             powerup = new StickyPowerup(spawnPosition);
                             powerup.setActivatedCallback(() => {
@@ -278,9 +288,22 @@ export class Game {
                                 this.paddle.sticky--;
                             });
                         }
-                        else {
+                        else if (rand == 1) {
                             // Multiball powerup
                             powerup = new MultiballPowerup(spawnPosition);
+                        }
+                        else {
+                            powerup = new FireballPowerup(spawnPosition);
+                            powerup.setActivatedCallback(() => {
+                                for (let ball of this.balls) {
+                                    ball.fireball = true;
+                                }
+                            });
+                            powerup.setDeactivatedCallback(() => {
+                                for (let ball of this.balls) {
+                                    ball.fireball = false;
+                                }
+                            });
                         }
                         this.visiblePowerups.push(powerup);
                     }
@@ -494,16 +517,16 @@ export class Game {
 
         // Draw the balls
         for (let ball of this.balls) {
-            this.ctx.drawImage(this.images["ball"], ball.position.x - this.settings.ballRadius, ball.position.y - this.settings.ballRadius);
-
-            /*
-            this.ctx.globalAlpha = 0.7;
-            this.ctx.beginPath();
-            this.ctx.fillStyle = "red";
-            this.ctx.arc(ball.position.x, ball.position.y, this.settings.ballRadius, 0, 2*Math.PI);
-            this.ctx.fill();
-            this.ctx.globalAlpha = 1.0;
-            */
+            if (ball.fireball) {
+                this.ctx.save();
+                this.ctx.translate(ball.position.x, ball.position.y);
+                this.ctx.rotate(ball.rotation);
+                this.ctx.translate(-ball.position.x, -ball.position.y);
+                this.ctx.drawImage(this.images["fireball"], ball.position.x - this.settings.ballRadius, ball.position.y - this.settings.ballRadius);
+                this.ctx.restore();
+            }
+            else
+                this.ctx.drawImage(this.images["ball"], ball.position.x - this.settings.ballRadius, ball.position.y - this.settings.ballRadius);
 
             // Draw the velocity vector(s)
             if (this.gamePaused && ball.velocity.mag() > 0.1) {
@@ -553,6 +576,8 @@ export class Game {
         for (let powerup of this.activePowerups) {
             if (powerup instanceof RepetitionLimitedPowerup)
                 s += `[${powerup.name}: ${powerup.repetitions}/${powerup.maxRepetitions}] `;
+            else if (powerup instanceof TimeLimitedPowerup)
+                s += `[${powerup.name}: ${(powerup.activeTime/1000).toFixed(1)}/${(powerup.maxTimeActive/1000).toFixed(1)}s]`
         }
 
         this.drawText(s, "Arial 18 px", "black", "left", 25, 15, this.sctx);
