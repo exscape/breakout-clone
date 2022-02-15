@@ -53,7 +53,8 @@ export class Game {
         this.collisionHandler = new CollisionHandler(settings);
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
-                              "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "fireball"];
+                              "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "fireball",
+                              "statusbar"];
         for (let i = 1; i <= 9; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -458,9 +459,6 @@ export class Game {
     }
 
     drawFrame() {
-        // Draw the status bar
-        this.drawStatusBar();
-
         // Clear the frame
         this.ctx.fillStyle = this.settings.canvasBackground;
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
@@ -469,6 +467,9 @@ export class Game {
             this.drawText("Loading images...", "30px Arial", "#ee3030", "center", 0, 400);
             return;
         }
+
+        // Draw the status bar
+        this.drawStatusBar();
 
         // Draw the paddle
         // paddleThickness/2 is also the end cap radius, so we need to subtract that from x as well
@@ -480,7 +481,7 @@ export class Game {
         if (this.paddle.sticky) {
             this.ctx.globalAlpha = 0.5;
             this.ctx.beginPath();
-            this.ctx.strokeStyle = "#45ff45";
+            this.ctx.strokeStyle = "#21c00a"; // "#45ff45";
             this.ctx.lineCap = "round";
             this.ctx.moveTo(this.paddle.position.x, this.paddle.position.y);
             this.ctx.lineTo(this.paddle.position.x + this.paddle.width, this.paddle.position.y);
@@ -488,16 +489,6 @@ export class Game {
             this.ctx.stroke();
             this.ctx.globalAlpha = 1.0;
         }
-
-        /*
-        // Draw the paddle centerline
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = "#ff0000";
-        this.ctx.moveTo(0, this.paddle.position.y);
-        this.ctx.lineTo(this.settings.canvasWidth, this.paddle.position.y);
-        this.ctx.lineWidth = 1;
-        this.ctx.stroke();
-        */
 
         // Draw the bricks
         for (let brick of this.bricks) {
@@ -535,6 +526,7 @@ export class Game {
         // Draw the balls
         for (let ball of this.balls) {
             if (ball.fireball) {
+                // Spin the ball. (Spinning is so much cooler than not spinning!)
                 this.ctx.save();
                 this.ctx.translate(ball.position.x, ball.position.y);
                 this.ctx.rotate(ball.rotation);
@@ -556,17 +548,6 @@ export class Game {
             }
         }
 
-        /*
-        // Draw the current framerate
-        // TODO: Move to status bar (right-aligned?)
-        this.drawText(`FPS: ${Math.floor(this.lastFPS)}`, "18px Arial", "#ee3030", "left", 10, 59);
-        */
-
-        // Draw player stats
-        // TODO: Move to status bar!
-        this.drawText(`Score: ${this.score}`, "18px Arial", "black", "left", 10, 25)
-        this.drawText(`Lives remaining: ${this.livesRemaining}`, "18px Arial", "black", "left", 10, 42);
-
         if (this.gameWon) {
             this.drawText(`A WINNER IS YOU!`, "60px Arial", "#ee3030", "center", 0, 520);
             this.drawText(`Score: ${this.score}`, "60px Arial", "#ee3030", "center", 0, 580);
@@ -585,9 +566,35 @@ export class Game {
     }
 
     drawStatusBar() {
-        this.sctx.fillStyle = "white";
-        this.sctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+        // Clear the status bar by drawing the background
+        this.sctx.drawImage(this.images["statusbar"], 0, 0, this.settings.canvasWidth, this.settings.statusbarHeight);
 
+        const powerupSize = 48; // Including the ring, drawn on top of the image
+        const powerupSpacing = 8;
+
+        let x = powerupSpacing;
+        const y = (this.settings.statusbarHeight - powerupSize) / 2;
+        for (let powerup of this.activePowerups) {
+            this.sctx.drawImage(this.images[powerup.image], x, y, powerupSize, powerupSize);
+            let ratio: number | undefined;
+            if (powerup instanceof TimeLimitedPowerup)
+                ratio = (powerup.maxTimeActive - powerup.activeTime) / powerup.maxTimeActive;
+            else if (powerup instanceof RepetitionLimitedPowerup)
+                ratio = (powerup.maxRepetitions - powerup.repetitions) / powerup.maxRepetitions;
+
+            if (ratio) {
+                this.sctx.beginPath();
+                this.sctx.lineWidth = 3;
+                this.sctx.strokeStyle = "#69d747";
+                const rot = Math.PI/2;
+                this.sctx.arc(x + powerupSize / 2, y + powerupSize / 2, powerupSize / 2, (2 * Math.PI) - (2 * Math.PI)*ratio - rot, 2 * Math.PI - rot);
+                this.sctx.stroke();
+            }
+
+            x += powerupSize + powerupSpacing;
+        }
+
+        /*
         // Draw temporary powerup stats
         let s = "";
         for (let powerup of this.activePowerups) {
@@ -596,7 +603,19 @@ export class Game {
             else if (powerup instanceof TimeLimitedPowerup)
                 s += `[${powerup.name}: ${(powerup.activeTime/1000).toFixed(1)}/${(powerup.maxTimeActive/1000).toFixed(1)}s]`
         }
-
         this.drawText(s, "Arial 18 px", "black", "left", 25, 15, this.sctx);
+        */
+
+        // Draw player stats
+        // TODO: Improve to use graphics
+        // this.drawText(`Score: ${this.score}; ${this.livesRemaining - 1} lives remaining`, "18px Arial", "black", "left", 10, 25, this.sctx)
+
+        // Draw the current framerate
+        /*
+        this.sctx.textBaseline = "middle";
+        this.drawText(`FPS: ${Math.floor(this.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, this.settings.statusbarHeight / 2, this.sctx);
+        this.sctx.textBaseline = "alphabetic";
+        */
+
     }
 }

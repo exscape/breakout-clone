@@ -26,7 +26,7 @@ window.addEventListener('DOMContentLoaded', () => {
         canvasWidth: 1264,
         canvasHeight: 720,
         canvasMargin: 15,
-        statusbarHeight: 40,
+        statusbarHeight: 56,
         ballRadius: 13,
         paddleThickness: 25,
         ballSpeed: 0.7,
