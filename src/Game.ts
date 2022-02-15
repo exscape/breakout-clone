@@ -219,7 +219,7 @@ export class Game {
             if (ball.collided)
                 continue;
 
-            // Handle brick collisions Naive implementation, but it performs just fine.
+            // Handle brick collisions. Naive implementation, but it performs just fine.
             for (let i = 0; i < this.bricks.length; i++) {
                 let brick = this.bricks[i];
                 if (!this.collisionHandler.brickCollision(ball, brick, dt))
@@ -315,6 +315,10 @@ export class Game {
             ball.correctVelocity(this.settings);
 
         // Handle powerup pick-ups
+        this.handlePowerupPickups(paddleTopY, paddleLeftmostX, paddleRightmostX);
+    }
+
+    private handlePowerupPickups(paddleTopY: number, paddleLeftmostX: number, paddleRightmostX: number) {
         const r = this.settings.powerupImageRadius;
         for (let i = this.visiblePowerups.length - 1; i >= 0; i--) {
             let powerup = this.visiblePowerups[i];
@@ -325,18 +329,18 @@ export class Game {
                 powerup.position.y - r < this.paddle.position.y &&
                 !this.gameLost &&
                 !this.lifeLost) {
-                    let existingPowerup = this.getPowerup(powerup.type);
-                    this.score += powerup.pickupScore;
-                    if (existingPowerup)
-                        existingPowerup.addInstance();
-                    else {
-                        powerup.activate();
-                        this.activePowerups.push(powerup);
-                    }
-
-                    this.visiblePowerups.splice(i, 1);
-                    // TODO: animate the disappearance
+                let existingPowerup = this.getPowerup(powerup.type);
+                this.score += powerup.pickupScore;
+                if (existingPowerup)
+                    existingPowerup.addInstance();
+                else {
+                    powerup.activate();
+                    this.activePowerups.push(powerup);
                 }
+
+                this.visiblePowerups.splice(i, 1);
+                // TODO: animate the disappearance
+            }
         }
     }
 
