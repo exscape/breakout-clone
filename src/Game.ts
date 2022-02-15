@@ -6,6 +6,7 @@ import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup } from './Powerups';
+import { debugAlert } from './Utils';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
@@ -186,7 +187,7 @@ export class Game {
     getPowerup(type: PowerupType): Powerup | null {
         let s = this.activePowerups.filter(p => p.type == type);
         if (s.length > 1)
-            alert(`BUG: Multiple powerups of type ${type.toString()} active!`);
+            debugAlert(`BUG: Multiple powerups of type ${type.toString()} active!`);
         return (s.length >= 1) ? s[0] : null;
     }
 
@@ -382,7 +383,7 @@ export class Game {
         for (let ball of this.balls) {
             if (ball.stuck) {
                 if (ball.velocity.x != 0 || ball.velocity.y != 0)
-                    alert("BUG: velocity != 0 while ball is stuck!");
+                    debugAlert("BUG: velocity != 0 while ball is stuck!");
                 continue;
             }
 

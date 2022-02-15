@@ -19,3 +19,10 @@ export function clamp(v: number, min: number, max: number) {
         v = max;
     return v;
 }
+
+export function debugAlert(s: string) {
+    if (true) {
+        console.error("DEBUG ALERT: " + s);
+        alert(s);
+    }
+}

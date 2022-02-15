@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Ball } from './Ball';
 import { Vec2 } from './Vec2';
 import { Settings } from './Settings';
-import { clamp } from './Utils';
+import { clamp, debugAlert } from './Utils';
 
 export class Paddle {
     width: number;
@@ -30,7 +30,7 @@ export class Paddle {
 
     launch() {
         if (this.stuckBall == null) {
-            alert("BUG: launch() called with stuckBall == null!");
+            debugAlert("BUG: launch() called with stuckBall == null!");
             return;
         }
 

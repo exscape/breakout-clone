@@ -2,7 +2,7 @@ import { Ball } from './Ball';
 import { Brick } from './Brick';
 import { Settings } from './Settings';
 import { Vec2 } from './Vec2';
-import { generatePairs } from './Utils';
+import { debugAlert, generatePairs } from './Utils';
 
 export enum CollisionFrom {
     None,
@@ -88,9 +88,9 @@ export class CollisionHandler {
             // TODO: I'm not sure when, but possibly when multiple balls are near each other and colliding, pushing eachother into bricks?
             // TODO: Not sure if it's an actual issue or whether it can be ignored yet. I suppose it does mean there's a risk balls get stuck in indestructible bricks?
             if (direction == CollisionFrom.Top && Math.sign(ball.velocity.y) != -1)
-                alert("MATH ERROR: moving wrong direction after collision (top hit)");
+                debugAlert("MATH ERROR: moving wrong direction after collision (top hit)");
             else if (direction == CollisionFrom.Bottom && Math.sign(ball.velocity.y) != 1)
-                alert("MATH ERROR: moving wrong direction after collision (bottom hit)");
+                debugAlert("MATH ERROR: moving wrong direction after collision (bottom hit)");
         }
         else {
             ball.velocity.x = -ball.velocity.x;
@@ -101,9 +101,9 @@ export class CollisionHandler {
             ball.position.x -= horizontalOverlap;
 
             if (direction == CollisionFrom.Left && Math.sign(ball.velocity.x) != -1)
-                alert("MATH ERROR: moving wrong direction after collision (left hit)");
+                debugAlert("MATH ERROR: moving wrong direction after collision (left hit)");
             else if (direction == CollisionFrom.Right && Math.sign(ball.velocity.x) != 1)
-                alert("MATH ERROR: moving wrong direction after collision (right hit)");
+                debugAlert("MATH ERROR: moving wrong direction after collision (right hit)");
         }
 
         return true;
@@ -164,7 +164,7 @@ export class CollisionHandler {
             if (secondBall.stuck)
                 [firstBall, secondBall] = [secondBall, firstBall];
             if (secondBall.stuck)
-                alert("BUG: firstBall stuck despite swap -- multiple stuck balls!");
+                debugAlert("BUG: firstBall stuck despite swap -- multiple stuck balls!");
 
             // TODO: reduce allocation here?
 
@@ -181,7 +181,7 @@ export class CollisionHandler {
             normal.normalize();
             let tangent = new Vec2(-normal.y, normal.x);
             if (Math.abs(1-tangent.mag()) > 0.01)
-                alert("MATH ERROR: tangent vector not a unit vector");
+                debugAlert("MATH ERROR: tangent vector not a unit vector");
 
             // Step 3 and 4 (step 2 is not necessary)
             let v1_normal_pre = normal.dot(firstBall.velocity);
@@ -227,7 +227,7 @@ export class CollisionHandler {
             }
 
             if (Math.abs(firstBall.velocity.mag() - this.settings.ballSpeed) > 0.01 || Math.abs(secondBall.velocity.mag() - this.settings.ballSpeed) > 0.01)
-                alert("MATH ERROR: Ball speed incorrect after collision")
+                debugAlert("MATH ERROR: Ball speed incorrect after collision")
 
             // Handle the case of collisions in sticky + multiball combination. The stuck ball should stay stuck.
             if (firstBall.stuck) {

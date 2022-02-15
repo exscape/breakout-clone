@@ -1,3 +1,5 @@
+import { debugAlert } from "./Utils";
+
 export class Vec2 {
     x: number;
     y: number;
@@ -39,7 +41,7 @@ export class Vec2 {
         this.x /= m;
         this.y /= m;
         if (Math.abs(1 - this.mag()) > 0.01)
-            alert("MATH ERROR: normalize() didn't yield a length-1 vector");
+            debugAlert("MATH ERROR: normalize() didn't yield a length-1 vector");
     }
 
     setMagnitude(mag: number): void {
@@ -48,7 +50,7 @@ export class Vec2 {
         this.x *= mag;
         this.y *= mag;
         if (Math.abs(this.mag() - mag) > 0.01)
-            alert("MATH ERROR: setMagnitude failed");
+            debugAlert("MATH ERROR: setMagnitude failed");
     }
 
 }
