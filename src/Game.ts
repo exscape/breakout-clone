@@ -155,20 +155,21 @@ export class Game {
     }
 
     spawnExtraBall(): boolean {
-        if (!this.gamePaused && !this.paddle.stuckBall) {
-            let b = new Ball(new Vec2(), new Vec2(), randomColor());
-            if (this.isPowerupActive("fireball"))
-                b.fireball = true;
-            this.balls.push(b);
-            this.paddle.setStuckBall(b);
-            this.paddle.launch();
-
-            (this.getPowerup("multiball") as MultiballPowerup)?.trigger();
-
-            return true;
-        }
-        else
+        if (this.gamePaused || this.paddle.stuckBall)
             return false;
+
+        let newBall = new Ball(new Vec2(), new Vec2(), randomColor());
+
+        if (this.isPowerupActive("fireball"))
+            newBall.fireball = true;
+
+        this.balls.push(newBall);
+        this.paddle.setStuckBall(newBall);
+        this.paddle.launch();
+
+        (this.getPowerup("multiball") as MultiballPowerup)?.trigger();
+
+        return true;
     }
 
     keyDown(ev: KeyboardEvent) {
@@ -193,59 +194,23 @@ export class Game {
     }
 
     update(dt: number) {
-        if (this.gameWon || this.gamePaused) // if gameLost, update() should still run, so the ball is drawn to exit the game area
+        // if gameLost, update() should still run, so the ball is drawn to exit the game area
+        if (this.gameWon || this.gamePaused)
             return;
 
+        // Animate the aiming line (if visible)
         this.aimDashOffset -= 0.07 * dt;
 
-        // Handle expiry of active powerups
-        for (let p of this.activePowerups) {
-            if (p instanceof TimeLimitedPowerup)
-                p.tick(dt);
-        }
-        this.activePowerups = this.activePowerups.filter(p => !p.expired);
-
-        // Animate powerups falling
-        for (let i = this.visiblePowerups.length - 1; i >= 0; i--) {
-            let p = this.visiblePowerups[i];
-            p.position.y += this.settings.powerupFallSpeed * dt;
-
-            if (p.position.y - this.settings.powerupImageRadius > this.settings.canvasHeight) {
-                this.visiblePowerups.splice(i, 1);
-            }
-
-            p.phase += Math.PI/2 * dt/300;
-        }
-
-        // Update the position of all balls first...
-        for (let ball of this.balls) {
-            if (ball.stuck) {
-                if (ball.velocity.x != 0 || ball.velocity.y != 0)
-                    alert("BUG: velocity != 0 while ball is stuck!");
-                continue;
-            }
-
-            ball.rotation += Math.PI/200 * dt;
-            if (ball.rotation > 2 * Math.PI)
-                ball.rotation -= 2 * Math.PI;
-
-            /*
-            if (ball.position.y < 640 || ball.velocity.y < 0) ball.velocity.y = 1.5 * Math.sign(ball.velocity.y);
-            else ball.velocity.y = 0.04 * Math.sign(ball.velocity.y);
-            */
-
-            ball.position.x += ball.velocity.x * dt;
-            ball.position.y += ball.velocity.y * dt;
-
-            ball.collided = false;
-        }
+        this.checkPowerupExpiry(dt);
+        this.animateFallingPowerups(dt);
+        this.updateBallPositions(dt);
 
         // Used for ball-paddle and powerup-paddle collisions, below
         const paddleTopY = this.paddle.position.y - this.settings.paddleThickness / 2;
         const paddleLeftmostX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
         const paddleRightmostX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above
 
-        // ... *then* handle collisions
+        // Handle collisions with walls and bricks
         for (let ball of this.balls) {
             // Handle wall collisions; reflects the ball if necessary
             this.collisionHandler.handleWallCollisions(ball);
@@ -254,8 +219,7 @@ export class Game {
             if (ball.collided)
                 continue;
 
-            // Handle brick collisions
-            // Naive, but it performs just fine. I can even run it 500 times per brick and still have 165 fps.
+            // Handle brick collisions Naive implementation, but it performs just fine.
             for (let i = 0; i < this.bricks.length; i++) {
                 let brick = this.bricks[i];
                 if (!this.collisionHandler.brickCollision(ball, brick, dt))
@@ -354,14 +318,7 @@ export class Game {
         const r = this.settings.powerupImageRadius;
         for (let i = this.visiblePowerups.length - 1; i >= 0; i--) {
             let powerup = this.visiblePowerups[i];
-            /*
-                ball.position.y + r >= paddleTopY &&
-                ball.position.x >= paddleLeftmostX &&
-                ball.position.x <= paddleRightmostX &&
-                ball.position.y + r < this.paddle.position.y + this.settings.paddleThickness / 2 && // + thickness/2 to reduce risk of fall-through at lower fps
-                !this.gameLost &&
-                !this.lifeLost) {
-            */
+
             if (powerup.position.y + r >= paddleTopY &&
                 powerup.position.x >= paddleLeftmostX &&
                 powerup.position.x <= paddleRightmostX &&
@@ -382,7 +339,47 @@ export class Game {
         }
     }
 
-    spawnRandomPowerup(spawnPosition: Vec2) {
+    private checkPowerupExpiry(dt: number) {
+        for (let p of this.activePowerups) {
+            if (p instanceof TimeLimitedPowerup)
+                p.tick(dt);
+        }
+        this.activePowerups = this.activePowerups.filter(p => !p.expired);
+    }
+
+    private animateFallingPowerups(dt: number) {
+        for (let i = this.visiblePowerups.length - 1; i >= 0; i--) {
+            let p = this.visiblePowerups[i];
+            p.position.y += this.settings.powerupFallSpeed * dt;
+
+            if (p.position.y - this.settings.powerupImageRadius > this.settings.canvasHeight) {
+                this.visiblePowerups.splice(i, 1);
+            }
+
+            p.phase += Math.PI / 2 * dt / 300;
+        }
+    }
+
+    private updateBallPositions(dt: number) {
+        for (let ball of this.balls) {
+            if (ball.stuck) {
+                if (ball.velocity.x != 0 || ball.velocity.y != 0)
+                    alert("BUG: velocity != 0 while ball is stuck!");
+                continue;
+            }
+
+            ball.rotation += Math.PI/200 * dt;
+            if (ball.rotation > 2 * Math.PI)
+                ball.rotation -= 2 * Math.PI;
+
+            ball.position.x += ball.velocity.x * dt;
+            ball.position.y += ball.velocity.y * dt;
+
+            ball.collided = false;
+        }
+    }
+
+    private spawnRandomPowerup(spawnPosition: Vec2) {
         let powerup: Powerup;
         let rand = _.random(0, 2);
         if (rand == 0) {
