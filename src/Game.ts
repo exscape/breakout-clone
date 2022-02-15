@@ -326,6 +326,7 @@ export class Game {
                 !this.gameLost &&
                 !this.lifeLost) {
                     let existingPowerup = this.getPowerup(powerup.type);
+                    this.score += powerup.pickupScore;
                     if (existingPowerup)
                         existingPowerup.addInstance();
                     else {

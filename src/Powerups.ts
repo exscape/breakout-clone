@@ -5,6 +5,7 @@ export type PowerupType = "sticky" | "multiball" | "fireball";
 export abstract class Powerup {
     type: PowerupType;
     name: string;
+    pickupScore: number;
 
     expired: boolean = false;
     image: string;
@@ -16,12 +17,13 @@ export abstract class Powerup {
 
     active: boolean = false; // Has this been picked up?
 
-    constructor(type: PowerupType, position: Vec2) {
+    constructor(type: PowerupType, position: Vec2, pickupScore: number) {
         this.type = type;
         this.name = type.toString();
         this.image = `powerup_${type.toString()}`;
         this.position = position;
         this.phase = 0;
+        this.pickupScore = pickupScore;
     }
 
     activate() {
@@ -56,8 +58,8 @@ export abstract class TimeLimitedPowerup extends Powerup {
     maxTimeActive: number;
     readonly originalMaxTimeActive: number;
 
-    constructor(type: PowerupType, position: Vec2, maxTimeActive: number = Number.POSITIVE_INFINITY) {
-        super(type, position);
+    constructor(type: PowerupType, position: Vec2, pickupScore: number, maxTimeActive: number) {
+        super(type, position, pickupScore);
         this.maxTimeActive = maxTimeActive;
         this.originalMaxTimeActive = maxTimeActive;
     }
@@ -82,8 +84,8 @@ export abstract class RepetitionLimitedPowerup extends Powerup {
     maxRepetitions: number;
     repetitions = 0;
 
-    constructor(type: PowerupType, position: Vec2, maxRepetitions: number) {
-        super(type, position);
+    constructor(type: PowerupType, position: Vec2, pickupScore: number, maxRepetitions: number) {
+        super(type, position, pickupScore);
         this.maxRepetitions = maxRepetitions;
         this.originalMaxRepetitions = maxRepetitions;
     }
@@ -102,18 +104,18 @@ export abstract class RepetitionLimitedPowerup extends Powerup {
 
 export class StickyPowerup extends RepetitionLimitedPowerup {
     constructor(position: Vec2) {
-        super("sticky", position, 5);
+        super("sticky", position, 75, 5);
     }
 }
 
 export class MultiballPowerup extends RepetitionLimitedPowerup {
     constructor(position: Vec2) {
-        super("multiball", position, 4);
+        super("multiball", position, 100, 4);
     }
 }
 
 export class FireballPowerup extends TimeLimitedPowerup {
     constructor(position: Vec2) {
-        super("fireball", position, 8000);
+        super("fireball", position, 125, 8000);
     }
 }
