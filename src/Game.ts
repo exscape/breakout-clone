@@ -274,38 +274,8 @@ export class Game {
                     this.bricksRemaining--;
 
                     if (_.random(1, 100) <= this.settings.powerupProbability) {
-                        // Spawn a random powerup
-                        let powerup: Powerup;
                         let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
-                        let rand = _.random(0, 2);
-                        if (rand == 0) {
-                            // Sticky powerup
-                            powerup = new StickyPowerup(spawnPosition);
-                            powerup.setActivatedCallback(() => {
-                                this.paddle.sticky++;
-                            });
-                            powerup.setDeactivatedCallback(() => {
-                                this.paddle.sticky--;
-                            });
-                        }
-                        else if (rand == 1) {
-                            // Multiball powerup
-                            powerup = new MultiballPowerup(spawnPosition);
-                        }
-                        else {
-                            powerup = new FireballPowerup(spawnPosition);
-                            powerup.setActivatedCallback(() => {
-                                for (let ball of this.balls) {
-                                    ball.fireball = true;
-                                }
-                            });
-                            powerup.setDeactivatedCallback(() => {
-                                for (let ball of this.balls) {
-                                    ball.fireball = false;
-                                }
-                            });
-                        }
-                        this.visiblePowerups.push(powerup);
+                        this.spawnRandomPowerup(spawnPosition);
                     }
                 }
 
@@ -410,6 +380,39 @@ export class Game {
                     // TODO: animate the disappearance
                 }
         }
+    }
+
+    spawnRandomPowerup(spawnPosition: Vec2) {
+        let powerup: Powerup;
+        let rand = _.random(0, 2);
+        if (rand == 0) {
+            // Sticky powerup
+            powerup = new StickyPowerup(spawnPosition);
+            powerup.setActivatedCallback(() => {
+                this.paddle.sticky++;
+            });
+            powerup.setDeactivatedCallback(() => {
+                this.paddle.sticky--;
+            });
+        }
+        else if (rand == 1) {
+            // Multiball powerup
+            powerup = new MultiballPowerup(spawnPosition);
+        }
+        else {
+            powerup = new FireballPowerup(spawnPosition);
+            powerup.setActivatedCallback(() => {
+                for (let ball of this.balls) {
+                    ball.fireball = true;
+                }
+            });
+            powerup.setDeactivatedCallback(() => {
+                for (let ball of this.balls) {
+                    ball.fireball = false;
+                }
+            });
+        }
+        this.visiblePowerups.push(powerup);
     }
 
     gameLoop(timestamp: number) {
