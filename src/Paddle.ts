@@ -56,7 +56,7 @@ export class Paddle {
         if (this.stuckBall)
             this.stuckBall.position.x += actualDeltaX;
 
-        this.aimAngle -= deltaY * 0.015;
-        this.aimAngle = clamp(this.aimAngle, -Math.PI/4, Math.PI/4);
+        this.aimAngle -= deltaY * 0.008;
+        this.aimAngle = clamp(this.aimAngle, -Math.PI/3.5, Math.PI/3.5);
     }
 }

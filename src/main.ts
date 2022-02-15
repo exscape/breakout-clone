@@ -29,11 +29,11 @@ window.addEventListener('DOMContentLoaded', () => {
         statusbarHeight: 40,
         ballRadius: 13,
         paddleThickness: 25,
-        ballSpeed: 0.75,
+        ballSpeed: 0.7,
         brickWidth: 86,
         brickHeight: 25,
         canvasBackground: "#f7faff", //#ecf2ff" // "#ddedff" // #eaeaea
-        powerupProbability: 15, // For development
+        powerupProbability: 2,
         powerupImageRadius: 24,
         powerupFallSpeed: 0.1,
         multiballSpawnInterval: 1000,
