@@ -340,8 +340,8 @@ export class Game {
             let powerup = this.visiblePowerups[i];
 
             if (powerup.position.y + r >= paddleTopY &&
-                powerup.position.x >= paddleLeftmostX &&
-                powerup.position.x <= paddleRightmostX &&
+                powerup.position.x + r >= paddleLeftmostX &&
+                powerup.position.x - r <= paddleRightmostX &&
                 powerup.position.y - r < this.paddle.position.y &&
                 !this.gameLost &&
                 !this.lifeLost) {
