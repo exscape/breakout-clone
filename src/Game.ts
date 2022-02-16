@@ -598,7 +598,7 @@ export class Game {
         const iconTextSpacing = 6;
 
         const iconSize = 24;
-        const charWidth = 12;
+        const charWidth = 11;
 
         let x = powerupSpacing;
 
