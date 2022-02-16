@@ -55,7 +55,7 @@ export class Game {
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "fireball",
-                              "statusbar"];
+                              "statusbar", "heart", "score"];
         for (let i = 1; i <= 9; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -68,7 +68,7 @@ export class Game {
                     self.loadingCompleted = true;
             }, false);
             img.addEventListener('error', (ev: ErrorEvent) => {
-                alert(`Failed to load image ${name}! Error: ${ev.message}`);
+                alert(`Failed to load image "${name}.png"!` + (ev.message ? ` ${ev.message}` : ""));
             });
             img.src = `img/${name}.png`;
         }
@@ -572,10 +572,32 @@ export class Game {
         // Clear the status bar by drawing the background
         this.sctx.drawImage(this.images["statusbar"], 0, 0, this.settings.canvasWidth, this.settings.statusbarHeight);
 
+        this.sctx.textBaseline = "middle";
+
         const powerupSize = 48; // Including the ring, drawn on top of the image
         const powerupSpacing = 8;
+        const iconTextSpacing = 6;
+
+        const iconSize = 24;
+        const charWidth = 12;
 
         let x = powerupSpacing;
+
+        // Draw the number of lives remaining
+        this.sctx.drawImage(this.images["heart"], x, (this.settings.statusbarHeight - iconSize) / 2, iconSize, iconSize);
+        x += iconSize + iconTextSpacing;
+        this.drawText(this.livesRemaining.toString(), "18px Arial", "white", "left", x, this.settings.statusbarHeight / 2, this.sctx);
+        x += 4 + iconTextSpacing + this.livesRemaining.toString().length * charWidth;
+
+        // Draw the score
+        this.sctx.drawImage(this.images["score"], x, (this.settings.statusbarHeight - iconSize) / 2, iconSize, iconSize);
+        x += iconSize + iconTextSpacing;
+        this.drawText(this.score.toString(), "18px Arial", "white", "left", x, this.settings.statusbarHeight / 2, this.sctx);
+        x += 4 + iconTextSpacing + this.score.toString().length * charWidth;
+
+
+        x -= 2;
+        // Draw active powerups
         const y = (this.settings.statusbarHeight - powerupSize) / 2;
         for (let powerup of this.activePowerups) {
             this.sctx.drawImage(this.images[powerup.image], x, y, powerupSize, powerupSize);
@@ -597,28 +619,11 @@ export class Game {
             x += powerupSize + powerupSpacing;
         }
 
-        /*
-        // Draw temporary powerup stats
-        let s = "";
-        for (let powerup of this.activePowerups) {
-            if (powerup instanceof RepetitionLimitedPowerup)
-                s += `[${powerup.name}: ${powerup.repetitions}/${powerup.maxRepetitions}] `;
-            else if (powerup instanceof TimeLimitedPowerup)
-                s += `[${powerup.name}: ${(powerup.activeTime/1000).toFixed(1)}/${(powerup.maxTimeActive/1000).toFixed(1)}s]`
-        }
-        this.drawText(s, "Arial 18 px", "black", "left", 25, 15, this.sctx);
-        */
-
-        // Draw player stats
-        // TODO: Improve to use graphics
-        // this.drawText(`Score: ${this.score}; ${this.livesRemaining - 1} lives remaining`, "18px Arial", "black", "left", 10, 25, this.sctx)
-
         // Draw the current framerate
         /*
         this.sctx.textBaseline = "middle";
         this.drawText(`FPS: ${Math.floor(this.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, this.settings.statusbarHeight / 2, this.sctx);
         this.sctx.textBaseline = "alphabetic";
         */
-
     }
 }
