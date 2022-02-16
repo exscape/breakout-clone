@@ -586,8 +586,18 @@ export class Game {
         // Draw the number of lives remaining
         this.sctx.drawImage(this.images["heart"], x, (this.settings.statusbarHeight - iconSize) / 2, iconSize, iconSize);
         x += iconSize + iconTextSpacing;
-        this.drawText(this.livesRemaining.toString(), "18px Arial", "white", "left", x, this.settings.statusbarHeight / 2, this.sctx);
-        x += 4 + iconTextSpacing + this.livesRemaining.toString().length * charWidth;
+        let lives;
+        let width;
+        if (this.livesRemaining >= 1) {
+            lives = (this.livesRemaining - 1).toString();
+            width = lives.length;
+        }
+        else {
+            lives = "🕱";
+            width = 1;
+        }
+        this.drawText(lives, "18px Arial", "white", "left", x, this.settings.statusbarHeight / 2, this.sctx);
+        x += 4 + iconTextSpacing + width * charWidth;
 
         // Draw the score
         this.sctx.drawImage(this.images["score"], x, (this.settings.statusbarHeight - iconSize) / 2, iconSize, iconSize);
@@ -595,9 +605,8 @@ export class Game {
         this.drawText(this.score.toString(), "18px Arial", "white", "left", x, this.settings.statusbarHeight / 2, this.sctx);
         x += 4 + iconTextSpacing + this.score.toString().length * charWidth;
 
-
-        x -= 2;
         // Draw active powerups
+        x -= 2;
         const y = (this.settings.statusbarHeight - powerupSize) / 2;
         for (let powerup of this.activePowerups) {
             this.sctx.drawImage(this.images[powerup.image], x, y, powerupSize, powerupSize);
