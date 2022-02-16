@@ -511,7 +511,7 @@ export class Game {
             let targetY = originY - this.settings.aimLineLength * Math.cos(this.paddle.aimAngle);
             this.ctx.beginPath();
             this.ctx.strokeStyle = "#ff3030";
-            this.ctx.setLineDash([1.5, 20]);
+            this.ctx.setLineDash([0, 20]);
             this.ctx.lineDashOffset = this.aimDashOffset;
             this.ctx.lineCap = "round";
             this.ctx.moveTo(originX, originY);
