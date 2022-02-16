@@ -41,3 +41,7 @@ export function formatTime(s: number) {
 
     return ret;
 }
+
+export function lerp(a: number, b: number, r: number) {
+    return a + (b - a) * clamp(r, 0, 1);
+}

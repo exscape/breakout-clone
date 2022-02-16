@@ -6,7 +6,7 @@ import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
-import { debugAlert, formatTime } from './Utils';
+import { debugAlert, formatTime, lerp } from './Utils';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
@@ -214,6 +214,8 @@ export class Game {
         this.animateFallingPowerups(dt);
         this.updateBallPositions(dt);
 
+        this.animateUltrawideTransition(dt);
+
         // Used for ball-paddle and powerup-paddle collisions, below
         const paddleTopY = this.paddle.position.y - this.settings.paddleThickness / 2;
         const paddleLeftmostX = this.paddle.position.x - this.paddle.width / 2;
@@ -253,6 +255,22 @@ export class Game {
 
         // Handle powerup pick-ups
         this.handlePowerupPickups(paddleTopY, paddleLeftmostX, paddleRightmostX);
+    }
+
+    animateUltrawideTransition(dt: number) {
+        let isActive = this.isPowerupActive("ultrawide");
+        if ((!isActive && this.paddle.width == this.paddle.defaultWidth) ||
+            (isActive && this.paddle.width == this.paddle.ultrawideWidth)) {
+            return;
+        }
+
+        this.paddle.ultrawideTransitionTime += dt;
+
+        const totalTransitionTime = 500;
+        let prevWidth = isActive ? this.paddle.defaultWidth : this.paddle.ultrawideWidth;
+        let targetWidth = isActive ? this.paddle.ultrawideWidth : this.paddle.defaultWidth;
+        this.paddle.width = lerp(prevWidth, targetWidth, this.paddle.ultrawideTransitionTime / totalTransitionTime);
+        this.paddle.clampPosition();
     }
 
     handlePaddleCollisions(ball: Ball, paddleTopY: number, paddleLeftmostX: number, paddleRightmostX: number) {
@@ -451,10 +469,12 @@ export class Game {
             // Ultrawide powerup
             powerup = new UltrawidePowerup(spawnPosition);
             powerup.setActivatedCallback(() => {
-                this.paddle.width = this.paddle.ultrawideWidth;
+                this.paddle.ultrawideTransitionTime = 0;
+                this.paddle.ultrawide = true;
             });
             powerup.setDeactivatedCallback(() => {
-                this.paddle.width = this.paddle.defaultWidth;
+                this.paddle.ultrawideTransitionTime = 0;
+                this.paddle.ultrawide = false;
             });
         }
         this.visiblePowerups.push(powerup);

@@ -13,6 +13,8 @@ export class Paddle {
     aimAngle: number = 0; // In radians, 0 meaning straight up
     readonly defaultWidth = 125;
     readonly ultrawideWidth = 325;
+    ultrawide: boolean = false;
+    ultrawideTransitionTime = 0; // How far in the animation we currently are
 
     constructor(settings: Settings) {
         this.width = this.defaultWidth;
@@ -45,18 +47,21 @@ export class Paddle {
         ball.velocity.y = -Math.cos(launchAngle) * this.settings.ballSpeed;
     }
 
-    move(deltaX: number, deltaY: number) {
-        let orig = this.position.x;
-        this.position.x += deltaX;
-
+    clampPosition() {
         if (this.position.x + this.width / 2 > this.settings.canvasWidth - this.settings.canvasMargin)
             this.position.x = this.settings.canvasWidth - this.settings.canvasMargin - this.width / 2;
         else if (this.position.x - this.width / 2 < this.settings.canvasMargin)
             this.position.x = this.settings.canvasMargin + this.width / 2;
 
-        let actualDeltaX = this.position.x - orig;
         if (this.stuckBall)
-            this.stuckBall.position.x += actualDeltaX;
+            this.stuckBall.position.x = this.position.x;
+    }
+
+    move(deltaX: number, deltaY: number) {
+        let orig = this.position.x;
+        this.position.x += deltaX;
+
+        this.clampPosition();
 
         this.aimAngle -= deltaY * 0.008;
         this.aimAngle = clamp(this.aimAngle, -Math.PI/3.5, Math.PI/3.5);
