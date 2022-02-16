@@ -5,7 +5,7 @@ import { Brick } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
-import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup } from './Powerups';
+import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup } from './Powerups';
 import { debugAlert } from './Utils';
 
 function randomColor() {
@@ -54,8 +54,8 @@ export class Game {
         this.collisionHandler = new CollisionHandler(settings);
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
-                              "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "fireball",
-                              "statusbar", "heart", "score"];
+                              "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife",
+                              "fireball", "statusbar", "heart", "score"];
         for (let i = 1; i <= 9; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -351,7 +351,8 @@ export class Game {
                     existingPowerup.addInstance();
                 else {
                     powerup.activate();
-                    this.activePowerups.push(powerup);
+                    if (!(powerup instanceof InstantEffectPowerup))
+                        this.activePowerups.push(powerup);
                 }
 
                 this.visiblePowerups.splice(i, 1);
@@ -404,7 +405,7 @@ export class Game {
 
     private spawnRandomPowerup(spawnPosition: Vec2) {
         let powerup: Powerup;
-        let rand = _.random(0, 2);
+        let rand = _.random(0, 3);
         if (rand == 0) {
             // Sticky powerup
             powerup = new StickyPowerup(spawnPosition);
@@ -419,7 +420,8 @@ export class Game {
             // Multiball powerup
             powerup = new MultiballPowerup(spawnPosition);
         }
-        else {
+        else if (rand == 2) {
+            // Fireball powerup
             powerup = new FireballPowerup(spawnPosition);
             powerup.setActivatedCallback(() => {
                 for (let ball of this.balls) {
@@ -431,6 +433,14 @@ export class Game {
                     ball.fireball = false;
                 }
             });
+        }
+        else {
+            // Extra life powerup
+            powerup = new ExtraLifePowerup(spawnPosition);
+            powerup.setActivatedCallback(() => {
+                this.livesRemaining += 1;
+                // TODO: play sound
+            })
         }
         this.visiblePowerups.push(powerup);
     }
