@@ -177,6 +177,8 @@ export class Game {
     keyDown(ev: KeyboardEvent) {
         if (ev.key == "p" || ev.key == "P")
             this.togglePause();
+        else if (ev.key == "a" || ev.key == "A")
+            this.spawnRandomPowerup(new Vec2(this.paddle.position.x + this.paddle.width / 2, this.paddle.position.y - this.settings.paddleThickness));
     }
 
     keyUp(ev: KeyboardEvent) {}
