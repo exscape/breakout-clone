@@ -26,7 +26,7 @@ window.addEventListener('DOMContentLoaded', () => {
         canvasWidth: 1264,
         canvasHeight: 720,
         canvasMargin: 2,
-        statusbarHeight: 56,
+        statusbarHeight: 44,
         ballRadius: 13,
         paddleThickness: 25,
         ballSpeed: 0.64,
@@ -34,7 +34,7 @@ window.addEventListener('DOMContentLoaded', () => {
         brickHeight: 25,
         canvasBackground: "#f7faff", //#ecf2ff" // "#ddedff" // #eaeaea
         powerupProbability: 2      * 5, // dev bonus
-        powerupImageRadius: 24,
+        powerupImageRadius: 18,
         powerupFallSpeed: 0.1,
         multiballSpawnInterval: 1000,
         aimLineLength: 150

@@ -611,7 +611,7 @@ export class Game {
 
         this.sctx.textBaseline = "middle";
 
-        const powerupSize = 48; // Including the ring, drawn on top of the image
+        const powerupSize = 36; // Including the ring, drawn on top of the image
         const powerupSpacing = 8;
         const iconTextSpacing = 6;
 
