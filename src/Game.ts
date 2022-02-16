@@ -141,7 +141,7 @@ export class Game {
 
     mouseMoved(e: MouseEvent) {
         if (!this.gamePaused && !this.gameLost && !this.gameWon && !this.lifeLost)
-            this.paddle.move(e.movementX, e.movementY);
+            this.paddle.move(e.movementX, this.shouldDrawAimLine() ? e.movementY : 0);
     }
 
     click() {
@@ -456,6 +456,10 @@ export class Game {
         window.requestAnimationFrame((dt) => this.gameLoop(dt));
     }
 
+    shouldDrawAimLine() {
+        return this.paddle.stuckBall || this.isPowerupActive("multiball");
+    }
+
     drawText(text: string, font: string, fillStyle: string, textAlign: CanvasTextAlign, x: number, y: number, context = this.ctx) {
         context.font = font;
         context.fillStyle = fillStyle;
@@ -518,7 +522,7 @@ export class Game {
         }
 
         // Draw the aim line
-        if (this.paddle.stuckBall || this.isPowerupActive("multiball")) {
+        if (this.shouldDrawAimLine()) {
             let originX = this.paddle.position.x + this.paddle.width / 2;
             let originY = this.paddle.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1;
             let targetX = originX + this.settings.aimLineLength * Math.sin(this.paddle.aimAngle);
