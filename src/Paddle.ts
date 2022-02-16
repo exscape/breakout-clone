@@ -11,9 +11,11 @@ export class Paddle {
     sticky: number = 0; // Number of "sticky" powerups active
     stuckBall: Ball | null;
     aimAngle: number = 0; // In radians, 0 meaning straight up
+    readonly defaultWidth = 125;
+    readonly ultrawideWidth = 325;
 
     constructor(settings: Settings) {
-        this.width = 125;
+        this.width = this.defaultWidth;
         this.position = new Vec2((settings.canvasWidth - this.width) / 2, settings.canvasHeight * 0.97);
         this.stuckBall = null;
         this.settings = settings;
@@ -48,9 +50,9 @@ export class Paddle {
         this.position.x += deltaX;
 
         if (this.position.x + this.width / 2 > this.settings.canvasWidth - this.settings.canvasMargin)
-            this.position.x = this.settings.canvasWidth - this.settings.canvasMargin - this.width;
-        else if (this.position.x < this.settings.canvasMargin)
-            this.position.x = this.settings.canvasMargin;
+            this.position.x = this.settings.canvasWidth - this.settings.canvasMargin - this.width / 2;
+        else if (this.position.x - this.width / 2 < this.settings.canvasMargin)
+            this.position.x = this.settings.canvasMargin + this.width / 2;
 
         let actualDeltaX = this.position.x - orig;
         if (this.stuckBall)

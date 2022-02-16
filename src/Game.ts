@@ -5,8 +5,8 @@ import { Brick } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
-import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup } from './Powerups';
-import { debugAlert } from './Utils';
+import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
+import { debugAlert, formatTime } from './Utils';
 
 function randomColor() {
     let colors = ["#38c600", "#0082f0", "#f6091f"];
@@ -38,6 +38,7 @@ export class Game {
 
     loadingCompleted: boolean = false;
 
+    totalGameTime: number = 0;
     livesRemaining: number = 0;
     score: number = 0;
 
@@ -54,8 +55,8 @@ export class Game {
         this.collisionHandler = new CollisionHandler(settings);
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
-                              "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife",
-                              "fireball", "statusbar", "heart", "score"];
+                              "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
+                              "fireball", "statusbar", "heart", "score", "clock"];
         for (let i = 1; i <= 9; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -97,6 +98,7 @@ export class Game {
         this.visiblePowerups.length = 0;
 
         if (!partialReset) {
+            this.totalGameTime = 0;
             this.bricks.length = 0;
             this.initializeBricks();
             this.bricksRemaining = this.bricks
@@ -201,6 +203,9 @@ export class Game {
         // if gameLost, update() should still run, so the ball is drawn to exit the game area
         if (this.gameWon || this.gamePaused)
             return;
+
+        if (!this.gameLost)
+            this.totalGameTime += dt;
 
         // Animate the aiming line (if visible)
         this.aimDashOffset -= 0.07 * dt;
@@ -405,7 +410,7 @@ export class Game {
 
     private spawnRandomPowerup(spawnPosition: Vec2) {
         let powerup: Powerup;
-        let rand = _.random(0, 3);
+        let rand = _.random(0, 4);
         if (rand == 0) {
             // Sticky powerup
             powerup = new StickyPowerup(spawnPosition);
@@ -434,13 +439,23 @@ export class Game {
                 }
             });
         }
-        else {
+        else if (rand == 3) {
             // Extra life powerup
             powerup = new ExtraLifePowerup(spawnPosition);
             powerup.setActivatedCallback(() => {
                 this.livesRemaining += 1;
                 // TODO: play sound
             })
+        }
+        else {
+            // Ultrawide powerup
+            powerup = new UltrawidePowerup(spawnPosition);
+            powerup.setActivatedCallback(() => {
+                this.paddle.width = this.paddle.ultrawideWidth;
+            });
+            powerup.setDeactivatedCallback(() => {
+                this.paddle.width = this.paddle.defaultWidth;
+            });
         }
         this.visiblePowerups.push(powerup);
     }
@@ -495,7 +510,10 @@ export class Game {
         const leftCapWidth = this.images["paddle_left"].width;
         const rightCapWidth = this.images["paddle_right"].width;
         this.ctx.drawImage(this.images["paddle_left"], this.paddle.position.x - Math.floor(this.paddle.width / 2), this.paddle.position.y - this.settings.paddleThickness / 2);
-        this.ctx.drawImage(this.images["paddle_center"], this.paddle.position.x - Math.ceil(this.paddle.width / 2) + leftCapWidth, this.paddle.position.y - this.settings.paddleThickness / 2);
+        this.ctx.drawImage(this.images["paddle_center"], this.paddle.position.x - Math.ceil(this.paddle.width / 2) + leftCapWidth,
+                                                         this.paddle.position.y - this.settings.paddleThickness / 2,
+                                                         this.paddle.width - leftCapWidth - rightCapWidth,
+                                                         this.settings.paddleThickness);
         this.ctx.drawImage(this.images["paddle_right"], this.paddle.position.x + Math.floor(this.paddle.width / 2) - rightCapWidth - 1, this.paddle.position.y - this.settings.paddleThickness / 2);
 
         // Draw the paddle sticky effect
@@ -598,12 +616,14 @@ export class Game {
         const iconTextSpacing = 6;
 
         const iconSize = 24;
+        const iconY = (this.settings.statusbarHeight - iconSize) / 2;
+        const textY = this.settings.statusbarHeight / 2;
         const charWidth = 11;
 
         let x = powerupSpacing;
 
         // Draw the number of lives remaining
-        this.sctx.drawImage(this.images["heart"], x, (this.settings.statusbarHeight - iconSize) / 2, iconSize, iconSize);
+        this.sctx.drawImage(this.images["heart"], x, iconY);
         x += iconSize + iconTextSpacing;
         let lives;
         let width;
@@ -615,13 +635,20 @@ export class Game {
             lives = "🕱";
             width = 1;
         }
-        this.drawText(lives, "18px Arial", "white", "left", x, this.settings.statusbarHeight / 2, this.sctx);
+        this.drawText(lives, "18px Arial", "white", "left", x, textY, this.sctx);
         x += 4 + iconTextSpacing + width * charWidth;
 
-        // Draw the score
-        this.sctx.drawImage(this.images["score"], x, (this.settings.statusbarHeight - iconSize) / 2, iconSize, iconSize);
+        // Draw the total time taken
+        this.sctx.drawImage(this.images["clock"], x, iconY);
         x += iconSize + iconTextSpacing;
-        this.drawText(this.score.toString(), "18px Arial", "white", "left", x, this.settings.statusbarHeight / 2, this.sctx);
+        let time = formatTime(Math.floor(this.totalGameTime / 1000));
+        this.drawText(time, "18px Arial", "white", "left", x, textY, this.sctx);
+        x += iconTextSpacing + time.length * charWidth - 3;
+
+        // Draw the score
+        this.sctx.drawImage(this.images["score"], x, iconY);
+        x += iconSize + iconTextSpacing;
+        this.drawText(this.score.toString(), "18px Arial", "white", "left", x, textY, this.sctx);
         x += 4 + iconTextSpacing + this.score.toString().length * charWidth;
 
         // Draw active powerups

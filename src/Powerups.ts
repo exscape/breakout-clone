@@ -1,6 +1,6 @@
 import { Vec2 } from "./Vec2";
 
-export type PowerupType = "sticky" | "multiball" | "fireball" | "extralife";
+export type PowerupType = "sticky" | "multiball" | "fireball" | "extralife" | "ultrawide";
 
 export abstract class Powerup {
     type: PowerupType;
@@ -122,7 +122,13 @@ export class MultiballPowerup extends RepetitionLimitedPowerup {
 
 export class FireballPowerup extends TimeLimitedPowerup {
     constructor(position: Vec2) {
-        super("fireball", position, 125, 6000);
+        super("fireball", position, 125, 8000);
+    }
+}
+
+export class UltrawidePowerup extends TimeLimitedPowerup {
+    constructor(position: Vec2) {
+        super("ultrawide", position, 100, 15000);
     }
 }
 

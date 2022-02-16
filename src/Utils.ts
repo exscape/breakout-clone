@@ -26,3 +26,18 @@ export function debugAlert(s: string) {
         alert(s);
     }
 }
+
+export function formatTime(s: number) {
+    // t is in seconds
+    let h = Math.floor(s / 3600);
+    s %= 3600;
+    let m = Math.floor(s / 60);
+    s %= 60;
+    let ret = "";
+    if (h > 0)
+        ret += `${h.toString().padStart(2, "0")}:`;
+    ret += `${m.toString().padStart(2, "0")}:`;
+    ret += `${s.toString().padStart(2, "0")}`;
+
+    return ret;
+}

@@ -25,7 +25,7 @@ window.addEventListener('DOMContentLoaded', () => {
     let settings: Settings = {
         canvasWidth: 1264,
         canvasHeight: 720,
-        canvasMargin: 15,
+        canvasMargin: 2,
         statusbarHeight: 56,
         ballRadius: 13,
         paddleThickness: 25,
