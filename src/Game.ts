@@ -675,14 +675,25 @@ export class Game {
         x -= 2;
         const y = (this.settings.statusbarHeight - powerupSize) / 2;
         for (let powerup of this.activePowerups) {
-            this.sctx.drawImage(this.images[powerup.image], x, y, powerupSize, powerupSize);
+            let draw = true;
+
+            if (powerup instanceof TimeLimitedPowerup) {
+                // Blink when the time is running out
+                const remaining = powerup.maxTimeActive - powerup.activeTime;
+                if ((remaining < 1000 && remaining >= 750) || (remaining < 500 && remaining >= 250))
+                    draw = false;
+            }
+
+            if (draw)
+                this.sctx.drawImage(this.images[powerup.image], x, y, powerupSize, powerupSize);
+
             let ratio: number | undefined;
             if (powerup instanceof TimeLimitedPowerup)
                 ratio = (powerup.maxTimeActive - powerup.activeTime) / powerup.maxTimeActive;
             else if (powerup instanceof RepetitionLimitedPowerup)
                 ratio = (powerup.maxRepetitions - powerup.repetitions) / powerup.maxRepetitions;
 
-            if (ratio) {
+            if (ratio && draw) {
                 this.sctx.beginPath();
                 this.sctx.lineWidth = 3;
                 this.sctx.strokeStyle = "#69d747";
