@@ -178,7 +178,7 @@ export class Game {
         if (ev.key == "p" || ev.key == "P")
             this.togglePause();
         else if (ev.key == "a" || ev.key == "A")
-            this.spawnRandomPowerup(new Vec2(this.paddle.position.x + this.paddle.width / 2, this.paddle.position.y - this.settings.paddleThickness));
+            this.spawnRandomPowerup(new Vec2(this.paddle.position.x, this.paddle.position.y - this.settings.paddleThickness));
     }
 
     keyUp(ev: KeyboardEvent) {}
@@ -211,8 +211,8 @@ export class Game {
 
         // Used for ball-paddle and powerup-paddle collisions, below
         const paddleTopY = this.paddle.position.y - this.settings.paddleThickness / 2;
-        const paddleLeftmostX = this.paddle.position.x - this.settings.paddleThickness / 2; // End cap radius = thickness/2
-        const paddleRightmostX = this.paddle.position.x + this.paddle.width + this.settings.paddleThickness / 2; // As above
+        const paddleLeftmostX = this.paddle.position.x - this.paddle.width / 2;
+        const paddleRightmostX = this.paddle.position.x + + this.paddle.width / 2;
 
         // Handle collisions with walls and bricks
         for (let ball of this.balls) {
@@ -273,7 +273,7 @@ export class Game {
                 // First calculate the hit location (between 0 and 1, 0 being the leftmost point of the paddle),
                 // then calculate the bounce angle based on that location (0.5 = straight up),
                 // then calculate the velocity components based on the previous velocity magnitude and the bounce angle.
-                const hitLocation = (ball.position.x - paddleLeftmostX) / (this.paddle.width + this.settings.paddleThickness); // Width + end cap radius * 2
+                const hitLocation = (ball.position.x - paddleLeftmostX) / this.paddle.width;
                 const distanceOffCenter = Math.abs(0.5 - hitLocation);
                 const maxAngle = 80 * Math.PI/180;
                 const angle = 2 * distanceOffCenter * maxAngle * Math.sign(hitLocation - 0.5);
@@ -492,9 +492,11 @@ export class Game {
 
         // Draw the paddle
         // paddleThickness/2 is also the end cap radius, so we need to subtract that from x as well
-        this.ctx.drawImage(this.images["paddle_left"], this.paddle.position.x - Math.floor(this.settings.paddleThickness / 2), this.paddle.position.y - this.settings.paddleThickness / 2);
-        this.ctx.drawImage(this.images["paddle_center"], this.paddle.position.x - Math.floor(this.settings.paddleThickness / 2) + 12, this.paddle.position.y - this.settings.paddleThickness / 2);
-        this.ctx.drawImage(this.images["paddle_right"], this.paddle.position.x + this.paddle.width, this.paddle.position.y - this.settings.paddleThickness / 2);
+        const leftCapWidth = this.images["paddle_left"].width;
+        const rightCapWidth = this.images["paddle_right"].width;
+        this.ctx.drawImage(this.images["paddle_left"], this.paddle.position.x - Math.floor(this.paddle.width / 2), this.paddle.position.y - this.settings.paddleThickness / 2);
+        this.ctx.drawImage(this.images["paddle_center"], this.paddle.position.x - Math.ceil(this.paddle.width / 2) + leftCapWidth, this.paddle.position.y - this.settings.paddleThickness / 2);
+        this.ctx.drawImage(this.images["paddle_right"], this.paddle.position.x + Math.floor(this.paddle.width / 2) - rightCapWidth - 1, this.paddle.position.y - this.settings.paddleThickness / 2);
 
         // Draw the paddle sticky effect
         if (this.paddle.sticky) {
@@ -502,8 +504,9 @@ export class Game {
             this.ctx.beginPath();
             this.ctx.strokeStyle = "#21c00a"; // "#45ff45";
             this.ctx.lineCap = "round";
-            this.ctx.moveTo(this.paddle.position.x, this.paddle.position.y);
-            this.ctx.lineTo(this.paddle.position.x + this.paddle.width, this.paddle.position.y);
+            const lineCapWidth = this.settings.paddleThickness / 2;
+            this.ctx.moveTo(this.paddle.position.x - this.paddle.width / 2 + lineCapWidth, this.paddle.position.y);
+            this.ctx.lineTo(this.paddle.position.x + this.paddle.width / 2 - lineCapWidth, this.paddle.position.y);
             this.ctx.lineWidth = this.settings.paddleThickness;
             this.ctx.stroke();
             this.ctx.globalAlpha = 1.0;
@@ -523,7 +526,7 @@ export class Game {
 
         // Draw the aim line
         if (this.shouldDrawAimLine()) {
-            let originX = this.paddle.position.x + this.paddle.width / 2;
+            let originX = this.paddle.position.x;
             let originY = this.paddle.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1;
             let targetX = originX + this.settings.aimLineLength * Math.sin(this.paddle.aimAngle);
             let targetY = originY - this.settings.aimLineLength * Math.cos(this.paddle.aimAngle);

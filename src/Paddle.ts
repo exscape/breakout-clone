@@ -13,7 +13,7 @@ export class Paddle {
     aimAngle: number = 0; // In radians, 0 meaning straight up
 
     constructor(settings: Settings) {
-        this.width = 100;
+        this.width = 125;
         this.position = new Vec2((settings.canvasWidth - this.width) / 2, settings.canvasHeight * 0.97);
         this.stuckBall = null;
         this.settings = settings;
@@ -23,7 +23,7 @@ export class Paddle {
     setStuckBall(ball: Ball) {
         this.stuckBall = ball;
         if (ball) {
-            this.stuckBall.position = new Vec2(this.position.x + this.width / 2, this.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1);
+            this.stuckBall.position = new Vec2(this.position.x, this.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1);
             this.stuckBall.stuck = true;
         }
     }
@@ -47,7 +47,7 @@ export class Paddle {
         let orig = this.position.x;
         this.position.x += deltaX;
 
-        if (this.position.x + this.width > this.settings.canvasWidth - this.settings.canvasMargin)
+        if (this.position.x + this.width / 2 > this.settings.canvasWidth - this.settings.canvasMargin)
             this.position.x = this.settings.canvasWidth - this.settings.canvasMargin - this.width;
         else if (this.position.x < this.settings.canvasMargin)
             this.position.x = this.settings.canvasMargin;
