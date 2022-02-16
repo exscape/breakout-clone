@@ -116,6 +116,6 @@ export class MultiballPowerup extends RepetitionLimitedPowerup {
 
 export class FireballPowerup extends TimeLimitedPowerup {
     constructor(position: Vec2) {
-        super("fireball", position, 125, 8000);
+        super("fireball", position, 125, 6000);
     }
 }

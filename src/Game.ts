@@ -360,8 +360,10 @@ export class Game {
 
     private checkPowerupExpiry(dt: number) {
         for (let p of this.activePowerups) {
-            if (p instanceof TimeLimitedPowerup)
-                p.tick(dt);
+            if (p instanceof TimeLimitedPowerup) {
+                if (!(this.balls.length === 1 && this.paddle.stuckBall))
+                    p.tick(dt); // TODO: Ensure we want the same behaviour for all powerups! Right now this is just fireball
+            }
         }
         this.activePowerups = this.activePowerups.filter(p => !p.expired);
     }
