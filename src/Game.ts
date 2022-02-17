@@ -17,6 +17,28 @@ export class Level {
     bricks: (Brick | undefined)[][] = [];
 }
 
+let introLevel =
+`..............
+..............
+..............
+41*4829484*283
+.4*835***9*45.
+.8*395*.*7*72.
+.4*674*.*6*46.
+.8*382*.*4*62.
+.8***5***4***.
+.985859396354.
+.657998674672.
+.684598674962.
+.498345693858.
+.834732842252.
+..............
+..............
+..............
+..............
+..............
+..............`;
+
 export class Game {
     canvas: HTMLCanvasElement;
     statusbarCanvas: HTMLCanvasElement;
@@ -113,7 +135,7 @@ export class Game {
             this.totalGameTime = 0;
 
             this.level.bricks.length = 0;
-            this.initializeBricks();
+            this.initializeBricks(introLevel);
             this.bricksRemaining = _.flatten(this.level.bricks)
                                     .filter(b => b != undefined && !b.indestructible)
                                     .length;
@@ -130,26 +152,38 @@ export class Game {
         this.gameWon = true;
     }
 
-    initializeBricks() {
-        // Will be changed massively later.
-        // For now, we have "brick spots" along the entire canvas width, but the 1st map has the leftmost and rightmost columns empty.
-        // Previously, those spots were empty and coded such that they must ALWAYS BE empty, but I don't want that to be the case later.
-        // We moved from 12 x 10 fixed bricks when making this change.
-        const firstRow = 3;
-        const xMargin = 1;
-        const spacing = 4;
-        const lastRow = this.levelHeight - 6;
-
+    initializeBricks(levelText: string) {
         this.level.bricks = Array(this.levelHeight).fill(undefined).map(_ => Array(this.levelWidth).fill(undefined));
 
-        for (let y = firstRow; y < lastRow; y++) {
-            for (let x = xMargin; x < this.levelWidth - xMargin; x++) {
+        let level2D: string[][] = [];
+
+        for (let row of levelText.split('\n')) {
+            let chars = row.split('');
+            if (chars.length !== this.levelWidth) {
+                alert(`Invalid level: one or more lines is not exactly ${this.levelWidth} characters`);
+                return;
+            }
+            level2D.push(chars);
+        }
+        if (level2D.length !== this.levelHeight) {
+            alert(`Invalid level: not exactly ${this.levelHeight} lines`);
+            return;
+        }
+
+        const spacing = 4;
+
+        for (let y = 0; y < this.levelHeight; y++) {
+            for (let x = 0; x < this.levelWidth; x++) {
                 let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
                 let yCoord = spacing + y * (this.settings.brickHeight + (y > 0 ? spacing : 0));
-                if (_.random(1,100) > 90)
+                let c = level2D[y][x];
+                let num = parseInt(c);
+                if (!isNaN(num)) {
+                    this.level.bricks[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick${num}`, this.settings, 10, 1);
+                }
+                else if (c === '*') {
                     this.level.bricks[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick_indestructible`, this.settings, 10, 1, true);
-                else
-                    this.level.bricks[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick${_.random(1, 9)}`, this.settings, 10, 1);
+                }
             }
         }
     }
