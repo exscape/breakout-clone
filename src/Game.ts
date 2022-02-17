@@ -313,7 +313,7 @@ export class Game {
             if (this.paddle.sticky > 0 && this.paddle.stuckBall == null) {
                 // The ball should stick to the paddle.
                 // If the paddle is sticky but HAS a stuck ball, we let it bounce as usual.
-                this.paddle.setStuckBall(ball);
+                this.paddle.setStuckBall(ball, false);
                 ball.velocity.x = 0;
                 ball.velocity.y = 0;
 
@@ -608,7 +608,7 @@ export class Game {
 
         // Draw the aim line
         if (this.shouldDrawAimLine()) {
-            let originX = this.paddle.position.x;
+            let originX = this.paddle.stuckBall ? this.paddle.stuckBall.position.x : this.paddle.position.x;
             let originY = this.paddle.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1;
             let targetX = originX + this.settings.aimLineLength * Math.sin(this.paddle.aimAngle);
             let targetY = originY - this.settings.aimLineLength * Math.cos(this.paddle.aimAngle);
