@@ -42,6 +42,8 @@ export class Game {
     livesRemaining: number = 0;
     score: number = 0;
 
+    devMenuOpen: boolean = false;
+
     images: Record<string, HTMLImageElement> = {};
 
     constructor(canvas: HTMLCanvasElement, statusbarCanvas: HTMLCanvasElement, settings: Settings) {
@@ -179,8 +181,34 @@ export class Game {
     keyDown(ev: KeyboardEvent) {
         if (ev.key == "p" || ev.key == "P")
             this.togglePause();
-        else if (ev.key == "a" || ev.key == "A")
-            this.spawnRandomPowerup(new Vec2(this.paddle.position.x, this.paddle.position.y - this.settings.paddleThickness));
+        else if (ev.key == "a" || ev.key == "A") {
+            this.devMenuOpen = !this.devMenuOpen;
+            return;
+        }
+
+        if (this.devMenuOpen) {
+            if (!["1", "2", "3", "4", "5"].includes(ev.key))
+                return;
+
+            let powerup: Powerup;
+            if (ev.key === "1") powerup = this.createPowerup("sticky");
+            else if (ev.key === "2") powerup = this.createPowerup("ultrawide");
+            else if (ev.key === "3") powerup = this.createPowerup("multiball");
+            else if (ev.key === "4") powerup = this.createPowerup("fireball");
+            else if (ev.key === "5") powerup = this.createPowerup("extralife");
+            else throw new Error("Quiet, compiler! (One of the above is ALWAYS true due to the prior above)");
+
+            let existingPowerup = this.getPowerup(powerup.type);
+            if (existingPowerup)
+                existingPowerup.addInstance();
+            else {
+                powerup.activate();
+                if (!(powerup instanceof InstantEffectPowerup))
+                    this.activePowerups.push(powerup);
+            }
+
+            this.devMenuOpen = false;
+        }
     }
 
     keyUp(ev: KeyboardEvent) {}
@@ -429,8 +457,25 @@ export class Game {
     private spawnRandomPowerup(spawnPosition: Vec2) {
         let powerup: Powerup;
         let rand = _.random(0, 4);
-        if (rand == 0) {
-            // Sticky powerup
+
+        // TODO: have separate probabilities for each powerup in the future!
+        if (rand == 0)
+            powerup = this.createPowerup("sticky", spawnPosition);
+        else if (rand == 1)
+            powerup = this.createPowerup("multiball", spawnPosition);
+        else if (rand == 2)
+            powerup = this.createPowerup("fireball", spawnPosition);
+        else if (rand == 3)
+            powerup = this.createPowerup("extralife", spawnPosition);
+        else
+            powerup = this.createPowerup("ultrawide", spawnPosition);
+
+        this.visiblePowerups.push(powerup);
+    }
+
+    createPowerup(type: PowerupType, spawnPosition = new Vec2(0, 0)) {
+        let powerup: Powerup;
+        if (type === "sticky") {
             powerup = new StickyPowerup(spawnPosition);
             powerup.setActivatedCallback(() => {
                 this.paddle.sticky++;
@@ -439,12 +484,10 @@ export class Game {
                 this.paddle.sticky--;
             });
         }
-        else if (rand == 1) {
-            // Multiball powerup
+        else if (type === "multiball") {
             powerup = new MultiballPowerup(spawnPosition);
         }
-        else if (rand == 2) {
-            // Fireball powerup
+        else if (type === "fireball") {
             powerup = new FireballPowerup(spawnPosition);
             powerup.setActivatedCallback(() => {
                 for (let ball of this.balls) {
@@ -457,16 +500,14 @@ export class Game {
                 }
             });
         }
-        else if (rand == 3) {
-            // Extra life powerup
+        else if (type === "extralife") {
             powerup = new ExtraLifePowerup(spawnPosition);
             powerup.setActivatedCallback(() => {
                 this.livesRemaining += 1;
                 // TODO: play sound
             })
         }
-        else {
-            // Ultrawide powerup
+        else if (type === "ultrawide") {
             powerup = new UltrawidePowerup(spawnPosition);
             powerup.setActivatedCallback(() => {
                 this.paddle.ultrawideTransitionTime = 0;
@@ -477,7 +518,10 @@ export class Game {
                 this.paddle.ultrawide = false;
             });
         }
-        this.visiblePowerups.push(powerup);
+        else
+            throw new Error("Invalid powerup type passed to createPowerup");
+
+        return powerup;
     }
 
     gameLoop(timestamp: number) {
@@ -606,6 +650,15 @@ export class Game {
                 this.ctx.lineTo(ball.position.x + ball.velocity.x * 100, ball.position.y + ball.velocity.y * 100);
                 this.ctx.stroke();
             }
+        }
+
+        if (this.devMenuOpen) {
+            this.drawText("1  Sticky", "20px Arial", "black", "left", 10, 500);
+            this.drawText("2  Ultrawide", "20px Arial", "black", "left", 10, 520);
+            this.drawText("3  Multiball", "20px Arial", "black", "left", 10, 540);
+            this.drawText("4  Fireball", "20px Arial", "black", "left", 10, 560);
+            this.drawText("5  Extra life", "20px Arial", "black", "left", 10, 580);
+            this.drawText("A  Close menu", "20px Arial", "black", "left", 10, 600);
         }
 
         if (this.gameWon) {
