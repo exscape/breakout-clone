@@ -15,7 +15,7 @@ export class Paddle {
     readonly ultrawideWidth = 325;
     ultrawide: boolean = false;
     ultrawideTransitionTime = 0; // How far in the animation we currently are
-    stuckBallOffset: number = 0;
+    stuckBallXRatio: number = 0; // 0-1, ratio of the paddle's width
 
     constructor(settings: Settings) {
         this.width = this.defaultWidth;
@@ -29,7 +29,7 @@ export class Paddle {
         this.stuckBall = ball;
         if (ball) {
             const newX = (this.sticky && !recenterBall) ? ball.position.x : this.position.x;
-            this.stuckBallOffset = newX - this.position.x;
+            this.stuckBallXRatio = 0.5 + (newX - this.position.x) / (2 * this.width);
             this.stuckBall.position = new Vec2(newX, this.position.y - this.settings.ballRadius - this.settings.paddleThickness / 2 + 1);
             this.stuckBall.stuck = true;
         }
@@ -57,7 +57,7 @@ export class Paddle {
             this.position.x = this.settings.canvasMargin + this.width / 2;
 
         if (this.stuckBall)
-            this.stuckBall.position.x = this.position.x + this.stuckBallOffset;
+            this.stuckBall.position.x = (this.position.x - this.width) + 2 * this.width * this.stuckBallXRatio;
     }
 
     move(deltaX: number, deltaY: number) {
