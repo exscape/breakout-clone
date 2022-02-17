@@ -686,12 +686,16 @@ export class Game {
 
         const powerupSize = 36; // Including the ring, drawn on top of the image
         const powerupSpacing = 8;
-        const iconTextSpacing = 6;
+        const iconTextSpacing = 8;
+
+        const textColor = "#281f17";
+        const fontSize = 20;
+        const fontName = "Arial";
+        const charWidth = 12;
+        const textY = this.settings.statusbarHeight / 2;
 
         const iconSize = 24;
         const iconY = (this.settings.statusbarHeight - iconSize) / 2;
-        const textY = this.settings.statusbarHeight / 2;
-        const charWidth = 11;
 
         let x = powerupSpacing;
 
@@ -708,20 +712,20 @@ export class Game {
             lives = "🕱";
             width = 1;
         }
-        this.drawText(lives, "18px Arial", "white", "left", x, textY, this.sctx);
+        this.drawText(lives, `${fontSize}px ${fontName}`, textColor, "left", x, textY, this.sctx);
         x += 4 + iconTextSpacing + width * charWidth;
 
         // Draw the total time taken
         this.sctx.drawImage(this.images["clock"], x, iconY);
-        x += iconSize + iconTextSpacing;
+        x += iconSize + iconTextSpacing - 2;
         let time = formatTime(Math.floor(this.totalGameTime / 1000));
-        this.drawText(time, "18px Arial", "white", "left", x, textY, this.sctx);
+        this.drawText(time, `${fontSize}px ${fontName}`, textColor, "left", x, textY, this.sctx);
         x += iconTextSpacing + time.length * charWidth - 3;
 
         // Draw the score
         this.sctx.drawImage(this.images["score"], x, iconY);
-        x += iconSize + iconTextSpacing;
-        this.drawText(this.score.toString(), "18px Arial", "white", "left", x, textY, this.sctx);
+        x += iconSize + iconTextSpacing + 2;
+        this.drawText(this.score.toString(), `${fontSize}px ${fontName}`, textColor, "left", x, textY, this.sctx);
         x += 4 + iconTextSpacing + this.score.toString().length * charWidth;
 
         // Draw active powerups
