@@ -13,14 +13,18 @@ function randomColor() {
     return _.sample(colors)!;
 }
 
+export class Level {
+    bricks: (Brick | undefined)[][] = [];
+}
+
 export class Game {
     canvas: HTMLCanvasElement;
     statusbarCanvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     sctx: CanvasRenderingContext2D;
     paddle: Paddle;
+    level: Level;
     balls: Ball[] = [];
-    bricks: Brick[] = [];
     settings: Settings;
     collisionHandler: CollisionHandler;
 
@@ -31,6 +35,9 @@ export class Game {
     gameWon: boolean = false;
     gamePaused: boolean = false;
     bricksRemaining: number = 0;
+
+    readonly levelWidth = 14;
+    readonly levelHeight = 20;
 
     activePowerups: Powerup[] = []; // Powerups that have been picked up and have an effect
     visiblePowerups: Powerup[] = []; // Powerups currently falling, yet to be picked up or lost
@@ -52,6 +59,8 @@ export class Game {
         this.statusbarCanvas = statusbarCanvas;
         this.ctx = canvas.getContext('2d')!!;
         this.sctx = statusbarCanvas.getContext('2d')!!;
+
+        this.level = new Level();
 
         this.paddle = new Paddle(settings);
         this.settings = settings;
@@ -102,12 +111,12 @@ export class Game {
 
         if (!partialReset) {
             this.totalGameTime = 0;
-            this.bricks.length = 0;
-            this.initializeBricks();
-            this.bricksRemaining = this.bricks
-                                       .filter(b => !b.indestructible)
-                                       .length;
 
+            this.level.bricks.length = 0;
+            this.initializeBricks();
+            this.bricksRemaining = _.flatten(this.level.bricks)
+                                    .filter(b => b != undefined && !b.indestructible)
+                                    .length;
             this.livesRemaining = 3;
             this.score = 0;
         }
@@ -126,20 +135,21 @@ export class Game {
         // For now, we have "brick spots" along the entire canvas width, but the 1st map has the leftmost and rightmost columns empty.
         // Previously, those spots were empty and coded such that they must ALWAYS BE empty, but I don't want that to be the case later.
         // We moved from 12 x 10 fixed bricks when making this change.
-        const numBricksX = 14;
-        const numBricksY = 14;
         const firstRow = 3;
         const xMargin = 1;
         const spacing = 4;
+        const lastRow = this.levelHeight - 6;
 
-        for (let y = firstRow; y < numBricksY; y++) {
-            for (let x = xMargin; x < numBricksX - xMargin; x++) {
+        this.level.bricks = Array(this.levelHeight).fill(undefined).map(_ => Array(this.levelWidth).fill(undefined));
+
+        for (let y = firstRow; y < lastRow; y++) {
+            for (let x = xMargin; x < this.levelWidth - xMargin; x++) {
                 let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
                 let yCoord = spacing + y * (this.settings.brickHeight + (y > 0 ? spacing : 0));
                 if (_.random(1,100) > 90)
-                    this.bricks.push(new Brick(new Vec2(xCoord, yCoord), `brick_indestructible`, this.settings, 10, 1, true));
+                    this.level.bricks[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick_indestructible`, this.settings, 10, 1, true);
                 else
-                    this.bricks.push(new Brick(new Vec2(xCoord, yCoord), `brick${_.random(1, 9)}`, this.settings, 10, 1));
+                    this.level.bricks[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick${_.random(1, 9)}`, this.settings, 10, 1);
             }
         }
     }
@@ -356,45 +366,49 @@ export class Game {
     }
 
     handleBrickCollisions(ball: Ball, dt: number) {
-        for (let i = 0; i < this.bricks.length; i++) {
-            let brick = this.bricks[i];
-            if (!this.collisionHandler.brickCollision(ball, brick, dt))
-                continue;
+        for (let y = 0; y < this.levelHeight; y++) {
+            for (let x = 0; x < this.levelWidth; x++) {
+                let brick = this.level.bricks[y][x];
+                if (brick === undefined) continue;
 
-            ball.collided = true;
+                if (!this.collisionHandler.brickCollision(ball, brick, dt))
+                    continue;
 
-            if (!brick.indestructible && !ball.fireball)
-                brick.health--;
-            else if (!brick.indestructible && ball.fireball)
-                brick.health = 0;
+                ball.collided = true;
 
-            if (brick.health <= 0) {
-                let delta = (Date.now() - this.lastBrickBreak) / 1000;
+                if (!brick.indestructible && !ball.fireball)
+                    brick.health--;
+                else if (!brick.indestructible && ball.fireball)
+                    brick.health = 0;
 
-                let multiplier = 1;
-                if (delta < 0.1)
-                    multiplier = 1.3; // Likely fireball
-                else if (delta < 0.35)
-                    multiplier = 1.5; // E.g. tight bouncing between top and bricks
-                else if (delta < 1.2)
-                    multiplier = 1.2; // Standard bouncing paddle-brick-paddle-brick
+                if (brick.health <= 0) {
+                    let delta = (Date.now() - this.lastBrickBreak) / 1000;
 
-                this.score += Math.floor(multiplier * brick.score);
-                this.bricks.splice(i, 1);
-                this.bricksRemaining--;
+                    let multiplier = 1;
+                    if (delta < 0.1)
+                        multiplier = 1.3; // Likely fireball
+                    else if (delta < 0.35)
+                        multiplier = 1.5; // E.g. tight bouncing between top and bricks
+                    else if (delta < 1.2)
+                        multiplier = 1.2; // Standard bouncing paddle-brick-paddle-brick
 
-                if (_.random(1, 100) <= this.settings.powerupProbability) {
-                    let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
-                    this.spawnRandomPowerup(spawnPosition);
+                    this.score += Math.floor(multiplier * brick.score);
+                    this.level.bricks[y][x] = undefined;
+                    this.bricksRemaining--;
+
+                    if (_.random(1, 100) <= this.settings.powerupProbability) {
+                        let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
+                        this.spawnRandomPowerup(spawnPosition);
+                    }
+
+                    this.lastBrickBreak = Date.now();
                 }
 
-                this.lastBrickBreak = Date.now();
+                if (this.bricksRemaining <= 0)
+                    this.win();
+
+                break; // Limit collisions to the first block tested
             }
-
-            if (this.bricksRemaining <= 0)
-                this.win();
-
-            break; // Limit collisions to the first block tested
         }
     }
 
@@ -608,7 +622,9 @@ export class Game {
         }
 
         // Draw the bricks
-        for (let brick of this.bricks) {
+        for (let brick of _.flatten(this.level.bricks)) {
+            if (brick === undefined)
+                continue;
             this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
         }
 
