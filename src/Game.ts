@@ -796,13 +796,18 @@ export class Game {
         const y = (this.settings.statusbarHeight - powerupSize) / 2;
         for (let powerup of this.activePowerups) {
             let draw = true;
+            let drawRed = false;
 
             if (powerup instanceof TimeLimitedPowerup) {
                 // Blink when the time is running out
                 const remaining = powerup.maxTimeActive - powerup.activeTime;
                 if ((remaining < 1000 && remaining >= 750) || (remaining < 500 && remaining >= 250))
                     draw = false;
+                if (remaining < powerup.originalMaxTimeActive / 5 || remaining < 1500)
+                    drawRed = true;
             }
+            else if (powerup instanceof RepetitionLimitedPowerup && (powerup.maxRepetitions - powerup.repetitions) <= 1)
+                drawRed = true;
 
             if (draw)
                 this.sctx.drawImage(this.images[powerup.image], x, y, powerupSize, powerupSize);
@@ -816,7 +821,7 @@ export class Game {
             if (ratio && draw) {
                 this.sctx.beginPath();
                 this.sctx.lineWidth = 3;
-                this.sctx.strokeStyle = "#69d747";
+                this.sctx.strokeStyle = drawRed ? "#ff2020" : "#69d747";
                 const rot = Math.PI/2;
                 this.sctx.arc(x + powerupSize / 2, y + powerupSize / 2, powerupSize / 2, (2 * Math.PI) - (2 * Math.PI)*ratio - rot, 2 * Math.PI - rot);
                 this.sctx.stroke();
