@@ -41,6 +41,7 @@ export class Game {
     totalGameTime: number = 0;
     livesRemaining: number = 0;
     score: number = 0;
+    lastBrickBreak: number = 0;
 
     devMenuOpen: boolean = false;
 
@@ -368,7 +369,17 @@ export class Game {
                 brick.health = 0;
 
             if (brick.health <= 0) {
-                this.score += Math.floor(brick.score * (ball.fireball ? 1.40 : 1));
+                let delta = (Date.now() - this.lastBrickBreak) / 1000;
+
+                let multiplier = 1;
+                if (delta < 0.1)
+                    multiplier = 1.3; // Likely fireball
+                else if (delta < 0.35)
+                    multiplier = 1.5; // E.g. tight bouncing between top and bricks
+                else if (delta < 1.2)
+                    multiplier = 1.2; // Standard bouncing paddle-brick-paddle-brick
+
+                this.score += Math.floor(multiplier * brick.score);
                 this.bricks.splice(i, 1);
                 this.bricksRemaining--;
 
@@ -376,6 +387,8 @@ export class Game {
                     let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
                     this.spawnRandomPowerup(spawnPosition);
                 }
+
+                this.lastBrickBreak = Date.now();
             }
 
             if (this.bricksRemaining <= 0)
