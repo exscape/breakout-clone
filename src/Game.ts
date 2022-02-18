@@ -21,17 +21,17 @@ let introLevel =
 `..............
 ..............
 ..............
-41*4829484*283
-.4*835***9*45.
-.8*395*.*7*72.
-.4*674*.*6*46.
-.8*382*.*4*62.
-.8***5***4***.
-.985859396354.
-.657998674672.
-.684598674962.
-.498345693858.
-.834732842252.
+.12*456789A*C.
+.12*456***A*C.
+.12*456*.*A*C.
+.12*456*.*A*C.
+.12*456*.*A*C.
+.12***6***A***
+.123456789ABC.
+.123456789ABC.
+.123456789ABC.
+.123456789ABC.
+.123456789ABC.
 ..............
 ..............
 ..............
@@ -91,7 +91,7 @@ export class Game {
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
                               "fireball", "statusbar", "heart", "score", "clock"];
-        for (let i = 1; i <= 9; i++)
+        for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
         for (let name of imageFilenames) {
@@ -177,7 +177,7 @@ export class Game {
                 let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
                 let yCoord = spacing + y * (this.settings.brickHeight + (y > 0 ? spacing : 0));
                 let c = level2D[y][x];
-                let num = parseInt(c);
+                let num = parseInt(c, 16);
                 if (!isNaN(num)) {
                     this.level.bricks[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick${num}`, this.settings, 10, 1);
                 }
