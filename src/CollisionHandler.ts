@@ -160,16 +160,14 @@ export class CollisionHandler {
 
             // If one of the balls is stuck, ensure it's firstBall, to make the rest of the code easier.
             // Collisions with a stuck ball are treated like collisions with a wall, i.e. the velocity is reflected about the tangent axis
-            // (i.e along the axis connecting the ball centers) while the stuck ball is not affected at all.
+            // (i.e *along* the axis connecting the ball centers) while the stuck ball is not affected at all.
             if (secondBall.stuck)
                 [firstBall, secondBall] = [secondBall, firstBall];
             if (secondBall.stuck)
                 debugAlert("BUG: firstBall stuck despite swap -- multiple stuck balls!");
 
-            // TODO: reduce allocation here?
-
             // Step 1
-            let normal = new Vec2(firstBall.position.x - secondBall.position.x, firstBall.position.y - secondBall.position.y);
+            let normal = new Vec2(firstBall.position).subtract(secondBall.position);
 
             // Rare, but happens in testing when you launch a TON of balls straight up and let them bounce.
             // Causes major bugs if not handled. Ignoring the collision is not ideal, but this is SO unlikely to happen
@@ -184,31 +182,21 @@ export class CollisionHandler {
                 debugAlert("MATH ERROR: tangent vector not a unit vector");
 
             // Step 3 and 4 (step 2 is not necessary)
-            let v1_normal_pre = normal.dot(firstBall.velocity);
-            let v1_tangent = tangent.dot(firstBall.velocity);
-            let v2_normal_pre = normal.dot(secondBall.velocity);
-            let v2_tangent = tangent.dot(secondBall.velocity);
+            let v1 = { normal: normal.dot(firstBall.velocity), tangent: tangent.dot(firstBall.velocity ) };
+            let v2 = { normal: normal.dot(secondBall.velocity), tangent: tangent.dot(secondBall.velocity ) };
 
             // Step 5 (for balls with equal mass)
             // If one ball is stuck (always firstBall, in that case), reflect the ball as if it hit a wall instead of trading speeds.
-            let v1_normal_post = v2_normal_pre;
-            let v2_normal_post = firstBall.stuck ? -v2_normal_pre : v1_normal_pre;
+            let v1_post = { normal: v2.normal, tangent: v1.tangent };
+            let v2_post = { normal: firstBall.stuck ? -v2.normal : v1.normal, tangent: v2.tangent };
 
             // Step 6
-            let v1_normal_vec = new Vec2(normal);
-            v1_normal_vec.scale(v1_normal_post);
-            let v1_tangent_vec = new Vec2(tangent);
-            v1_tangent_vec.scale(v1_tangent);
-            let v2_normal_vec = new Vec2(normal);
-            v2_normal_vec.scale(v2_normal_post);
-            let v2_tangent_vec = new Vec2(tangent);
-            v2_tangent_vec.scale(v2_tangent);
+            let v1_vec = new Vec2(normal).scale(v1_post.normal).add(new Vec2(tangent).scale(v1_post.tangent));
+            let v2_vec = new Vec2(normal).scale(v2_post.normal).add(new Vec2(tangent).scale(v2_post.tangent));
 
             // Step 7
-            firstBall.velocity = v1_normal_vec;
-            firstBall.velocity.add(v1_tangent_vec);
-            secondBall.velocity = v2_normal_vec;
-            secondBall.velocity.add(v2_tangent_vec);
+            firstBall.velocity = v1_vec;
+            secondBall.velocity = v2_vec;
 
             // Step 8, added by me: we can't really have 100% physically accurate collisions in this game.
             // If the ball stops or moves extremely slowly, that just about ruins the gameplay, so we enforce a fixed

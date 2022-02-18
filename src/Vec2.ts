@@ -24,24 +24,34 @@ export class Vec2 {
         return this.x * other.x + this.y * other.y;
     }
 
-    scale(scalar: number): void {
+    scale(scalar: number): Vec2 {
         this.x *= scalar;
         this.y *= scalar;
+        return this;
     }
 
-    add(other: Vec2): void {
+    add(other: Vec2): Vec2 {
         this.x += other.x;
         this.y += other.y;
+        return this;
     }
 
-    normalize(): void {
+    subtract(other: Vec2): Vec2 {
+        this.x -= other.x;
+        this.y -= other.y;
+        return this;
+    }
+
+    normalize(): Vec2 {
         const m = this.mag();
         if (m == 0)
-            return; // A normalized 0-length vector is a 0-length vector
+            return this; // A normalized 0-length vector is a 0-length vector
         this.x /= m;
         this.y /= m;
         if (Math.abs(1 - this.mag()) > 0.01)
             debugAlert("MATH ERROR: normalize() didn't yield a length-1 vector");
+
+        return this;
     }
 
     setMagnitude(mag: number): void {
