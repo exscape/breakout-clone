@@ -12,27 +12,8 @@ export class Level {
     bricks: (Brick | undefined)[][] = [];
 }
 
-let introLevel =
-`..............
-..............
-..............
-.12*456789A*C.
-.12*456***A*C.
-.12*456*.*A*C.
-.12*456*.*A*C.
-.12*456*.*A*C.
-.12***6***A***
-.123456789ABC.
-.123456789ABC.
-.123456789ABC.
-.123456789ABC.
-.123456789ABC.
-..............
-..............
-..............
-..............
-..............
-..............`;
+type LevelType = "campaign" | "standalone";
+type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, filename: string, author: string };
 
 export class Game {
     canvas: HTMLCanvasElement;
@@ -60,7 +41,12 @@ export class Game {
     visiblePowerups: Powerup[] = []; // Powerups currently falling, yet to be picked up or lost
     aimDashOffset: number = 0; // Used to animate the aiming line for the sticky powerup
 
+    levelLoadingCompleted: boolean = false;
+    imageLoadingCompleted: boolean = false;
     loadingCompleted: boolean = false;
+    loadingFailed: boolean = false;
+
+    levelText: string | undefined;
 
     totalGameTime: number = 0;
     livesRemaining: number = 0;
@@ -83,6 +69,8 @@ export class Game {
         this.settings = settings;
         this.collisionHandler = new CollisionHandler(settings);
 
+        this.fetchLevelIndex();
+
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
                               "fireball", "statusbar", "heart", "score", "clock"];
@@ -94,8 +82,13 @@ export class Game {
             let self = this;
             img.addEventListener('load', function () {
                 self.images[name] = this;
-                if (Object.keys(self.images).length == imageFilenames.length)
-                    self.loadingCompleted = true;
+                if (Object.keys(self.images).length == imageFilenames.length) {
+                    self.imageLoadingCompleted = true;
+                    if (self.levelLoadingCompleted) {
+                        self.loadingCompleted = true;
+                        self.init();
+                    }
+                }
             }, false);
             img.addEventListener('error', (ev: ErrorEvent) => {
                 alert(`Failed to load image "${name}.png"!` + (ev.message ? ` ${ev.message}` : ""));
@@ -103,15 +96,21 @@ export class Game {
             img.src = `img/${name}.png`;
         }
 
-        this.reset();
-
         this.lastRender = 0;
+    }
+
+    init() {
+        this.reset();
         window.requestAnimationFrame((dt) => this.gameLoop(dt));
     }
 
     reset() {
         // If the game is still active and lives remain, we do a partial reset.
         // Otherwise, reset everything -- i.e. restart the game entirely.
+
+        if (!this.levelText)
+            alert("Reset called with lastLevel undefined");
+
         let partialReset = !this.gameLost && !this.gameWon && this.livesRemaining > 0;
 
         this.lifeLost = false;
@@ -130,7 +129,10 @@ export class Game {
             this.totalGameTime = 0;
 
             this.level.bricks.length = 0;
-            this.initializeBricks(introLevel);
+            if (!this.loadLevel(this.levelText!!)) {
+                this.loadingCompleted = false;
+                this.loadingFailed = true;
+            }
             this.bricksRemaining = _.flatten(this.level.bricks)
                                     .filter(b => b != undefined && !b.indestructible)
                                     .length;
@@ -138,31 +140,96 @@ export class Game {
             this.score = 0;
         }
 
-        let ball = new Ball(new Vec2(), new Vec2(), "black");
+        let ball = new Ball(new Vec2(), new Vec2());
         this.balls.push(ball);
         this.paddle.setStuckBall(ball);
+    }
+
+    fetchLevelIndex() {
+        fetch('/game/level_index.php', {
+                method: "GET",
+                cache: 'no-cache'
+        })
+        .then(response => response.json())
+        .then(json => {
+            // Fetch the campaign level with the lowest levelnumber
+            if ("type" in json && json.type === "error") {
+                alert("Failed to read level index: " + json.error);
+                return;
+            }
+            else if (!("result" in json)) {
+                alert("Invalid answer from server");
+                return;
+            }
+
+            let metadataArray = json.result as LevelMetadata[];
+
+            if (metadataArray.length <= 0) {
+                alert("No levels found in level index!");
+                return;
+            }
+
+            let firstLevel = metadataArray.filter(m => m.type === "campaign")
+                                          .reduce((prev, current) => {
+                                            return (prev.levelnumber < current.levelnumber) ? prev : current
+                                          }, metadataArray[0]);
+
+            this.fetchLevel(`levels/${firstLevel.filename}`);
+        })
+        .catch(error => {
+            alert("Failed to download level index: " + error);
+        });
+    }
+
+    fetchLevel(path: string) {
+        fetch(`/game/${path}`, {
+                method: "GET",
+                cache: 'no-cache'
+        })
+        .then(response => {
+            if (response.ok)
+                return response.text()
+            else
+                throw new Error("HTTP error");
+        })
+        .then(text => {
+            this.levelLoadingCompleted = true;
+            this.levelText = text;
+            if (this.imageLoadingCompleted) {
+                this.loadingCompleted = true;
+                this.init();
+            }
+        })
+        .catch(error => {
+            alert("Failed to download level index: " + error);
+        });
     }
 
     win() {
         this.gameWon = true;
     }
 
-    initializeBricks(levelText: string) {
+    loadLevel(levelText: string): boolean {
         this.level.bricks = Array(this.levelHeight).fill(undefined).map(_ => Array(this.levelWidth).fill(undefined));
 
         let level2D: string[][] = [];
 
+        let count = 0;
         for (let row of levelText.split('\n')) {
+            count++;
+            if (count > this.levelHeight)
+                break;
+
             let chars = row.split('');
             if (chars.length !== this.levelWidth) {
                 alert(`Invalid level: one or more lines is not exactly ${this.levelWidth} characters`);
-                return;
+                return false;
             }
             level2D.push(chars);
         }
         if (level2D.length !== this.levelHeight) {
             alert(`Invalid level: not exactly ${this.levelHeight} lines`);
-            return;
+            return false;
         }
 
         const spacing = 4;
@@ -181,6 +248,8 @@ export class Game {
                 }
             }
         }
+
+        return true;
     }
 
     mouseMoved(e: MouseEvent) {
@@ -617,8 +686,12 @@ export class Game {
         this.ctx.fillStyle = this.settings.canvasBackground;
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
 
-        if (!this.loadingCompleted) {
+        if (!this.loadingCompleted && !this.loadingFailed) {
             this.drawText("Loading images...", "30px Arial", "#ee3030", "center", 0, 400);
+            return;
+        }
+        else if (this.loadingFailed) {
+            this.drawText("Loading failed!", "30px Arial", "#ee3030", "center", 0, 400);
             return;
         }
 
