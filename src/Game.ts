@@ -8,11 +8,6 @@ import { CollisionHandler } from './CollisionHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
 import { debugAlert, formatTime, lerp } from './Utils';
 
-function randomColor() {
-    let colors = ["#38c600", "#0082f0", "#f6091f"];
-    return _.sample(colors)!;
-}
-
 export class Level {
     bricks: (Brick | undefined)[][] = [];
 }
@@ -209,7 +204,7 @@ export class Game {
         if (this.gamePaused || this.paddle.stuckBall)
             return false;
 
-        let newBall = new Ball(new Vec2(), new Vec2(), randomColor());
+        let newBall = new Ball(new Vec2(), new Vec2());
 
         if (this.isPowerupActive("fireball"))
             newBall.fireball = true;

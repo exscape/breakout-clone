@@ -5,16 +5,14 @@ import { Settings } from './Settings';
 export class Ball {
     velocity: Vec2;
     position: Vec2;
-    color: string;
     stuck: boolean;
     collided: boolean; // Did this ball collide *this frame*?
     fireball: boolean;
     rotation: number;
 
-    constructor(velocity: Vec2, position: Vec2, color: string) {
+    constructor(velocity: Vec2, position: Vec2) {
         this.velocity = velocity;
         this.position = position;
-        this.color = color;
         this.stuck = false;
         this.collided = false;
         this.fireball = false;
