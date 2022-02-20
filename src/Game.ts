@@ -14,6 +14,7 @@ export class Level {
 
 type LevelType = "campaign" | "standalone";
 type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, filename: string, author: string };
+type LevelIndexResult = { "campaign": LevelMetadata[], "standalone": LevelMetadata[] };
 
 export class Game {
     canvas: HTMLCanvasElement;
@@ -162,18 +163,14 @@ export class Game {
                 return;
             }
 
-            let metadataArray = json.result as LevelMetadata[];
+            let metadataArray = json.result as LevelIndexResult;
 
-            if (metadataArray.length <= 0) {
-                alert("No levels found in level index!");
+            if (metadataArray.campaign.length <= 0) {
+                alert("No campaign levels found in level index!");
                 return;
             }
 
-            let firstLevel = metadataArray.filter(m => m.type === "campaign")
-                                          .reduce((prev, current) => {
-                                            return (prev.levelnumber < current.levelnumber) ? prev : current
-                                          }, metadataArray[0]);
-
+            let firstLevel = metadataArray.campaign[0];
             this.fetchLevel(`levels/${firstLevel.filename}`);
         })
         .catch(error => {
