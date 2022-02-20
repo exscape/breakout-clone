@@ -1,5 +1,4 @@
 import _ from "lodash";
-import { BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
@@ -214,9 +213,10 @@ export class DrawingHandler {
         const maxY = this.settings.levelHeight * this.settings.brickHeight + this.settings.levelHeight * this.settings.brickSpacing;
 
         if (e.activeBrick && e.cursor.y <= maxY) {
-            this.ctx.globalAlpha = 0.6;
             const pos = this.snapCursorPosition(e.cursor);
+            this.ctx.globalAlpha = 0.6;
             this.ctx.drawImage(this.images[e.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
+            this.ctx.globalAlpha = 1.0;
         }
         else
             this.ctx.drawImage(this.images["mouse_pointer"], e.cursor.x, e.cursor.y);

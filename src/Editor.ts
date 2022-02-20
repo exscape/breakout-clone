@@ -1,7 +1,7 @@
 import { Brick } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, clamp } from "./Utils";
+import { brickCoordsFromDrawCoords, clamp, drawCoordsFromBrickCoords } from "./Utils";
 import { Vec2 } from "./Vec2";
 
 export class Editor {
@@ -9,11 +9,11 @@ export class Editor {
     settings: Settings;
     cursor: Vec2;
     emptyLevelText: string;
-    brickPalette: string[] = ["_dashed", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12","_indestructible"];
+    brickPalette: string[] = ["_delete", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "_indestructible"];
 
     bricks: (Brick | undefined)[][] = [];
 
-    activeBrick: string | null = "brick1";
+    activeBrick: string = "brick1";
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
@@ -44,9 +44,19 @@ export class Editor {
     }
 
     click() {
+        const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
+        const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
         if (this.cursor.y >= this.settings.paletteY && this.cursor.y < this.settings.paletteY + this.settings.brickHeight) {
-            const brickX = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
-            this.activeBrick = `brick${this.brickPalette[brickX]}`;
+            // Click is in the palette
+            this.activeBrick = `brick${this.brickPalette[x]}`;
+        }
+        else {
+            // Click is in the game area
+            const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", x, this.settings), drawCoordsFromBrickCoords("y", y, this.settings));
+            if (this.activeBrick === "brick_delete")
+                this.bricks[y][x] = undefined;
+            else
+                this.bricks[y][x] = new Brick(drawCoords, this.activeBrick, this.settings, 10, 1, this.activeBrick?.includes("_indestructible"));
         }
     }
 }
