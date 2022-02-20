@@ -34,9 +34,6 @@ export class Game {
     gamePaused: boolean = false;
     bricksRemaining: number = 0;
 
-    readonly levelWidth = 14;
-    readonly levelHeight = 20;
-
     activePowerups: Powerup[] = []; // Powerups that have been picked up and have an effect
     visiblePowerups: Powerup[] = []; // Powerups currently falling, yet to be picked up or lost
     aimDashOffset: number = 0; // Used to animate the aiming line for the sticky powerup
@@ -110,7 +107,8 @@ export class Game {
             this.totalGameTime = 0;
 
             this.level.bricks.length = 0;
-            if (!this.loadLevel(this.levelText!!)) {
+            this.level.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
+            if (!this.loadLevel(this.levelText!!, this.level.bricks)) {
                 this.loadingCompleted = false;
                 this.loadingFailed = true;
             }
@@ -186,42 +184,38 @@ export class Game {
         this.gameWon = true;
     }
 
-    loadLevel(levelText: string): boolean {
-        this.level.bricks = Array(this.levelHeight).fill(undefined).map(_ => Array(this.levelWidth).fill(undefined));
-
+    loadLevel(levelText: string, target: BrickOrEmpty[][]): boolean {
         let level2D: string[][] = [];
 
         let count = 0;
         for (let row of levelText.split('\n')) {
             count++;
-            if (count > this.levelHeight)
+            if (count > this.settings.levelHeight)
                 break;
 
             let chars = row.split('');
-            if (chars.length !== this.levelWidth) {
-                alert(`Invalid level: one or more lines is not exactly ${this.levelWidth} characters`);
+            if (chars.length !== this.settings.levelWidth) {
+                alert(`Invalid level: one or more lines is not exactly ${this.settings.levelWidth} characters`);
                 return false;
             }
             level2D.push(chars);
         }
-        if (level2D.length !== this.levelHeight) {
-            alert(`Invalid level: not exactly ${this.levelHeight} lines`);
+        if (level2D.length !== this.settings.levelHeight) {
+            alert(`Invalid level: not exactly ${this.settings.levelHeight} lines`);
             return false;
         }
 
-        const spacing = 4;
-
-        for (let y = 0; y < this.levelHeight; y++) {
-            for (let x = 0; x < this.levelWidth; x++) {
-                let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
-                let yCoord = spacing + y * (this.settings.brickHeight + (y > 0 ? spacing : 0));
+        for (let y = 0; y < this.settings.levelHeight; y++) {
+            for (let x = 0; x < this.settings.levelWidth; x++) {
+                let xCoord = drawCoordsFromBrickCoords("x", x, this.settings);
+                let yCoord = drawCoordsFromBrickCoords("y", y, this.settings);
                 let c = level2D[y][x];
                 let num = parseInt(c, 16);
                 if (!isNaN(num)) {
-                    this.level.bricks[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick${num}`, this.settings, 10, 1);
+                    target[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick${num}`, this.settings, 10, 1);
                 }
                 else if (c === '*') {
-                    this.level.bricks[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick_indestructible`, this.settings, 10, 1, true);
+                    target[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick_indestructible`, this.settings, 10, 1, true);
                 }
             }
         }
@@ -441,8 +435,8 @@ export class Game {
     }
 
     handleBrickCollisions(ball: Ball, dt: number) {
-        for (let y = 0; y < this.levelHeight; y++) {
-            for (let x = 0; x < this.levelWidth; x++) {
+        for (let y = 0; y < this.settings.levelHeight; y++) {
+            for (let x = 0; x < this.settings.levelWidth; x++) {
                 let brick = this.level.bricks[y][x];
                 if (brick === undefined) continue;
 

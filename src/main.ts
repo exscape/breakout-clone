@@ -18,22 +18,29 @@ window.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('pointerlockchange', pointerLockChange, false);
 
     let settings: Settings = {
-        canvasWidth: 1264,
-        canvasHeight: 720,
-        canvasMargin: 2,
+        canvasWidth: 0,  // calculated below
+        canvasHeight: 0, // calculated below
         statusbarHeight: 44,
+        statusbarHeightInEditor: 2 * 25 + 3 * 4, // 2 * brick height, plus spacing above, between, below
         ballRadius: 13,
         paddleThickness: 25,
         ballSpeed: 0.64,
         brickWidth: 86,
         brickHeight: 25,
+        brickSpacing: 4,
+        levelWidth: 14, // in # of bricks
+        levelHeight: 24, // in # of bricks
         canvasBackground: "#f7faff", //#ecf2ff" // "#ddedff" // #eaeaea
-        powerupProbability: 2      * 5, // dev bonus
+        powerupProbability: 6,//      * 2.5, // dev bonus
         powerupImageRadius: 18,
         powerupFallSpeed: 0.1,
         multiballSpawnInterval: 1000,
-        aimLineLength: 150
+        aimLineLength: 150,
+        paletteY: 0 // calculated below
     }
+    settings.canvasWidth = settings.levelWidth * settings.brickWidth + settings.brickSpacing * (settings.levelWidth + 1);
+    settings.canvasHeight = (settings.levelHeight + 1) * settings.brickHeight + settings.brickSpacing * (settings.levelHeight + 2);
+    settings.paletteY = settings.canvasHeight - settings.brickHeight - settings.brickSpacing;
 
     gameCanvasElement.width = settings.canvasWidth;
     gameCanvasElement.height = settings.canvasHeight;
