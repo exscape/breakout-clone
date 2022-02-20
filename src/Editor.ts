@@ -59,6 +59,9 @@ export class Editor {
     }
 
     placeBrickAtCursor(rightClick: boolean = false) {
+        if (this.cursor.y >= this.settings.paletteY)
+            return;
+
         const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
         const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
         const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", x, this.settings), drawCoordsFromBrickCoords("y", y, this.settings));
