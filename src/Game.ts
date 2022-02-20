@@ -300,7 +300,8 @@ export class Game {
             this.devMenuOpen = !this.devMenuOpen;
             return;
         }
-        else if (ev.key == "e" || ev.key == "E" ) {
+        else if (ev.ctrlKey && (ev.key == "e" || ev.key == "E" )) {
+            ev.preventDefault();
             this.pause();
             this.currentMode = "editor";
             this.statusbarCanvas.height = this.settings.statusbarHeightInEditor;

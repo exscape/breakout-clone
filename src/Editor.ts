@@ -33,10 +33,50 @@ export class Editor {
         this.game.loadLevel(this.emptyLevelText, this.bricks);
     }
 
+    exportLevel(): string {
+        // Generates a string containing the level text, ready to be sent to the server.
+        let lines: string[] = [];
+        for (let y = 0; y < this.settings.levelHeight; y++) {
+            let line: string[] = [];
+            for (let x = 0; x < this.settings.levelWidth; x++) {
+                const name = (this.bricks[y][x] !== undefined) ? this.bricks[y][x]!.name.substring(5) : "empty";
+
+                let n = parseInt(name, 10);
+
+                if (this.bricks[y][x] === undefined)
+                    line.push(".");
+                else if ((n = parseInt(name, 10)) > 0)
+                    line.push(n.toString(16).toUpperCase());
+                else if (name === "_indestructible")
+                    line.push("*");
+                else
+                    alert("BUG: invalid brick type in exportLevel");
+            }
+            line.push("\n");
+            lines.push(line.join(""));
+        }
+        return lines.join("");
+    }
+
+    placeBrickAtCursor(rightClick: boolean = false) {
+        const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
+        const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
+        const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", x, this.settings), drawCoordsFromBrickCoords("y", y, this.settings));
+        if (this.activeBrick === "brick_delete" || rightClick) // Also delete if user right-clicked
+            this.bricks[y][x] = undefined;
+        else
+            this.bricks[y][x] = new Brick(drawCoords, this.activeBrick, this.settings, 10, 1, this.activeBrick?.includes("_indestructible"));
+    }
+
     keyDown(ev: KeyboardEvent) {
         if (ev.ctrlKey && (ev.key == "x" || ev.key == "X")) {
             // TODO: add checks about modified data / ask about saving etc.
+            ev.preventDefault();
             this.game.exitEditor();
+        }
+        else if (ev.ctrlKey && (ev.key == "s" || ev.key == "S")) {
+            ev.preventDefault();
+            console.log(this.exportLevel());
         }
     }
     keyUp(ev: KeyboardEvent) {}
@@ -77,15 +117,4 @@ export class Editor {
         this.leftButtonDown = false;
         this.rightButtonDown = false;
     }
-
-    placeBrickAtCursor(rightClick: boolean = false) {
-        const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
-        const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
-        const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", x, this.settings), drawCoordsFromBrickCoords("y", y, this.settings));
-        if (this.activeBrick === "brick_delete" || rightClick) // Also delete if user right-clicked
-            this.bricks[y][x] = undefined;
-        else
-            this.bricks[y][x] = new Brick(drawCoords, this.activeBrick, this.settings, 10, 1, this.activeBrick?.includes("_indestructible"));
-    }
-
 }
