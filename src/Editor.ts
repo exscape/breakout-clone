@@ -16,6 +16,7 @@ export class Editor {
     activeBrick: string = "brick1";
 
     leftButtonDown: boolean = false;
+    rightButtonDown: boolean = false;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
@@ -43,16 +44,23 @@ export class Editor {
     mouseMoved(e: MouseEvent) {
         this.cursor.x = clamp(this.cursor.x + e.movementX, 0, this.settings.canvasWidth - 3);
         this.cursor.y = clamp(this.cursor.y + e.movementY, 0, this.settings.canvasHeight - 1);
+
+        if (this.leftButtonDown || this.rightButtonDown)
+            this.placeBrickAtCursor(this.rightButtonDown);
     }
 
     onmouseup(e: MouseEvent) {
         if (e.button === 0)
             this.leftButtonDown = false;
+        else if (e.button === 2)
+            this.rightButtonDown = false;
     }
 
     onmousedown(e: MouseEvent) {
         if (e.button === 0)
             this.leftButtonDown = true;
+        else if (e.button === 2)
+            this.rightButtonDown = true;
 
         const index = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
         if (this.cursor.y >= this.settings.paletteY && this.cursor.y < this.settings.paletteY + this.settings.brickHeight) {
@@ -65,7 +73,12 @@ export class Editor {
         }
     }
 
-    placeBrickAtCursor(rightClick: boolean) {
+    focusLost() {
+        this.leftButtonDown = false;
+        this.rightButtonDown = false;
+    }
+
+    placeBrickAtCursor(rightClick: boolean = false) {
         const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
         const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
         const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", x, this.settings), drawCoordsFromBrickCoords("y", y, this.settings));

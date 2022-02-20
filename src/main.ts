@@ -52,7 +52,8 @@ window.addEventListener('DOMContentLoaded', () => {
     statusCanvasElement.style.visibility = "visible";
 
     let onmousedownhandler = (e: MouseEvent) => {
-        game?.onmousedown(e);
+        if (document.pointerLockElement === gameCanvasElement)
+            game?.onmousedown(e);
     };
 
     let onmouseuphandler = (e: MouseEvent) => {
@@ -65,7 +66,7 @@ window.addEventListener('DOMContentLoaded', () => {
             game?.onmouseup(e);
     };
 
-    game = new Game(gameCanvasElement, statusCanvasElement, settings);
+    game = new Game(gameCanvasElement!!, statusCanvasElement, settings);
 
     gameCanvasElement.onmousedown = onmousedownhandler;
     gameCanvasElement.onmouseup = onmouseuphandler;

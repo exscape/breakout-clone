@@ -216,7 +216,12 @@ export class DrawingHandler {
             const pos = this.snapCursorPosition(e.cursor);
             this.ctx.globalAlpha = 0.6;
             this.ctx.drawImage(this.images[e.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
+
+            // Draw a border around the image; otherwise, the mouse location is invisible when hovering over blocks of the same color.
+            this.ctx.strokeStyle = "red";
             this.ctx.globalAlpha = 1.0;
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(pos.x - this.settings.brickWidth / 2 - 2, pos.y - this.settings.brickHeight / 2 - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
         }
         else
             this.ctx.drawImage(this.images["mouse_pointer"], e.cursor.x, e.cursor.y);

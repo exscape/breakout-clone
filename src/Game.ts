@@ -344,8 +344,17 @@ export class Game {
     }
 
     togglePause() { this.gamePaused = !this.gamePaused; }
-    focusLost() { if (!this.gameWon && !this.gameLost) this.pause(); }
     pause() { this.gamePaused = true; }
+
+    focusLost() {
+        if (this.currentMode === "editor") {
+            this.editor.focusLost();
+            return;
+        }
+
+        if (!this.gameWon && !this.gameLost)
+            this.pause();
+    }
 
     getPowerup(type: PowerupType): Powerup | null {
         let s = this.activePowerups.filter(p => p.type == type);
