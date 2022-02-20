@@ -1,3 +1,6 @@
+import { Settings } from "./Settings";
+import { Vec2 } from "./Vec2";
+
 export function generatePairs(list: any[]): any[] {
     let pairs: any[] = [];
     if (list.length < 2) return []
@@ -44,4 +47,17 @@ export function formatTime(s: number) {
 
 export function lerp(a: number, b: number, r: number) {
     return a + (b - a) * clamp(r, 0, 1);
+}
+
+// Convert from e.g. the brick at (4, 2) to the pixel coordinates (of the top-left corner)
+export function drawCoordsFromBrickCoords(type: "x" | "y", coord: number, settings: Settings): number {
+    const size = (type === "x") ? settings.brickWidth : settings.brickHeight;
+    return settings.brickSpacing + coord * (size + (coord > 0 ? settings.brickSpacing : 0));
+}
+
+// Convert from a screen coordinate anywhere inside a brick to its brick coordinate
+export function brickCoordsFromDrawCoords(type: "x" | "y", coord: number, settings: Settings): number {
+    const size = (type === "x") ? settings.brickWidth : settings.brickHeight;
+    const max = (type === "x") ? settings.levelWidth : settings.levelHeight;
+    return clamp(Math.floor(coord / (size + settings.brickSpacing)), 0, max - 1);
 }

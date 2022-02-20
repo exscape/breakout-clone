@@ -1,6 +1,8 @@
 import { Vec2 } from './Vec2';
 import { Settings } from './Settings';
 
+export type BrickOrEmpty = Brick | undefined;
+
 export class Brick {
     health: number; // How many hits until destroyed?
     name: string;

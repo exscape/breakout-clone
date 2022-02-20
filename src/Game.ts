@@ -1,21 +1,23 @@
 import _ from 'lodash';
 import { Settings } from './Settings';
 import { Paddle } from "./Paddle";
-import { Brick } from "./Brick";
+import { Brick, BrickOrEmpty } from "./Brick";
 import { Ball } from "./Ball";
 import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
 import { DrawingHandler } from './DrawingHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
-import { debugAlert, formatTime, lerp } from './Utils';
+import { debugAlert, drawCoordsFromBrickCoords, lerp } from './Utils';
+import { Editor } from './Editor';
 
 export class Level {
-    bricks: (Brick | undefined)[][] = [];
+    bricks: BrickOrEmpty[][] = [];
 }
 
 type LevelType = "campaign" | "standalone";
 type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, filename: string, author: string };
 type LevelIndexResult = { "campaign": LevelMetadata[], "standalone": LevelMetadata[] };
+type Mode = "game" | "editor";
 
 export class Game {
     canvas: HTMLCanvasElement;
@@ -54,11 +56,15 @@ export class Game {
 
     drawingHandler: DrawingHandler;
 
+    currentMode: Mode = "game";
+    editor: Editor;
+
     constructor(canvas: HTMLCanvasElement, statusbarCanvas: HTMLCanvasElement, settings: Settings) {
+        this.settings = settings;
         this.canvas = canvas;
         this.statusbarCanvas = statusbarCanvas;
 
-        this.drawingHandler = new DrawingHandler(this, canvas.getContext('2d')!!, statusbarCanvas.getContext('2d')!!, settings, () => {
+        this.drawingHandler = new DrawingHandler(this, canvas, statusbarCanvas, settings, () => {
             this.imageLoadingCompleted = true;
             if (this.levelLoadingCompleted) {
                 this.loadingCompleted = true;
@@ -69,17 +75,18 @@ export class Game {
         this.level = new Level();
 
         this.paddle = new Paddle(settings);
-        this.settings = settings;
         this.collisionHandler = new CollisionHandler(settings);
 
         this.fetchLevelIndex();
+
+        this.editor = new Editor(this, settings);
 
         this.lastRender = 0;
     }
 
     init() {
         this.reset();
-        window.requestAnimationFrame((dt) => this.gameLoop(dt));
+        window.requestAnimationFrame((dt) => this.mainLoop(dt));
     }
 
     reset() {
@@ -224,11 +231,21 @@ export class Game {
     }
 
     mouseMoved(e: MouseEvent) {
+        if (this.currentMode === "editor") {
+            this.editor.mouseMoved(e);
+            return;
+        }
+
         if (!this.gamePaused && !this.gameLost && !this.gameWon && !this.lifeLost)
             this.paddle.move(e.movementX, this.shouldDrawAimLine() ? e.movementY : 0);
     }
 
     click() {
+        if (this.currentMode === "editor") {
+            this.editor.click();
+            return;
+        }
+
         if (this.gameLost || this.gameWon) {
             this.reset();
             return;
@@ -259,11 +276,21 @@ export class Game {
     }
 
     keyDown(ev: KeyboardEvent) {
+        if (this.currentMode === "editor") {
+            this.editor.keyDown(ev);
+            return;
+        }
+
         if (ev.key == "p" || ev.key == "P")
             this.togglePause();
         else if (ev.key == "a" || ev.key == "A") {
             this.devMenuOpen = !this.devMenuOpen;
             return;
+        }
+        else if (ev.key == "e" || ev.key == "E" ) {
+            this.pause();
+            this.currentMode = "editor";
+            this.statusbarCanvas.height = this.settings.statusbarHeightInEditor;
         }
 
         if (this.devMenuOpen) {
@@ -291,7 +318,18 @@ export class Game {
         }
     }
 
-    keyUp(ev: KeyboardEvent) {}
+    keyUp(ev: KeyboardEvent) {
+        if (this.currentMode === "editor") {
+            this.editor.keyUp(ev);
+            return;
+        }
+    }
+
+    exitEditor() {
+        this.currentMode = "game";
+        this.statusbarCanvas.height = this.settings.statusbarHeight;
+    }
+
     togglePause() { this.gamePaused = !this.gamePaused; }
     focusLost() { if (!this.gameWon && !this.gameLost) this.pause(); }
     pause() { this.gamePaused = true; }
@@ -308,6 +346,9 @@ export class Game {
     }
 
     update(dt: number) {
+        if (this.currentMode === "editor")
+            return;
+
         // if gameLost, update() should still run, so the ball is drawn to exit the game area
         if (this.gameWon || this.gamePaused)
             return;
@@ -620,15 +661,18 @@ export class Game {
         return powerup;
     }
 
-    gameLoop(timestamp: number) {
+    mainLoop(timestamp: number) {
         var dt = timestamp - this.lastRender
 
         this.update(dt)
-        this.drawingHandler.drawFrame()
+        if (this.currentMode === "game")
+            this.drawingHandler.drawGameFrame();
+        else
+            this.drawingHandler.drawEditorFrame();
 
         this.lastRender = timestamp
         this.lastFPS = 1000/dt;
-        window.requestAnimationFrame((dt) => this.gameLoop(dt));
+        window.requestAnimationFrame((dt) => this.mainLoop(dt));
     }
 
     shouldDrawAimLine() {

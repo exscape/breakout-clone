@@ -51,10 +51,11 @@ export class Paddle {
     }
 
     clampPosition() {
-        if (this.position.x + this.width / 2 > this.settings.canvasWidth - this.settings.canvasMargin)
-            this.position.x = this.settings.canvasWidth - this.settings.canvasMargin - this.width / 2;
-        else if (this.position.x - this.width / 2 < this.settings.canvasMargin)
-            this.position.x = this.settings.canvasMargin + this.width / 2;
+        const margin = 0;
+        if (this.position.x + this.width / 2 > this.settings.canvasWidth - margin)
+            this.position.x = this.settings.canvasWidth - margin - this.width / 2;
+        else if (this.position.x - this.width / 2 < margin)
+            this.position.x = margin + this.width / 2;
 
         if (this.stuckBall)
             this.stuckBall.position.x = (this.position.x - this.width) + 2 * this.width * this.stuckBallXRatio;

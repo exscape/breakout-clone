@@ -1,10 +1,14 @@
 import _ from "lodash";
+import { BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
-import { formatTime } from "./Utils";
+import { brickCoordsFromDrawCoords, drawCoordsFromBrickCoords, formatTime } from "./Utils";
+import { Vec2 } from "./Vec2";
 
 export class DrawingHandler {
+    canvas: HTMLCanvasElement;
+    statusbarCanvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     sctx: CanvasRenderingContext2D;
     settings: Settings;
@@ -12,15 +16,17 @@ export class DrawingHandler {
 
     images: Record<string, HTMLImageElement> = {};
 
-    constructor(game: Game, ctx: CanvasRenderingContext2D, sctx: CanvasRenderingContext2D, settings: Settings, imagesLoadedCallback: () => void) {
+    constructor(game: Game, canvas: HTMLCanvasElement, statusbarCanvas: HTMLCanvasElement, settings: Settings, imagesLoadedCallback: () => void) {
         this.game = game;
-        this.ctx = ctx;
-        this.sctx = sctx;
+        this.canvas = canvas;
+        this.statusbarCanvas = statusbarCanvas;
+        this.ctx = canvas.getContext('2d')!!;
+        this.sctx = statusbarCanvas.getContext('2d')!!
         this.settings = settings;
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
-                              "fireball", "statusbar", "heart", "score", "clock"];
+                              "fireball", "statusbar", "heart", "score", "clock", "mouse_pointer", "brick_delete"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -58,7 +64,7 @@ export class DrawingHandler {
         this.ctx.globalAlpha = 1.0;
     }
 
-    drawFrame() {
+    drawGameFrame() {
         // Clear the frame
         this.ctx.fillStyle = this.settings.canvasBackground;
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
@@ -77,14 +83,15 @@ export class DrawingHandler {
 
         // Draw the paddle
         // paddleThickness/2 is also the end cap radius, so we need to subtract that from x as well
+        const paddleCenter = this.game.paddle.position;
         const leftCapWidth = this.images["paddle_left"].width;
         const rightCapWidth = this.images["paddle_right"].width;
-        this.ctx.drawImage(this.images["paddle_left"], this.game.paddle.position.x - Math.floor(this.game.paddle.width / 2), this.game.paddle.position.y - this.settings.paddleThickness / 2);
-        this.ctx.drawImage(this.images["paddle_center"], this.game.paddle.position.x - Math.ceil(this.game.paddle.width / 2) + leftCapWidth,
-                                                         this.game.paddle.position.y - this.settings.paddleThickness / 2,
+        this.ctx.drawImage(this.images["paddle_left"], paddleCenter.x - Math.floor(this.game.paddle.width / 2), paddleCenter.y - this.settings.paddleThickness / 2);
+        this.ctx.drawImage(this.images["paddle_center"], paddleCenter.x - Math.ceil(this.game.paddle.width / 2) + leftCapWidth,
+                                                         paddleCenter.y - this.settings.paddleThickness / 2,
                                                          this.game.paddle.width - leftCapWidth - rightCapWidth,
                                                          this.settings.paddleThickness);
-        this.ctx.drawImage(this.images["paddle_right"], this.game.paddle.position.x + Math.floor(this.game.paddle.width / 2) - rightCapWidth - 1, this.game.paddle.position.y - this.settings.paddleThickness / 2);
+        this.ctx.drawImage(this.images["paddle_right"], paddleCenter.x + Math.floor(this.game.paddle.width / 2) - rightCapWidth - 1, paddleCenter.y - this.settings.paddleThickness / 2);
 
         // Draw the paddle sticky effect
         if (this.game.paddle.sticky) {
@@ -93,19 +100,15 @@ export class DrawingHandler {
             this.ctx.strokeStyle = "#21c00a"; // "#45ff45";
             this.ctx.lineCap = "round";
             const lineCapWidth = this.settings.paddleThickness / 2;
-            this.ctx.moveTo(this.game.paddle.position.x - this.game.paddle.width / 2 + lineCapWidth, this.game.paddle.position.y);
-            this.ctx.lineTo(this.game.paddle.position.x + this.game.paddle.width / 2 - lineCapWidth, this.game.paddle.position.y);
+            this.ctx.moveTo(paddleCenter.x - this.game.paddle.width / 2 + lineCapWidth, paddleCenter.y);
+            this.ctx.lineTo(paddleCenter.x + this.game.paddle.width / 2 - lineCapWidth, paddleCenter.y);
             this.ctx.lineWidth = this.settings.paddleThickness;
             this.ctx.stroke();
             this.ctx.globalAlpha = 1.0;
         }
 
         // Draw the bricks
-        for (let brick of _.flatten(this.game.level.bricks)) {
-            if (brick === undefined)
-                continue;
-            this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
-        }
+        this.drawBricks();
 
         // Draw powerups
         for (let powerup of this.game.visiblePowerups) {
@@ -183,6 +186,60 @@ export class DrawingHandler {
             this.drawText(`Score: ${this.game.score}`, "60px Arial", "#ee3030", "center", 0, 580);
             this.drawText("Click to restart the game.", "40px Arial", "#ee3030", "center", 0, 635);
             return;
+        }
+    }
+
+    snapCursorPosition(cursor: Vec2): Vec2 {
+        let snapped = new Vec2(cursor);
+
+        // Basically, round to the nearest brick, then find the center coordinates of that.
+        snapped.x = brickCoordsFromDrawCoords("x", snapped.x, this.settings);
+        snapped.y = brickCoordsFromDrawCoords("y", snapped.y, this.settings);
+        snapped.x = drawCoordsFromBrickCoords("x", snapped.x, this.settings) + this.settings.brickWidth / 2;
+        snapped.y = drawCoordsFromBrickCoords("y", snapped.y, this.settings) + this.settings.brickHeight / 2;
+
+        return snapped;
+    }
+
+    drawEditorFrame() {
+        const e = this.game.editor;
+
+        // Clear the frame
+        this.ctx.fillStyle = this.settings.canvasBackground;
+        this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+
+        this.drawBricks();
+
+        // Draw the mouse pointer (last of all, so that it is on top)
+        const maxY = this.settings.levelHeight * this.settings.brickHeight + this.settings.levelHeight * this.settings.brickSpacing;
+
+        if (e.activeBrick && e.cursor.y <= maxY) {
+            this.ctx.globalAlpha = 0.6;
+            const pos = this.snapCursorPosition(e.cursor);
+            this.ctx.drawImage(this.images[e.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
+        }
+        else
+            this.ctx.drawImage(this.images["mouse_pointer"], e.cursor.x, e.cursor.y);
+    }
+
+    drawBricks() {
+        const brickSource = (this.game.currentMode === "game") ? this.game.level.bricks : this.game.editor.bricks;
+        for (let brick of _.flatten(brickSource)) {
+            if (brick === undefined)
+                continue;
+            this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
+        }
+
+        if (this.game.currentMode === "editor") {
+            // Draw the brick palette
+            let x = 0;
+            for (let suffix of this.game.editor.brickPalette) {
+                const name = `brick${suffix}`;
+                const spacing = 4;
+                let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
+                this.ctx.drawImage(this.images[name], xCoord, this.settings.paletteY, this.settings.brickWidth, this.settings.brickHeight);
+                x++;
+            }
         }
     }
 
