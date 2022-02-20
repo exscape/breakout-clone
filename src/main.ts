@@ -2,18 +2,13 @@ import { Game } from './Game';
 import { Settings } from './Settings';
 
 let gameCanvasElement: HTMLCanvasElement | null = null;
-//let gameContext: CanvasRenderingContext2D | null = null;
 let statusCanvasElement: HTMLCanvasElement | null = null;
-//let statusContext: CanvasRenderingContext2D | null = null;
 
 let game: Game | undefined;
 
 window.addEventListener('DOMContentLoaded', () => {
     gameCanvasElement = document.getElementById('main-canvas') as HTMLCanvasElement;
-    // gameContext = gameCanvasElement?.getContext('2d');
-
     statusCanvasElement = document.getElementById('statusbar-canvas') as HTMLCanvasElement;
-    // statusContext = statusCanvasElement?.getContext('2d');
 
     if (!gameCanvasElement || !statusCanvasElement /*|| !gameContext || !statusContext */) {
         alert("Unable to load game!");

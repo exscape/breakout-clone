@@ -187,7 +187,7 @@ export class Game {
             if (response.ok)
                 return response.text()
             else
-                throw new Error("HTTP error");
+                throw new Error("HTTP error (this is probably a bug, though!)");
         })
         .then(text => {
             this.levelLoadingCompleted = true;
