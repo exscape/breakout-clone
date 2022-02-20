@@ -240,11 +240,24 @@ export class Game {
             this.paddle.move(e.movementX, this.shouldDrawAimLine() ? e.movementY : 0);
     }
 
-    click() {
+    onmousedown(e: MouseEvent) {
         if (this.currentMode === "editor") {
-            this.editor.click();
+            this.editor.onmousedown(e);
             return;
         }
+
+        if (e.button !== 0)
+            return;
+    }
+
+    onmouseup(e: MouseEvent) {
+        if (this.currentMode === "editor") {
+            this.editor.onmouseup(e);
+            return;
+        }
+
+        if (e.button !== 0)
+            return;
 
         if (this.gameLost || this.gameWon) {
             this.reset();

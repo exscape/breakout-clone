@@ -51,20 +51,24 @@ window.addEventListener('DOMContentLoaded', () => {
     gameCanvasElement.style.visibility = "visible";
     statusCanvasElement.style.visibility = "visible";
 
-    let onclickHandler = () => {
+    let onmousedownhandler = (e: MouseEvent) => {
+        game?.onmousedown(e);
+    };
+
+    let onmouseuphandler = (e: MouseEvent) => {
         if (document.pointerLockElement !== gameCanvasElement) {
             gameCanvasElement!!.tabIndex = 0;
             gameCanvasElement!!.focus();
             gameCanvasElement!!.requestPointerLock();
         }
         else
-            game?.click();
+            game?.onmouseup(e);
     };
 
     game = new Game(gameCanvasElement, statusCanvasElement, settings);
 
-    gameCanvasElement.onclick = onclickHandler;
-    statusCanvasElement.onclick = onclickHandler;
+    gameCanvasElement.onmousedown = onmousedownhandler;
+    gameCanvasElement.onmouseup = onmouseuphandler;
 
     gameCanvasElement.onkeydown = (ev: KeyboardEvent) => {
         game?.keyDown(ev);

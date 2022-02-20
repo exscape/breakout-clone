@@ -15,6 +15,8 @@ export class Editor {
 
     activeBrick: string = "brick1";
 
+    leftButtonDown: boolean = false;
+
     constructor(game: Game, settings: Settings) {
         this.game = game;
         this.settings = settings;
@@ -43,20 +45,34 @@ export class Editor {
         this.cursor.y = clamp(this.cursor.y + e.movementY, 0, this.settings.canvasHeight - 1);
     }
 
-    click() {
-        const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
-        const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
+    onmouseup(e: MouseEvent) {
+        if (e.button === 0)
+            this.leftButtonDown = false;
+    }
+
+    onmousedown(e: MouseEvent) {
+        if (e.button === 0)
+            this.leftButtonDown = true;
+
+        const index = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
         if (this.cursor.y >= this.settings.paletteY && this.cursor.y < this.settings.paletteY + this.settings.brickHeight) {
             // Click is in the palette
-            this.activeBrick = `brick${this.brickPalette[x]}`;
+            this.activeBrick = `brick${this.brickPalette[index]}`;
         }
         else {
             // Click is in the game area
-            const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", x, this.settings), drawCoordsFromBrickCoords("y", y, this.settings));
-            if (this.activeBrick === "brick_delete")
-                this.bricks[y][x] = undefined;
-            else
-                this.bricks[y][x] = new Brick(drawCoords, this.activeBrick, this.settings, 10, 1, this.activeBrick?.includes("_indestructible"));
+            this.placeBrickAtCursor(e.button === 2);
         }
     }
+
+    placeBrickAtCursor(rightClick: boolean) {
+        const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
+        const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
+        const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", x, this.settings), drawCoordsFromBrickCoords("y", y, this.settings));
+        if (this.activeBrick === "brick_delete" || rightClick) // Also delete if user right-clicked
+            this.bricks[y][x] = undefined;
+        else
+            this.bricks[y][x] = new Brick(drawCoords, this.activeBrick, this.settings, 10, 1, this.activeBrick?.includes("_indestructible"));
+    }
+
 }
