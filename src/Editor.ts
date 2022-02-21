@@ -59,7 +59,7 @@ export class Editor {
     }
 
     placeBrickAtCursor(rightClick: boolean = false) {
-        if (this.cursor.y >= this.settings.paletteY)
+        if (this.cursor.y >= this.settings.paletteY - this.settings.brickHeight - 2 * this.settings.brickSpacing)
             return;
 
         const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);

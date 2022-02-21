@@ -210,7 +210,7 @@ export class DrawingHandler {
         this.drawBricks();
 
         // Draw the mouse pointer (last of all, so that it is on top)
-        const maxY = this.settings.levelHeight * this.settings.brickHeight + this.settings.levelHeight * this.settings.brickSpacing;
+        const maxY = (this.settings.levelHeight - 1) * this.settings.brickHeight + (this.settings.levelHeight - 1) * this.settings.brickSpacing;
 
         if (e.activeBrick && e.cursor.y <= maxY) {
             const pos = this.snapCursorPosition(e.cursor);
