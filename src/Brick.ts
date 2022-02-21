@@ -19,12 +19,13 @@ export class Brick {
     // Only used in the editor
     selected: boolean = false;
 
-    constructor(position: Vec2, name: string, settings: Settings, score: number, health: number = 1, indestructible: boolean = false) {
+    constructor(position: Vec2, name: string, settings: Settings, score: number, health: number = 1, indestructible: boolean = false, selected: boolean = false) {
         this.health = health;
         this.name = name;
         this.score = score;
         this.indestructible = indestructible;
         this.settings = settings;
+        this.selected = selected;
 
         // Sigh; not sure how to prevent this. The compiler doesn't realize these are ALWAYS set if we call this.setUpperLeft() instead
         // of duplicating it here...
@@ -39,5 +40,9 @@ export class Brick {
         this.upperRight = new Vec2(upperLeft.x + this.settings.brickWidth, upperLeft.y);
         this.bottomLeft = new Vec2(upperLeft.x, upperLeft.y + this.settings.brickHeight);
         this.bottomRight = new Vec2(upperLeft.x + this.settings.brickWidth, upperLeft.y + this.settings.brickHeight);
+    }
+
+    copy(): Brick {
+        return new Brick(new Vec2(this.upperLeft), this.name, this.settings, this.score, this.health, this.indestructible, this.selected);
     }
 }

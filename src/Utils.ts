@@ -62,13 +62,23 @@ export function brickCoordsFromDrawCoords(type: "x" | "y", coord: number, settin
     return clamp(Math.floor(coord / (size + settings.brickSpacing)), 0, max - 1);
 }
 
-export function copy2DArray(src: any[][], dst: any[][]) {
+export function clearBrickArray(array: any[][]) {
+    for (let y = 0; y < array.length; y++) {
+        for (let x = 0; x < array[0].length; x++) {
+            array[y][x] = undefined;
+        }
+    }
+}
+
+export function copyBrickArray(src: any[][], dst: any[][], selectedOnly: boolean) {
     if (src.length !== dst.length || src[0].length !== dst[0].length)
         throw new Error("copy2DArray(): source and destination arrays have different dimensions");
 
     for (let y = 0; y < src.length; y++) {
         for (let x = 0; x < src[0].length; x++) {
-            dst[y][x] = src[y][x];
+            if (selectedOnly && !src[y][x]?.selected)
+                dst[y][x] = undefined;
+            dst[y][x] = (src[y][x] === undefined) ? undefined : src[y][x].copy();
         }
     }
 }

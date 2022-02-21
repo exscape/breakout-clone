@@ -85,4 +85,8 @@ export class BrickPosition {
             this.y = x.y;
         }
     }
+
+    toString(): string {
+        return `(${this.x},${this.y})`;
+    }
 }
