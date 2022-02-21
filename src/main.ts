@@ -21,7 +21,6 @@ window.addEventListener('DOMContentLoaded', () => {
         canvasWidth: 0,  // calculated below
         canvasHeight: 0, // calculated below
         statusbarHeight: 44,
-        statusbarHeightInEditor: 2 * 25 + 3 * 4, // 2 * brick height, plus spacing above, between, below
         ballRadius: 13,
         paddleThickness: 25,
         ballSpeed: 0.64,

@@ -302,11 +302,7 @@ export class Game {
         }
         else if (ev.ctrlKey && (ev.key == "e" || ev.key == "E" )) {
             ev.preventDefault();
-            this.pause();
-            this.currentMode = "editor";
-            this.statusbarCanvas.height = this.settings.statusbarHeightInEditor;
-            this.statusbarCanvas.style.visibility = "hidden";
-            this.canvas.style.borderBottom = "2px solid black";
+            this.enterEditor();
         }
 
         if (this.devMenuOpen) {
@@ -341,9 +337,15 @@ export class Game {
         }
     }
 
+    enterEditor() {
+        this.pause();
+        this.currentMode = "editor";
+        this.statusbarCanvas.style.visibility = "hidden";
+        this.canvas.style.borderBottom = "2px solid black";
+    }
+
     exitEditor() {
         this.currentMode = "game";
-        this.statusbarCanvas.height = this.settings.statusbarHeight;
         this.statusbarCanvas.style.visibility = "visible";
         this.canvas.style.borderBottom = "none";
     }
