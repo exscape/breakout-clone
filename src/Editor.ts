@@ -167,6 +167,10 @@ export class Editor {
                 }
             }
         }
+
+        // Step 3: if shift is pressed, COPY instead of move. In other words, add the selected bricks back at their original locations
+        if (this.shiftDown)
+            copyBrickArray(this.bricksBeforeDrag, this.bricks, true, false);
     }
 
     startDrag() {
@@ -180,6 +184,10 @@ export class Editor {
     stopDrag() {
         this.currentlyDragging = false;
         console.log("Stop drag at " + Date.now());
+
+        for (let brick of flatten(this.bricks)) {
+            if (brick) brick.selected = false;
+        }
     }
 
     mouseMoved(e: MouseEvent) {
