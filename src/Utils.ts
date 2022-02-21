@@ -1,6 +1,7 @@
+import { result } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
-import { Vec2 } from "./Vec2";
+import { BrickPosition, Vec2 } from "./Vec2";
 
 export function generatePairs(list: any[]): any[] {
     let pairs: any[] = [];
@@ -91,4 +92,33 @@ export function copyBrickArray(src: BrickOrEmpty[][], dst: BrickOrEmpty[][], cop
             }
         }
     }
+}
+
+function calculateOneSymmetricPosition(axis: "x" | "y", pos: BrickPosition, maxValue: number) {
+    let newPos = new BrickPosition(pos);
+    if (axis === "x")
+        newPos.x = maxValue - pos.x - 1;
+    else
+        newPos.y = maxValue - pos.y - 1;
+    return newPos;
+}
+
+export function calculateSymmetricPositions(pos: BrickPosition, horizontalSymmetry: boolean, verticalSymmetry: boolean, maxX: number, maxY: number) {
+    // TODO:
+    // TODO: Use in DrawingHandler as well!!
+    let result: BrickPosition[] = [pos];
+
+    let newPosH = pos; // Needs a value to silence the compiler, even though we know it's never used when undefined
+    if (horizontalSymmetry) {
+        newPosH = calculateOneSymmetricPosition("x", pos, maxX);
+        result.push(newPosH);
+    }
+
+    if (verticalSymmetry)
+        result.push(calculateOneSymmetricPosition("y", pos, maxY));
+
+    if (horizontalSymmetry && verticalSymmetry)
+        result.push(calculateOneSymmetricPosition("y", newPosH, maxY));
+
+    return result;
 }

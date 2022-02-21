@@ -27,8 +27,8 @@ window.addEventListener('DOMContentLoaded', () => {
         brickWidth: 86,
         brickHeight: 25,
         brickSpacing: 4,
-        levelWidth: 14, // in # of bricks
-        levelHeight: 24, // in # of bricks
+        levelWidth: 15, // in # of bricks
+        levelHeight: 23, // in # of bricks
         canvasBackground: "#f7faff", //#ecf2ff" // "#ddedff" // #eaeaea
         powerupProbability: 6,//      * 2.5, // dev bonus
         powerupImageRadius: 18,

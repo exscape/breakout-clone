@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, clamp, clearBrickArray, drawCoordsFromBrickCoords } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 
@@ -28,6 +28,9 @@ export class Editor {
     shiftDown: boolean = false;
     altDown: boolean = false;
     ctrlDown: boolean = false;
+
+    verticalSymmetry: boolean = true;
+    horizontalSymmetry: boolean = true;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
@@ -82,11 +85,15 @@ export class Editor {
         this.selectBrickAtCursor("deselect");
     }
 
-    deselectAll() {
+    selectAll(x: "select" | "deselect" = "select") {
         for (let brick of flatten(this.bricks)) {
             if (brick)
-                brick.selected = false;
+                brick.selected = (x === "select");
         }
+    }
+
+    deselectAll() {
+        this.selectAll("deselect");
     }
 
     deleteSelectedBlocks() {
@@ -119,8 +126,14 @@ export class Editor {
         if (!pos)
             return;
 
+        for (let symmetricPosition of calculateSymmetricPositions(pos, this.horizontalSymmetry, this.verticalSymmetry, this.settings.levelWidth, this.settings.levelHeight)) {
+            this.placeBrickAtPosition(symmetricPosition, (this.activeBrick === "brick_delete" || rightClick));
+        }
+    }
+
+    placeBrickAtPosition(pos: BrickPosition, shouldDelete: boolean) {
         const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", pos.x, this.settings), drawCoordsFromBrickCoords("y", pos.y, this.settings));
-        if (this.activeBrick === "brick_delete" || rightClick) // Also delete if user right-clicked with a normal brick
+        if (shouldDelete)
             this.bricks[pos.y][pos.x] = undefined;
         else
             this.bricks[pos.y][pos.x] = new Brick(drawCoords, this.activeBrick, this.settings, 10, 1, this.activeBrick?.includes("_indestructible"));
@@ -138,6 +151,10 @@ export class Editor {
         else if (ev.ctrlKey && (ev.key == "s" || ev.key == "S")) {
             ev.preventDefault();
             console.log(this.exportLevel());
+        }
+        else if (ev.ctrlKey && (ev.key == "a" || ev.key == "A")) {
+            ev.preventDefault();
+            this.selectAll();
         }
         else if (ev.ctrlKey && (ev.key == "d" || ev.key == "D")) {
             ev.preventDefault();
@@ -164,18 +181,17 @@ export class Editor {
             return;
 
         this.lastDragPos = pos;
+        const dragOffset = new BrickPosition(this.lastDragPos.x - this.dragStartPos.x, this.lastDragPos.y - this.dragStartPos.y);
+
+        if (dragOffset.x === 0 && dragOffset.y === 0) {
+            copyBrickArray(this.bricksBeforeDrag, this.bricks, true, true);
+            return;
+        }
 
         // Step 1: copy UNSELECTED bricks that should remain where they are
         clearBrickArray(this.bricks);
         copyBrickArray(this.bricksBeforeDrag, this.bricks, false, true);
-        const dragOffset = new BrickPosition(this.lastDragPos.x - this.dragStartPos.x, this.lastDragPos.y - this.dragStartPos.y);
         console.log(`dragMoved: now at (${pos.x},${pos.y}), dragOffset = (${dragOffset.x},${dragOffset.y})`);
-
-        if (dragOffset.x === 0 && dragOffset.y === 0) {
-            // Also copy SELECTED bricks, to make the entire array unchanged
-            copyBrickArray(this.bricksBeforeDrag, this.bricks, true, false);
-            return;
-        }
 
         // Step 2: find all bricks that were SELECTED when the drag started, and copy them to their new position
         for (let y = 0; y < this.settings.levelHeight; y++) {
@@ -200,8 +216,6 @@ export class Editor {
                 if (b)
                     b.selected = false;
             });
-
-            // Also deselect the original bricks.
         }
     }
 
@@ -260,7 +274,8 @@ export class Editor {
         const index = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
         if (this.cursor.y >= this.settings.paletteY && this.cursor.y < this.settings.paletteY + this.settings.brickHeight) {
             // Click is in the palette
-            this.activeBrick = `brick${this.brickPalette[index]}`;
+            if (index < this.brickPalette.length)
+                this.activeBrick = `brick${this.brickPalette[index]}`;
         }
         else {
             // Click is in the game area

@@ -2,8 +2,8 @@ import _ from "lodash";
 import { Game } from "./Game";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, drawCoordsFromBrickCoords, formatTime } from "./Utils";
-import { Vec2 } from "./Vec2";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime } from "./Utils";
+import { BrickPosition, Vec2 } from "./Vec2";
 
 export class DrawingHandler {
     canvas: HTMLCanvasElement;
@@ -188,18 +188,7 @@ export class DrawingHandler {
         }
     }
 
-    snapCursorPosition(cursor: Vec2): Vec2 {
-        let snapped = new Vec2(cursor);
-
-        // Basically, round to the nearest brick, then find the center coordinates of that.
-        snapped.x = brickCoordsFromDrawCoords("x", snapped.x, this.settings);
-        snapped.y = brickCoordsFromDrawCoords("y", snapped.y, this.settings);
-        snapped.x = drawCoordsFromBrickCoords("x", snapped.x, this.settings) + this.settings.brickWidth / 2;
-        snapped.y = drawCoordsFromBrickCoords("y", snapped.y, this.settings) + this.settings.brickHeight / 2;
-
-        return snapped;
-    }
-
+    // Only used for actual cursors, not active blocks
     drawCursor(imageName: string, offset: boolean) {
         const e = this.game.editor;
         const width = this.images[imageName].width;
@@ -221,27 +210,42 @@ export class DrawingHandler {
 
         if (e.cursor.y < maxY) {
             // Cursor is in the level area
-            if (e.shiftDown) {
+            if (e.shiftDown)
                 this.drawCursor("cursor_select", true);
-            }
-            else if (e.altDown) {
+            else if (e.altDown)
                 this.drawCursor("cursor_deselect", true)
-            }
             else {
-                // Draw the active brick
-                const pos = this.snapCursorPosition(e.cursor);
-                this.ctx.globalAlpha = 0.6;
-                this.ctx.drawImage(this.images[e.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
+                // Draw the active brick, with symmetric copies if applicable
+                let brickPos = new BrickPosition();
+                brickPos.x = brickCoordsFromDrawCoords("x", e.cursor.x, this.settings);
+                brickPos.y = brickCoordsFromDrawCoords("y", e.cursor.y, this.settings);
 
-                // Draw a border around the image; otherwise, the mouse location is invisible when hovering over blocks of the same color.
-                this.ctx.strokeStyle = "red";
-                this.ctx.globalAlpha = 1.0;
-                this.ctx.lineWidth = 2;
-                this.ctx.strokeRect(pos.x - this.settings.brickWidth / 2 - 2, pos.y - this.settings.brickHeight / 2 - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
+                const symmetricBricks = calculateSymmetricPositions(brickPos, e.horizontalSymmetry, e.verticalSymmetry, this.settings.levelWidth, this.settings.levelHeight);
+
+                for (let brick of symmetricBricks) {
+                    brick.x = drawCoordsFromBrickCoords("x", brick.x, this.settings) + this.settings.brickWidth / 2;
+                    brick.y = drawCoordsFromBrickCoords("y", brick.y, this.settings) + this.settings.brickHeight / 2;
+
+                    // Only highlight the original block, where the mouse pointer actually is
+                    this.drawEditorCursorBlock(brick, (brick.x === brickPos.x && brick.y === brickPos.y));
+                }
             }
         }
         else
             this.drawCursor("cursor_regular", false);
+    }
+
+    drawEditorCursorBlock(pos: BrickPosition, highlight: boolean) {
+        this.ctx.globalAlpha = 0.6;
+        this.ctx.drawImage(this.images[this.game.editor.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
+        this.ctx.globalAlpha = 1.0;
+
+        if (highlight) {
+            // Draw a border around the image; otherwise, the mouse location is invisible when hovering over blocks of the same color.
+            this.ctx.strokeStyle = "red";
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(pos.x - this.settings.brickWidth / 2 - 2, pos.y - this.settings.brickHeight / 2 - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
+        }
     }
 
     drawBricks() {
