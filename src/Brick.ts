@@ -14,6 +14,9 @@ export class Brick {
     bottomLeft: Vec2;
     bottomRight: Vec2;
 
+    // Only used in the editor
+    selected: boolean = false;
+
     constructor(position: Vec2, name: string, settings: Settings, score: number, health: number = 1, indestructible: boolean = false) {
         this.health = health;
         this.name = name;

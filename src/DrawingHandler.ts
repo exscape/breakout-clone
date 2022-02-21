@@ -25,7 +25,7 @@ export class DrawingHandler {
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
-                              "fireball", "statusbar", "heart", "score", "clock", "mouse_pointer", "brick_delete"];
+                              "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "brick_delete"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -209,22 +209,32 @@ export class DrawingHandler {
 
         this.drawBricks();
 
-        // Draw the mouse pointer (last of all, so that it is on top)
+        // Draw the active brick / mouse pointer (last of all, so that it is on top)
         const maxY = (this.settings.levelHeight - 1) * this.settings.brickHeight + (this.settings.levelHeight - 1) * this.settings.brickSpacing;
 
-        if (e.activeBrick && e.cursor.y < maxY) {
-            const pos = this.snapCursorPosition(e.cursor);
-            this.ctx.globalAlpha = 0.6;
-            this.ctx.drawImage(this.images[e.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
+        if (e.cursor.y < maxY) {
+            // Cursor is in the level area
+            if (e.shiftDown) {
+                const width = this.images["cursor_select"].width;
+                const height = this.images["cursor_select"].height;
 
-            // Draw a border around the image; otherwise, the mouse location is invisible when hovering over blocks of the same color.
-            this.ctx.strokeStyle = "red";
-            this.ctx.globalAlpha = 1.0;
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(pos.x - this.settings.brickWidth / 2 - 2, pos.y - this.settings.brickHeight / 2 - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
+                this.ctx.drawImage(this.images["cursor_select"], e.cursor.x - width / 2, e.cursor.y - height / 2);
+            }
+            else {
+                // Draw the active brick
+                const pos = this.snapCursorPosition(e.cursor);
+                this.ctx.globalAlpha = 0.6;
+                this.ctx.drawImage(this.images[e.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
+
+                // Draw a border around the image; otherwise, the mouse location is invisible when hovering over blocks of the same color.
+                this.ctx.strokeStyle = "red";
+                this.ctx.globalAlpha = 1.0;
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(pos.x - this.settings.brickWidth / 2 - 2, pos.y - this.settings.brickHeight / 2 - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
+            }
         }
         else
-            this.ctx.drawImage(this.images["mouse_pointer"], e.cursor.x, e.cursor.y);
+            this.ctx.drawImage(this.images["cursor_regular"], e.cursor.x, e.cursor.y);
     }
 
     drawBricks() {
@@ -233,6 +243,14 @@ export class DrawingHandler {
             if (brick === undefined)
                 continue;
             this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
+
+            if (brick.selected) {
+                this.ctx.strokeStyle = "blue";
+                this.ctx.globalAlpha = 1.0;
+                this.ctx.lineWidth = 2;
+                const pos = brick.upperLeft;
+                this.ctx.strokeRect(pos.x - 2, pos.y - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
+            }
         }
 
         if (this.game.currentMode === "editor") {

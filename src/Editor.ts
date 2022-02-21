@@ -17,6 +17,8 @@ export class Editor {
 
     leftButtonDown: boolean = false;
     rightButtonDown: boolean = false;
+    shiftDown: boolean = false;
+    altDown: boolean = false;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
@@ -58,6 +60,23 @@ export class Editor {
         return lines.join("");
     }
 
+    selectBrickAtCursor(selectOrDeselect: "select" | "deselect" = "select") {
+        if (this.cursor.y >= this.settings.paletteY - this.settings.brickHeight - 2 * this.settings.brickSpacing)
+            return;
+
+        const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
+        const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
+
+        if (this.bricks[y][x] === undefined)
+            return;
+
+        this.bricks[y][x]!.selected = (selectOrDeselect === "select") ? true : false;
+    }
+
+    deselectBrickAtCursor() {
+        this.selectBrickAtCursor("deselect");
+    }
+
     placeBrickAtCursor(rightClick: boolean = false) {
         if (this.cursor.y >= this.settings.paletteY - this.settings.brickHeight - 2 * this.settings.brickSpacing)
             return;
@@ -72,6 +91,8 @@ export class Editor {
     }
 
     keyDown(ev: KeyboardEvent) {
+        if (ev.shiftKey) this.shiftDown = true;
+        if (ev.altKey) this.altDown = true;
         if (ev.ctrlKey && (ev.key == "x" || ev.key == "X")) {
             // TODO: add checks about modified data / ask about saving etc.
             ev.preventDefault();
@@ -82,14 +103,24 @@ export class Editor {
             console.log(this.exportLevel());
         }
     }
-    keyUp(ev: KeyboardEvent) {}
+
+    keyUp(ev: KeyboardEvent) {
+        if (!ev.shiftKey) this.shiftDown = false;
+        if (!ev.altKey) this.altDown = false;
+    }
 
     mouseMoved(e: MouseEvent) {
         this.cursor.x = clamp(this.cursor.x + e.movementX, 0, this.settings.canvasWidth - 3);
         this.cursor.y = clamp(this.cursor.y + e.movementY, 0, this.settings.canvasHeight - 1);
 
-        if (this.leftButtonDown || this.rightButtonDown)
-            this.placeBrickAtCursor(this.rightButtonDown);
+        if (this.leftButtonDown || this.rightButtonDown) {
+            if (this.shiftDown)
+                this.selectBrickAtCursor();
+            else if (this.altDown)
+                this.deselectBrickAtCursor();
+            else
+                this.placeBrickAtCursor(this.rightButtonDown);
+        }
     }
 
     onmouseup(e: MouseEvent) {
@@ -112,7 +143,12 @@ export class Editor {
         }
         else {
             // Click is in the game area
-            this.placeBrickAtCursor(e.button === 2);
+            if (this.shiftDown)
+                this.selectBrickAtCursor();
+            else if (this.altDown)
+                this.deselectBrickAtCursor();
+            else
+                this.placeBrickAtCursor(e.button === 2);
         }
     }
 
