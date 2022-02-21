@@ -25,7 +25,7 @@ export class DrawingHandler {
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
-                              "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "brick_delete"];
+                              "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -200,6 +200,13 @@ export class DrawingHandler {
         return snapped;
     }
 
+    drawCursor(imageName: string, offset: boolean) {
+        const e = this.game.editor;
+        const width = this.images[imageName].width;
+        const height = this.images[imageName].height;
+        this.ctx.drawImage(this.images[imageName], e.cursor.x - (offset ? width/2 : 0), e.cursor.y - (offset ? height/2 : 0));
+    }
+
     drawEditorFrame() {
         const e = this.game.editor;
 
@@ -215,10 +222,10 @@ export class DrawingHandler {
         if (e.cursor.y < maxY) {
             // Cursor is in the level area
             if (e.shiftDown) {
-                const width = this.images["cursor_select"].width;
-                const height = this.images["cursor_select"].height;
-
-                this.ctx.drawImage(this.images["cursor_select"], e.cursor.x - width / 2, e.cursor.y - height / 2);
+                this.drawCursor("cursor_select", true);
+            }
+            else if (e.altDown) {
+                this.drawCursor("cursor_deselect", true)
             }
             else {
                 // Draw the active brick
@@ -234,7 +241,7 @@ export class DrawingHandler {
             }
         }
         else
-            this.ctx.drawImage(this.images["cursor_regular"], e.cursor.x, e.cursor.y);
+            this.drawCursor("cursor_regular", false);
     }
 
     drawBricks() {

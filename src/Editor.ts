@@ -92,7 +92,7 @@ export class Editor {
 
     keyDown(ev: KeyboardEvent) {
         if (ev.shiftKey) this.shiftDown = true;
-        if (ev.altKey) this.altDown = true;
+        if (ev.altKey) { ev.preventDefault(); this.altDown = true; }
         if (ev.ctrlKey && (ev.key == "x" || ev.key == "X")) {
             // TODO: add checks about modified data / ask about saving etc.
             ev.preventDefault();
@@ -106,7 +106,7 @@ export class Editor {
 
     keyUp(ev: KeyboardEvent) {
         if (!ev.shiftKey) this.shiftDown = false;
-        if (!ev.altKey) this.altDown = false;
+        if (!ev.altKey) { ev.preventDefault(); this.altDown = false; }
     }
 
     mouseMoved(e: MouseEvent) {
