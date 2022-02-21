@@ -3,7 +3,7 @@ import { Game } from "./Game";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
 import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime } from "./Utils";
-import { BrickPosition, Vec2 } from "./Vec2";
+import { BrickPosition } from "./Vec2";
 
 export class DrawingHandler {
     canvas: HTMLCanvasElement;
@@ -223,11 +223,12 @@ export class DrawingHandler {
                 const symmetricBricks = calculateSymmetricPositions(brickPos, e.horizontalSymmetry, e.verticalSymmetry, this.settings.levelWidth, this.settings.levelHeight);
 
                 for (let brick of symmetricBricks) {
+                    const originalBlock = (brickPos.x === brick.x && brickPos.y === brick.y);
                     brick.x = drawCoordsFromBrickCoords("x", brick.x, this.settings) + this.settings.brickWidth / 2;
                     brick.y = drawCoordsFromBrickCoords("y", brick.y, this.settings) + this.settings.brickHeight / 2;
 
                     // Only highlight the original block, where the mouse pointer actually is
-                    this.drawEditorCursorBlock(brick, (brick.x === brickPos.x && brick.y === brickPos.y));
+                    this.drawEditorCursorBlock(brick, originalBlock);
                 }
             }
         }

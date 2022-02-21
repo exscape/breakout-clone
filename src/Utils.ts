@@ -104,9 +104,7 @@ function calculateOneSymmetricPosition(axis: "x" | "y", pos: BrickPosition, maxV
 }
 
 export function calculateSymmetricPositions(pos: BrickPosition, horizontalSymmetry: boolean, verticalSymmetry: boolean, maxX: number, maxY: number) {
-    // TODO:
-    // TODO: Use in DrawingHandler as well!!
-    let result: BrickPosition[] = [pos];
+    let result: BrickPosition[] = [new BrickPosition(pos)];
 
     let newPosH = pos; // Needs a value to silence the compiler, even though we know it's never used when undefined
     if (horizontalSymmetry) {
