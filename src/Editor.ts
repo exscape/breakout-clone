@@ -184,9 +184,12 @@ export class Editor {
     stopDrag() {
         this.currentlyDragging = false;
         console.log("Stop drag at " + Date.now());
+    }
 
-        for (let brick of flatten(this.bricks)) {
-            if (brick) brick.selected = false;
+    abortDrag() {
+        if (this.currentlyDragging) {
+            this.currentlyDragging = false;
+            copyBrickArray(this.bricksBeforeDrag, this.bricks, true, true);
         }
     }
 
@@ -242,7 +245,11 @@ export class Editor {
     }
 
     focusLost() {
+        this.abortDrag();
+
         this.leftButtonDown = false;
         this.rightButtonDown = false;
+        this.shiftDown = false;
+        this.altDown = false;
     }
 }
