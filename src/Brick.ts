@@ -1,5 +1,6 @@
 import { Vec2 } from './Vec2';
 import { Settings } from './Settings';
+import { drawCoordsFromBrickCoords } from './Utils';
 
 export type BrickOrEmpty = Brick | undefined;
 
@@ -44,5 +45,12 @@ export class Brick {
 
     copy(): Brick {
         return new Brick(new Vec2(this.upperLeft), this.name, this.settings, this.score, this.health, this.indestructible, this.selected);
+    }
+
+    updateDrawPosition(x: number, y: number) {
+        // Calculate position based on its location on the level
+        const newX = drawCoordsFromBrickCoords("x", x, this.settings);
+        const newY = drawCoordsFromBrickCoords("y", y, this.settings);
+        this.setUpperLeft(new Vec2(newX, newY));
     }
 }

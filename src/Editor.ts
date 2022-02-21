@@ -139,55 +139,39 @@ export class Editor {
 
         this.lastDragPos = pos;
 
+        // Step 1: copy UNSELECTED bricks that should remain where they are
         clearBrickArray(this.bricks);
-        copyBrickArray(this.bricksBeforeDrag, this.bricks, true);
+        copyBrickArray(this.bricksBeforeDrag, this.bricks, false, true);
         const dragOffset = new BrickPosition(this.lastDragPos.x - this.dragStartPos.x, this.lastDragPos.y - this.dragStartPos.y);
         console.log(`dragMoved: now at (${pos.x},${pos.y}), dragOffset = (${dragOffset.x},${dragOffset.y})`);
 
-        if (dragOffset.x === 0 && dragOffset.y === 0)
+        if (dragOffset.x === 0 && dragOffset.y === 0) {
+            // Also copy SELECTED bricks, to make the entire array unchanged
+            copyBrickArray(this.bricksBeforeDrag, this.bricks, true, false);
             return;
+        }
 
-        let toClear: BrickPosition[] = [];
-        let toNotClear: BrickPosition[] = [];
-        // Find all bricks that were selected when the drag started, and copy them
+        // Step 2: find all bricks that were SELECTED when the drag started, and copy them to their new position
         for (let y = 0; y < this.settings.levelHeight; y++) {
             for (let x = 0; x < this.settings.levelWidth; x++) {
-                if (this.bricksBeforeDrag[y][x]?.selected) {
-                    toClear.push(new BrickPosition(x, y));
-                    console.log(`Adding (${x},${y}) to toClear`)
-
-                    if (x + dragOffset.x >= 0 &&
-                        y + dragOffset.y >= 0 &&
-                        x + dragOffset.x < this.settings.levelWidth &&
-                        y + dragOffset.y < this.settings.levelHeight) {
-                            // We need to both update this.bricks *AND* the Brick class itself, since that holds the position to draw it at!
-                            const brick = this.bricksBeforeDrag[y][x]!.copy();
-                            brick.setUpperLeft(new Vec2(drawCoordsFromBrickCoords("x", x + dragOffset.x, this.settings), drawCoordsFromBrickCoords("y", y + dragOffset.y, this.settings)));
-                            this.bricks[y + dragOffset.y][x + dragOffset.x] = brick;
-                            console.log(`  Moved to (${x + dragOffset.x},${y + dragOffset.y}); brick = ${this.bricksBeforeDrag[y][x] === undefined ? "clear" : this.bricksBeforeDrag[y][x]!.name}`);
-
-                            toNotClear.push(new BrickPosition(x + dragOffset.x, y + dragOffset.y));
-                    }
+                if (this.bricksBeforeDrag[y][x]?.selected &&
+                    x + dragOffset.x >= 0 &&
+                    y + dragOffset.y >= 0 &&
+                    x + dragOffset.x < this.settings.levelWidth &&
+                    y + dragOffset.y < this.settings.levelHeight) {
+                        // We need to both update this.bricks *AND* the Brick class itself, since that holds the position to draw it at!
+                        const brick = this.bricksBeforeDrag[y][x]!.copy();
+                        brick.setUpperLeft(new Vec2(drawCoordsFromBrickCoords("x", x + dragOffset.x, this.settings), drawCoordsFromBrickCoords("y", y + dragOffset.y, this.settings)));
+                        this.bricks[y + dragOffset.y][x + dragOffset.x] = brick;
+                        console.log(`  Moved to (${x + dragOffset.x},${y + dragOffset.y}); brick = ${this.bricksBeforeDrag[y][x] === undefined ? "clear" : this.bricksBeforeDrag[y][x]!.name}`);
                 }
             }
         }
-
-        for (let pos of toClear) {
-            let skip = false;
-            for (let no of toNotClear) {
-                if (pos.x === no.x && pos.y === no.y) skip = true;
-            }
-            if (skip) continue;
-
-            console.log(`  Clearing at (${pos.x},${pos.y})`)
-            this.bricks[pos.y][pos.x] = undefined;
-        }
-
     }
 
     startDrag() {
         this.currentlyDragging = true;
-        copyBrickArray(this.bricks, this.bricksBeforeDrag, false);
+        copyBrickArray(this.bricks, this.bricksBeforeDrag, true, true);
         this.dragStartPos = this.brickPositionAtCursor()!;
         this.lastDragPos = this.dragStartPos;
         console.log(`Start drag at (${this.dragStartPos.x},${this.dragStartPos.y})`);
