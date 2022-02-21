@@ -89,6 +89,15 @@ export class Editor {
         }
     }
 
+    deleteSelectedBlocks() {
+        for (let y = 0; y < this.bricks.length; y++) {
+            for (let x = 0; x < this.bricks[0].length; x++) {
+                if (this.bricks[y][x]?.selected)
+                    this.bricks[y][x] = undefined;
+            }
+        }
+    }
+
     brickPositionAtCursor(): BrickPosition | null {
         if (this.cursor.y >= this.settings.paletteY - this.settings.brickHeight - 2 * this.settings.brickSpacing)
             return null;
@@ -133,6 +142,9 @@ export class Editor {
         else if (ev.ctrlKey && (ev.key == "d" || ev.key == "D")) {
             ev.preventDefault();
             this.deselectAll();
+        }
+        else if (ev.key === "Delete") {
+            this.deleteSelectedBlocks();
         }
     }
 
