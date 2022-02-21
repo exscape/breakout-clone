@@ -305,6 +305,8 @@ export class Game {
             this.pause();
             this.currentMode = "editor";
             this.statusbarCanvas.height = this.settings.statusbarHeightInEditor;
+            this.statusbarCanvas.style.visibility = "hidden";
+            this.canvas.style.borderBottom = "2px solid black";
         }
 
         if (this.devMenuOpen) {
@@ -342,6 +344,8 @@ export class Game {
     exitEditor() {
         this.currentMode = "game";
         this.statusbarCanvas.height = this.settings.statusbarHeight;
+        this.statusbarCanvas.style.visibility = "visible";
+        this.canvas.style.borderBottom = "none";
     }
 
     togglePause() { this.gamePaused = !this.gamePaused; }
