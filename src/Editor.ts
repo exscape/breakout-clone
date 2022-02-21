@@ -1,5 +1,5 @@
 import { flatten } from "lodash";
-import { Brick } from "./Brick";
+import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
 import { brickCoordsFromDrawCoords, clamp, clearBrickArray, drawCoordsFromBrickCoords } from "./Utils";
@@ -172,8 +172,14 @@ export class Editor {
         }
 
         // Step 3: if shift is pressed, COPY instead of move. In other words, add the selected bricks back at their original locations
-        if (this.ctrlDown)
-            copyBrickArray(this.bricksBeforeDrag, this.bricks, true, false);
+        if (this.ctrlDown) {
+            copyBrickArray(this.bricksBeforeDrag, this.bricks, true, false, (b: BrickOrEmpty) => {
+                if (b)
+                    b.selected = false;
+            });
+
+            // Also deselect the original bricks.
+        }
     }
 
     startDrag() {

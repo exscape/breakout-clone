@@ -1,4 +1,4 @@
-import { BrickOrEmpty } from "./Brick";
+import { Brick, BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
 import { Vec2 } from "./Vec2";
 
@@ -71,7 +71,7 @@ export function clearBrickArray(array: any[][]) {
     }
 }
 
-export function copyBrickArray(src: BrickOrEmpty[][], dst: BrickOrEmpty[][], copySelected: boolean, copyUnselected: boolean) {
+export function copyBrickArray(src: BrickOrEmpty[][], dst: BrickOrEmpty[][], copySelected: boolean, copyUnselected: boolean, callback?: (b: BrickOrEmpty) => void) {
     if (src.length !== dst.length || src[0].length !== dst[0].length)
         throw new Error("copy2DArray(): source and destination arrays have different dimensions");
 
@@ -80,10 +80,14 @@ export function copyBrickArray(src: BrickOrEmpty[][], dst: BrickOrEmpty[][], cop
             if (copySelected && src[y][x]?.selected) {
                 dst[y][x] = (src[y][x] === undefined) ? undefined : src[y][x]!.copy();
                 dst[y][x]?.updateDrawPosition(x, y);
+                if (callback)
+                    callback(dst[y][x]);
             }
             if (copyUnselected && !src[y][x]?.selected) {
                 dst[y][x] = (src[y][x] === undefined) ? undefined : src[y][x]!.copy();
                 dst[y][x]?.updateDrawPosition(x, y);
+                if (callback)
+                    callback(dst[y][x]);
             }
         }
     }
