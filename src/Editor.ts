@@ -27,6 +27,7 @@ export class Editor {
     rightButtonDown: boolean = false;
     shiftDown: boolean = false;
     altDown: boolean = false;
+    ctrlDown: boolean = false;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
@@ -111,6 +112,7 @@ export class Editor {
 
     keyDown(ev: KeyboardEvent) {
         if (ev.shiftKey) this.shiftDown = true;
+        if (ev.ctrlKey) this.ctrlDown = true;
         if (ev.altKey) { ev.preventDefault(); this.altDown = true; }
         if (ev.ctrlKey && (ev.key == "x" || ev.key == "X")) {
             // TODO: add checks about modified data / ask about saving etc.
@@ -125,6 +127,7 @@ export class Editor {
 
     keyUp(ev: KeyboardEvent) {
         if (!ev.shiftKey) this.shiftDown = false;
+        if (!ev.ctrlKey) this.ctrlDown = false;
         if (!ev.altKey) { ev.preventDefault(); this.altDown = false; }
     }
 
@@ -169,7 +172,7 @@ export class Editor {
         }
 
         // Step 3: if shift is pressed, COPY instead of move. In other words, add the selected bricks back at their original locations
-        if (this.shiftDown)
+        if (this.ctrlDown)
             copyBrickArray(this.bricksBeforeDrag, this.bricks, true, false);
     }
 
@@ -251,5 +254,6 @@ export class Editor {
         this.rightButtonDown = false;
         this.shiftDown = false;
         this.altDown = false;
+        this.ctrlDown = false;
     }
 }
