@@ -82,6 +82,13 @@ export class Editor {
         this.selectBrickAtCursor("deselect");
     }
 
+    deselectAll() {
+        for (let brick of flatten(this.bricks)) {
+            if (brick)
+                brick.selected = false;
+        }
+    }
+
     brickPositionAtCursor(): BrickPosition | null {
         if (this.cursor.y >= this.settings.paletteY - this.settings.brickHeight - 2 * this.settings.brickSpacing)
             return null;
@@ -122,6 +129,10 @@ export class Editor {
         else if (ev.ctrlKey && (ev.key == "s" || ev.key == "S")) {
             ev.preventDefault();
             console.log(this.exportLevel());
+        }
+        else if (ev.ctrlKey && (ev.key == "d" || ev.key == "D")) {
+            ev.preventDefault();
+            this.deselectAll();
         }
     }
 
