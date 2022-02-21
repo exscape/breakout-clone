@@ -22,11 +22,15 @@ type Mode = "game" | "editor";
 export class Game {
     canvas: HTMLCanvasElement;
     statusbarCanvas: HTMLCanvasElement;
+    helpElement: HTMLHeadingElement;
     paddle: Paddle;
     level: Level;
     balls: Ball[] = [];
     settings: Settings;
     collisionHandler: CollisionHandler;
+
+    readonly GAME_HELP_TEXT = "Move the mouse to control the paddle. Click to launch. Press P to pause.";
+    readonly EDITOR_HELP_TEXT = "Left-click to place bricks, right-click to remove.<br>Shift+click to select bricks, alt+click to deselect.";
 
     lastRender: number;
     lastFPS: number = 0;
@@ -63,6 +67,7 @@ export class Game {
         this.settings = settings;
         this.canvas = canvas;
         this.statusbarCanvas = statusbarCanvas;
+        this.helpElement = document.getElementById("helptext")! as HTMLHeadingElement;
 
         this.drawingHandler = new DrawingHandler(this, canvas, statusbarCanvas, settings, () => {
             this.imageLoadingCompleted = true;
@@ -340,14 +345,16 @@ export class Game {
     enterEditor() {
         this.pause();
         this.currentMode = "editor";
-        this.statusbarCanvas.style.visibility = "hidden";
+        this.statusbarCanvas.style.display = "none";
         this.canvas.style.borderBottom = "2px solid black";
+        this.helpElement.innerHTML = this.EDITOR_HELP_TEXT;
     }
 
     exitEditor() {
         this.currentMode = "game";
-        this.statusbarCanvas.style.visibility = "visible";
+        this.statusbarCanvas.style.display = "block";
         this.canvas.style.borderBottom = "none";
+        this.helpElement.innerHTML = this.GAME_HELP_TEXT;
     }
 
     togglePause() { this.gamePaused = !this.gamePaused; }
