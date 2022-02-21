@@ -61,3 +61,14 @@ export function brickCoordsFromDrawCoords(type: "x" | "y", coord: number, settin
     const max = (type === "x") ? settings.levelWidth : settings.levelHeight;
     return clamp(Math.floor(coord / (size + settings.brickSpacing)), 0, max - 1);
 }
+
+export function copy2DArray(src: any[][], dst: any[][]) {
+    if (src.length !== dst.length || src[0].length !== dst[0].length)
+        throw new Error("copy2DArray(): source and destination arrays have different dimensions");
+
+    for (let y = 0; y < src.length; y++) {
+        for (let x = 0; x < src[0].length; x++) {
+            dst[y][x] = src[y][x];
+        }
+    }
+}

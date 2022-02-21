@@ -8,7 +8,9 @@ export class Brick {
     name: string;
     score: number;
     indestructible: boolean;
+    settings: Settings;
 
+    // The other corners are used by the collision checking code
     upperLeft: Vec2;
     upperRight: Vec2;
     bottomLeft: Vec2;
@@ -22,11 +24,20 @@ export class Brick {
         this.name = name;
         this.score = score;
         this.indestructible = indestructible;
+        this.settings = settings;
 
-        // The other corners are used by the collision checking code
-        this.upperLeft = position;
-        this.upperRight = new Vec2(position.x + settings.brickWidth, position.y);
-        this.bottomLeft = new Vec2(position.x, position.y + settings.brickHeight);
-        this.bottomRight = new Vec2(position.x + settings.brickWidth, position.y + settings.brickHeight);
+        // Sigh; not sure how to prevent this. The compiler doesn't realize these are ALWAYS set if we call this.setUpperLeft() instead
+        // of duplicating it here...
+        this.upperLeft = new Vec2(position);
+        this.upperRight = new Vec2(position.x + this.settings.brickWidth, position.y);
+        this.bottomLeft = new Vec2(position.x, position.y + this.settings.brickHeight);
+        this.bottomRight = new Vec2(position.x + this.settings.brickWidth, position.y + this.settings.brickHeight);
+    }
+
+    setUpperLeft(upperLeft: Vec2) {
+        this.upperLeft = new Vec2(upperLeft);
+        this.upperRight = new Vec2(upperLeft.x + this.settings.brickWidth, upperLeft.y);
+        this.bottomLeft = new Vec2(upperLeft.x, upperLeft.y + this.settings.brickHeight);
+        this.bottomRight = new Vec2(upperLeft.x + this.settings.brickWidth, upperLeft.y + this.settings.brickHeight);
     }
 }

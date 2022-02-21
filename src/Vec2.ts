@@ -64,3 +64,25 @@ export class Vec2 {
     }
 
 }
+
+// Basically just as simple class to store integral x and y coordinates for bricks.
+export class BrickPosition {
+    x: number;
+    y: number;
+
+    constructor(x: number | BrickPosition = 0, y: number = 0) {
+        if (typeof x === "number") {
+            if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y))
+                throw new Error("BrickPosition constructor called with non-integer argument(s)");
+            this.x = x;
+            this.y = y;
+        }
+        else {
+            // Create a copy of this vector
+            if (!Number.isSafeInteger(x.x) || !Number.isSafeInteger(x.y))
+                throw new Error("BrickPosition constructor called with non-integer argument(s)");
+            this.x = x.x;
+            this.y = x.y;
+        }
+    }
+}

@@ -1,8 +1,10 @@
+import { flatten } from "lodash";
 import { Brick } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
 import { brickCoordsFromDrawCoords, clamp, drawCoordsFromBrickCoords } from "./Utils";
-import { Vec2 } from "./Vec2";
+import { BrickPosition, Vec2 } from "./Vec2";
+import { copy2DArray } from './Utils';
 
 export class Editor {
     game: Game;
@@ -12,6 +14,12 @@ export class Editor {
     brickPalette: string[] = ["_delete", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "_indestructible"];
 
     bricks: (Brick | undefined)[][] = [];
+
+    // Drag stuff
+    currentlyDragging: boolean = false;
+    bricksBeforeDrag: (Brick | undefined)[][] = [];
+    dragStartPos: BrickPosition = new BrickPosition();
+    lastDragPos: BrickPosition = new BrickPosition();
 
     activeBrick: string = "brick1";
 
@@ -32,6 +40,7 @@ export class Editor {
     clearLevel() {
         this.bricks.length = 0;
         this.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
+        this.bricksBeforeDrag = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
         this.game.loadLevel(this.emptyLevelText, this.bricks);
     }
 
@@ -61,33 +70,43 @@ export class Editor {
     }
 
     selectBrickAtCursor(selectOrDeselect: "select" | "deselect" = "select") {
-        if (this.cursor.y >= this.settings.paletteY - this.settings.brickHeight - 2 * this.settings.brickSpacing)
+        let brick = this.getBrickAtCursor();
+        if (!brick)
             return;
 
-        const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
-        const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
-
-        if (this.bricks[y][x] === undefined)
-            return;
-
-        this.bricks[y][x]!.selected = (selectOrDeselect === "select") ? true : false;
+        brick.selected = (selectOrDeselect === "select") ? true : false;
     }
 
     deselectBrickAtCursor() {
         this.selectBrickAtCursor("deselect");
     }
 
-    placeBrickAtCursor(rightClick: boolean = false) {
+    brickPositionAtCursor(): BrickPosition | null {
         if (this.cursor.y >= this.settings.paletteY - this.settings.brickHeight - 2 * this.settings.brickSpacing)
-            return;
+            return null;
 
         const x = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
         const y = brickCoordsFromDrawCoords("y", this.cursor.y, this.settings);
-        const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", x, this.settings), drawCoordsFromBrickCoords("y", y, this.settings));
-        if (this.activeBrick === "brick_delete" || rightClick) // Also delete if user right-clicked
-            this.bricks[y][x] = undefined;
+
+        return new BrickPosition(x, y);
+    }
+
+    getBrickAtCursor(): Brick | null {
+        let pos = this.brickPositionAtCursor();
+        if (!pos) return null;
+        return (this.bricks[pos.y][pos.x] !== undefined) ? this.bricks[pos.y][pos.x]! : null;
+    }
+
+    placeBrickAtCursor(rightClick: boolean = false) {
+        const pos = this.brickPositionAtCursor();
+        if (!pos)
+            return;
+
+        const drawCoords = new Vec2(drawCoordsFromBrickCoords("x", pos.x, this.settings), drawCoordsFromBrickCoords("y", pos.y, this.settings));
+        if (this.activeBrick === "brick_delete" || rightClick) // Also delete if user right-clicked with a normal brick
+            this.bricks[pos.y][pos.x] = undefined;
         else
-            this.bricks[y][x] = new Brick(drawCoords, this.activeBrick, this.settings, 10, 1, this.activeBrick?.includes("_indestructible"));
+            this.bricks[pos.y][pos.x] = new Brick(drawCoords, this.activeBrick, this.settings, 10, 1, this.activeBrick?.includes("_indestructible"));
     }
 
     keyDown(ev: KeyboardEvent) {
@@ -109,12 +128,69 @@ export class Editor {
         if (!ev.altKey) { ev.preventDefault(); this.altDown = false; }
     }
 
+    dragMoved() {
+        // Restore the original layout, then copy all selected bricks with the same offset as the selected brick.
+        // Bricks that end up outside of the game area are ignored.
+        const pos = this.brickPositionAtCursor();
+        if (!pos)
+            return;
+        if (pos.x === this.lastDragPos.x && pos.y === this.lastDragPos.y)
+            return;
+
+        this.lastDragPos = pos;
+
+        // Restore and calculate offset
+        copy2DArray(this.bricksBeforeDrag, this.bricks);
+        const dragOffset = new BrickPosition(this.lastDragPos.x - this.dragStartPos.x, this.lastDragPos.y - this.dragStartPos.y);
+        console.log(`dragMoved: now at (${pos.x},${pos.y}), dragOffset = (${dragOffset.x},${dragOffset.y})`);
+
+        if (dragOffset.x === 0 && dragOffset.y === 0)
+            return;
+
+        // Find all bricks that were selected when the drag started, and copy them
+        for (let y = 0; y < this.settings.levelHeight; y++) {
+            for (let x = 0; x < this.settings.levelWidth; x++) {
+                if (this.bricksBeforeDrag[y][x]?.selected) {
+                    this.bricks[y][x] = undefined;
+                    console.log(`  Clearing at (${x},${y})`)
+
+                    if (x + dragOffset.x >= 0 &&
+                        y + dragOffset.y >= 0 &&
+                        x + dragOffset.x < this.settings.levelWidth &&
+                        y + dragOffset.y < this.settings.levelHeight) {
+                            // We need to both update this.bricks *AND* the Brick class itself, since that holds the position to draw it at!
+                            const brick = this.bricksBeforeDrag[y][x];
+                            brick?.setUpperLeft(new Vec2(drawCoordsFromBrickCoords("x", x + dragOffset.x, this.settings), drawCoordsFromBrickCoords("y", y + dragOffset.y, this.settings)));
+                            this.bricks[y + dragOffset.y][x + dragOffset.x] = brick;
+                            console.log(`  Copied to (${x + dragOffset.x},${y + dragOffset.y}); brick = ${this.bricksBeforeDrag[y][x] === undefined ? "clear" : this.bricksBeforeDrag[y][x]!.name}`);
+                    }
+                }
+            }
+        }
+
+    }
+
+    startDrag() {
+        this.currentlyDragging = true;
+        copy2DArray(this.bricks, this.bricksBeforeDrag);
+        this.dragStartPos = this.brickPositionAtCursor()!;
+        this.lastDragPos = this.dragStartPos;
+        console.log(`Start drag at (${this.dragStartPos.x},${this.dragStartPos.y})`);
+    }
+
+    stopDrag() {
+        this.currentlyDragging = false;
+        console.log("Stop drag at " + Date.now());
+    }
+
     mouseMoved(e: MouseEvent) {
         this.cursor.x = clamp(this.cursor.x + e.movementX, 0, this.settings.canvasWidth - 3);
         this.cursor.y = clamp(this.cursor.y + e.movementY, 0, this.settings.canvasHeight - 1);
 
         if (this.leftButtonDown || this.rightButtonDown) {
-            if (this.shiftDown)
+            if (this.currentlyDragging)
+                this.dragMoved();
+            else if (this.shiftDown)
                 this.selectBrickAtCursor();
             else if (this.altDown)
                 this.deselectBrickAtCursor();
@@ -128,6 +204,9 @@ export class Editor {
             this.leftButtonDown = false;
         else if (e.button === 2)
             this.rightButtonDown = false;
+
+        if (this.currentlyDragging)
+            this.stopDrag();
     }
 
     onmousedown(e: MouseEvent) {
@@ -147,6 +226,9 @@ export class Editor {
                 this.selectBrickAtCursor();
             else if (this.altDown)
                 this.deselectBrickAtCursor();
+            else if (this.getBrickAtCursor()?.selected) {
+                this.startDrag();
+            }
             else
                 this.placeBrickAtCursor(e.button === 2);
         }
