@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { Editor } from "./Editor";
 import { Game } from "./Game";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
@@ -12,11 +13,13 @@ export class DrawingHandler {
     sctx: CanvasRenderingContext2D;
     settings: Settings;
     game: Game;
+    editor: Editor;
 
     images: Record<string, HTMLImageElement> = {};
 
-    constructor(game: Game, canvas: HTMLCanvasElement, statusbarCanvas: HTMLCanvasElement, settings: Settings, imagesLoadedCallback: () => void) {
+    constructor(game: Game, editor: Editor, canvas: HTMLCanvasElement, statusbarCanvas: HTMLCanvasElement, settings: Settings, imagesLoadedCallback: () => void) {
         this.game = game;
+        this.editor = editor;
         this.canvas = canvas;
         this.statusbarCanvas = statusbarCanvas;
         this.ctx = canvas.getContext('2d')!!;
@@ -191,7 +194,7 @@ export class DrawingHandler {
 
     // Only used for actual mouse cursors, not blocks about to be placed
     drawCursor(imageName: string, offset: boolean) {
-        const e = this.game.editor;
+        const e = this.editor;
         const width = this.images[imageName].width;
         const height = this.images[imageName].height;
         this.ctx.drawImage(this.images[imageName], e.cursor.x - (offset ? width/2 : 0), e.cursor.y - (offset ? height/2 : 0));
@@ -202,7 +205,7 @@ export class DrawingHandler {
         this.ctx.fillRect(this.settings.canvasWidth, 0, this.settings.editorToolbarWidth, this.settings.canvasHeight);
 
         let y = 4;
-        for (let button of this.game.editor.toolbarButtons) {
+        for (let button of this.editor.toolbarButtons) {
             const foregroundImage = this.images[button.image];
             const backgroundImage = button.enabled ? this.images["button_pushed"] : this.images["button_unpushed"];
             this.ctx.drawImage(backgroundImage, this.settings.canvasWidth, y);
@@ -213,7 +216,7 @@ export class DrawingHandler {
     }
 
     drawEditorFrame() {
-        const e = this.game.editor;
+        const e = this.editor;
 
         // Clear the frame
         this.ctx.fillStyle = this.settings.canvasBackground;
@@ -256,7 +259,7 @@ export class DrawingHandler {
 
     drawEditorCursorBlock(pos: BrickPosition, highlight: boolean) {
         this.ctx.globalAlpha = 0.6;
-        this.ctx.drawImage(this.images[this.game.editor.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
+        this.ctx.drawImage(this.images[this.editor.activeBrick], pos.x - this.settings.brickWidth / 2, pos.y - this.settings.brickHeight / 2);
         this.ctx.globalAlpha = 1.0;
 
         if (highlight) {
@@ -268,7 +271,7 @@ export class DrawingHandler {
     }
 
     drawBricks() {
-        const brickSource = (this.game.currentMode === "game") ? this.game.level.bricks : this.game.editor.bricks;
+        const brickSource = (this.game.currentMode === "game") ? this.game.level.bricks : this.editor.bricks;
         for (let brick of _.flatten(brickSource)) {
             if (brick === undefined)
                 continue;
@@ -286,7 +289,7 @@ export class DrawingHandler {
         if (this.game.currentMode === "editor") {
             // Draw the brick palette
             let x = 0;
-            for (let suffix of this.game.editor.brickPalette) {
+            for (let suffix of this.editor.brickPalette) {
                 const name = `brick${suffix}`;
                 const spacing = 4;
                 let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));

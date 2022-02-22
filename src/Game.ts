@@ -69,7 +69,9 @@ export class Game {
         this.statusbarCanvas = statusbarCanvas;
         this.helpElement = document.getElementById("helptext")! as HTMLHeadingElement;
 
-        this.drawingHandler = new DrawingHandler(this, canvas, statusbarCanvas, settings, () => {
+        this.editor = new Editor(this, settings);
+
+        this.drawingHandler = new DrawingHandler(this, this.editor, canvas, statusbarCanvas, settings, () => {
             this.imageLoadingCompleted = true;
             if (this.levelLoadingCompleted) {
                 this.loadingCompleted = true;
@@ -84,7 +86,6 @@ export class Game {
 
         this.fetchLevelIndex();
 
-        this.editor = new Editor(this, settings);
 
         this.lastRender = 0;
     }
