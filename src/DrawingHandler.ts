@@ -3,8 +3,8 @@ import { Editor } from "./Editor";
 import { Game } from "./Game";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime } from "./Utils";
-import { BrickPosition } from "./Vec2";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter } from "./Utils";
+import { BrickPosition, Vec2 } from "./Vec2";
 
 export class DrawingHandler {
     canvas: HTMLCanvasElement;
@@ -15,21 +15,75 @@ export class DrawingHandler {
     game: Game;
     editor: Editor;
 
+    // Used for optimization; a naive way to draw the grid performs HORRIBLY (below 10 fps)
+    gridCanvas: HTMLCanvasElement;
+
     images: Record<string, HTMLImageElement> = {};
 
+    generateGridCanvas(): HTMLCanvasElement {
+        const lineWidth = 2;
+
+        let canvas = document.createElement('canvas');
+        canvas.width = this.settings.canvasWidth;
+        canvas.height = this.settings.canvasHeight;
+
+        let context = canvas.getContext('2d')!;
+        // Draws a grid, for the editor
+        context.globalAlpha = 0.3;
+        context.strokeStyle = "black";
+        context.lineWidth = lineWidth;
+        context.lineCap = "butt";
+        const horizontalLine = (y: number) => {
+            context.beginPath();
+            context.moveTo(0, y);
+            context.lineTo(this.settings.canvasWidth, y);
+            context.stroke();
+        };
+        const verticalLine = (x: number) => {
+            context.beginPath();
+            context.moveTo(x, 0);
+            context.lineTo(x, this.settings.canvasHeight); // TODO: not correct
+            context.stroke();
+        };
+
+        let xPos = this.settings.brickSpacing / 2;
+        for (let x = 0; x <= this.settings.levelWidth; x++) {
+            verticalLine(xPos);
+            xPos += this.settings.brickSpacing + this.settings.brickWidth;
+        }
+
+        let yPos = this.settings.brickSpacing / 2;
+        for (let y = 0; y < this.settings.levelHeight; y++) {
+            horizontalLine(yPos);
+            yPos += this.settings.brickSpacing + this.settings.brickHeight;
+        }
+
+        // Draw special lines for the very center of the grid
+        context.strokeStyle = "#440044";
+        context.lineWidth = 2;
+        context.setLineDash([1, 1]);
+        verticalLine(levelCenter("x", this.settings));
+        horizontalLine(levelCenter("y", this.settings));
+
+        context.globalAlpha = 1.0;
+
+        return canvas;
+    }
+
     constructor(game: Game, editor: Editor, canvas: HTMLCanvasElement, statusbarCanvas: HTMLCanvasElement, settings: Settings, imagesLoadedCallback: () => void) {
+        this.settings = settings;
         this.game = game;
         this.editor = editor;
         this.canvas = canvas;
+        this.gridCanvas = this.generateGridCanvas();
         this.statusbarCanvas = statusbarCanvas;
         this.ctx = canvas.getContext('2d')!!;
         this.sctx = statusbarCanvas.getContext('2d')!!
-        this.settings = settings;
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
                               "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete",
-                              "button_pushed", "button_unpushed", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center"];
+                              "button_pushed", "button_unpushed", "icon_grid", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -193,11 +247,11 @@ export class DrawingHandler {
     }
 
     // Only used for actual mouse cursors, not blocks about to be placed
-    drawCursor(imageName: string, offset: boolean) {
+    drawCursor(imageName: string, offset: boolean, pos: Vec2 = this.editor.cursor) {
         const e = this.editor;
         const width = this.images[imageName].width;
         const height = this.images[imageName].height;
-        this.ctx.drawImage(this.images[imageName], e.cursor.x - (offset ? width/2 : 0), e.cursor.y - (offset ? height/2 : 0));
+        this.ctx.drawImage(this.images[imageName], pos.x - (offset ? width/2 : 0), pos.y - (offset ? height/2 : 0));
     }
 
     drawEditorToolbar() {
@@ -224,14 +278,26 @@ export class DrawingHandler {
 
         this.drawEditorToolbar();
 
+        if (e.shouldDrawGrid || e.setSymmetryCenter)
+            this.drawGrid();
+
         this.drawBricks();
+
+        // Draw the symmetry center, if symmetry is enabled, and we're not currently changing it (in which case it's drawn as the cursor, instead!)
+        if ((e.verticalSymmetry || e.horizontalSymmetry) && !e.setSymmetryCenter) {
+            this.drawCursor("icon_symmetry_center", true, e.symmetryCenter);
+        }
 
         // Draw the active brick / mouse pointer (last of all, so that it is on top)
         const maxY = (this.settings.levelHeight - 1) * this.settings.brickHeight + (this.settings.levelHeight - 1) * this.settings.brickSpacing;
 
         if (e.cursor.y < maxY && e.cursor.x < this.settings.canvasWidth) {
             // Cursor is in the level area
-            if (e.shiftDown)
+            if (e.setSymmetryCenter) {
+                let pos = snapSymmetryCenter(this.editor.cursor, this.settings);
+                this.drawCursor("icon_symmetry_center", true, pos);
+            }
+            else if (e.shiftDown)
                 this.drawCursor("cursor_select", true);
             else if (e.altDown)
                 this.drawCursor("cursor_deselect", true)
@@ -255,6 +321,11 @@ export class DrawingHandler {
         }
         else
             this.drawCursor("cursor_regular", false);
+    }
+
+    drawGrid() {
+        this.ctx.globalAlpha = 1.0;
+        this.ctx.drawImage(this.gridCanvas, 0, 0);
     }
 
     drawEditorCursorBlock(pos: BrickPosition, highlight: boolean) {

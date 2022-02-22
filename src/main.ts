@@ -29,7 +29,7 @@ window.addEventListener('DOMContentLoaded', () => {
         brickHeight: 25,
         brickSpacing: 4,
         levelWidth: 15, // in # of bricks
-        levelHeight: 23, // in # of bricks
+        levelHeight: 24, // in # of bricks; note that the last brick line is always empty, so in practice, this is an ODD height, not even
         canvasBackground: "#f7faff", //#ecf2ff" // "#ddedff" // #eaeaea
         powerupProbability: 6,//      * 2.5, // dev bonus
         powerupImageRadius: 18,

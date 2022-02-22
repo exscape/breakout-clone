@@ -138,3 +138,24 @@ export function calculateSymmetricPositions(pos: BrickPosition, horizontalSymmet
 
     return result;
 }
+
+// Snap the symmetry center point from any (x,y) coordinate to one that is aligned with a brick center or edge
+export function snapSymmetryCenter(cursor: Vec2, settings: Settings): Vec2 {
+    let snapped = new Vec2(cursor);
+
+    // This sure saved me a while of thinking/trial and error. :-)
+    // https://stackoverflow.com/a/16338275/1668576
+    let snapValue = (input: number, offset: number, multiple: number) => { return (Math.round((input - offset) / multiple) * multiple) + offset; }
+
+    snapped.x = snapValue(cursor.x, settings.brickSpacing / 2, (settings.brickSpacing + settings.brickWidth) / 2);
+    snapped.y = snapValue(cursor.y, settings.brickSpacing / 2, (settings.brickSpacing + settings.brickHeight) / 2);
+
+    return snapped;
+}
+
+export function levelCenter(axis: "x" | "y", settings: Settings) {
+    if (axis === "x")
+        return settings.canvasWidth / 2;
+    else
+        return drawCoordsFromBrickCoords("y", Math.floor(settings.levelHeight / 2), settings) - (settings.brickHeight / 2) - settings.brickSpacing;
+}

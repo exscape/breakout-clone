@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, Rect } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, levelCenter, Rect, snapSymmetryCenter } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 
@@ -48,6 +48,10 @@ export class Editor {
     toolbarButtons: ToolbarButton[] = [];
     verticalSymmetry: boolean = false;
     horizontalSymmetry: boolean = false;
+    setSymmetryCenter: boolean = false;
+    shouldDrawGrid: boolean = false;
+    symmetryCenter: Vec2 = new Vec2();
+    symmetryCenterButton: ToolbarButton | undefined;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
@@ -65,6 +69,8 @@ export class Editor {
         this.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
         this.bricksBeforeDrag = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
         this.game.loadLevel(this.emptyLevelText, this.bricks);
+
+        this.symmetryCenter = new Vec2(levelCenter("x", this.settings), levelCenter("y", this.settings));
     }
 
     exportLevel(): string {
@@ -96,21 +102,25 @@ export class Editor {
         const x = this.settings.canvasWidth;
         let y = 4;
 
+        this.toolbarButtons.push(new ToolbarButton(new Rect(x, y, 48, 48), "icon_grid", "Show grid", false, (enabled: boolean) => {
+            this.shouldDrawGrid = enabled;
+        }));
+        y += 48;
+
         this.toolbarButtons.push(new ToolbarButton(new Rect(x, y, 48, 48), "icon_hsymmetry", "Horizontal symmetry", false, (enabled: boolean) => {
-            console.log("HSymmetry clicked, enabled: " + enabled);
             this.horizontalSymmetry = enabled;
         }));
         y += 48;
 
         this.toolbarButtons.push(new ToolbarButton(new Rect(x, y, 48, 48), "icon_vsymmetry", "Vertical symmetry", false, (enabled: boolean) => {
-            console.log("VSymmetry clicked, enabled: " + enabled);
             this.verticalSymmetry = enabled;
         }));
         y += 48;
 
         this.toolbarButtons.push(new ToolbarButton(new Rect(x, y, 48, 48), "icon_symmetry_center", "Set symmetry centerpoint", false, (enabled: boolean) => {
-            console.log("symmetry center icon clicked, enabled: " + enabled);
+            this.setSymmetryCenter = enabled;
         }));
+        this.symmetryCenterButton = this.toolbarButtons[this.toolbarButtons.length - 1];
     }
 
     selectBrickAtCursor(selectOrDeselect: "select" | "deselect" = "select") {
@@ -283,7 +293,7 @@ export class Editor {
         this.cursor.x = clamp(this.cursor.x + e.movementX, 0, this.settings.canvasWidth + this.settings.editorToolbarWidth - 3);
         this.cursor.y = clamp(this.cursor.y + e.movementY, 0, this.settings.canvasHeight - 1);
 
-        if (this.cursor.x < this.settings.canvasWidth && (this.leftButtonDown || this.rightButtonDown)) {
+        if (this.cursor.x < this.settings.canvasWidth && (this.leftButtonDown || this.rightButtonDown) && !this.setSymmetryCenter) {
             if (this.currentlyDragging)
                 this.dragMoved();
             else if (this.shiftDown)
@@ -300,6 +310,13 @@ export class Editor {
             this.leftButtonDown = false;
         else if (e.button === 2)
             this.rightButtonDown = false;
+
+        if (this.setSymmetryCenter && this.cursor.x < this.settings.canvasWidth && this.cursor.y < this.settings.paletteY) {
+            this.symmetryCenter = snapSymmetryCenter(this.cursor, this.settings);
+            this.setSymmetryCenter = false;
+            if (this.symmetryCenterButton)
+                this.symmetryCenterButton.enabled = false;
+        }
 
         if (this.currentlyDragging)
             this.stopDrag();
@@ -331,7 +348,7 @@ export class Editor {
             if (index < this.brickPalette.length)
                 this.activeBrick = `brick${this.brickPalette[index]}`;
         }
-        else {
+        else if (!this.setSymmetryCenter) {
             // Click is in the game area
             if (this.shiftDown)
                 this.selectBrickAtCursor();
