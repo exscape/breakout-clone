@@ -189,7 +189,7 @@ export class DrawingHandler {
         }
     }
 
-    // Only used for actual cursors, not active blocks
+    // Only used for actual mouse cursors, not blocks about to be placed
     drawCursor(imageName: string, offset: boolean) {
         const e = this.game.editor;
         const width = this.images[imageName].width;
@@ -198,6 +198,9 @@ export class DrawingHandler {
     }
 
     drawEditorToolbar() {
+        this.ctx.fillStyle = "#e5e5e5";
+        this.ctx.fillRect(this.settings.canvasWidth, 0, this.settings.editorToolbarWidth, this.settings.canvasHeight);
+
         let y = 4;
         for (let button of this.game.editor.toolbarButtons) {
             const foregroundImage = this.images[button.image];
@@ -215,8 +218,6 @@ export class DrawingHandler {
         // Clear the frame
         this.ctx.fillStyle = this.settings.canvasBackground;
         this.ctx.fillRect(0, 0, this.settings.canvasWidth + this.settings.editorToolbarWidth, this.settings.canvasHeight);
-        this.ctx.fillStyle = "#e5e5e5";
-        this.ctx.fillRect(this.settings.canvasWidth, 0, this.settings.editorToolbarWidth, this.settings.canvasHeight);
 
         this.drawEditorToolbar();
 
@@ -240,12 +241,12 @@ export class DrawingHandler {
                 const symmetricBricks = calculateSymmetricPositions(brickPos, e.horizontalSymmetry, e.verticalSymmetry, this.settings.levelWidth, this.settings.levelHeight);
 
                 for (let brick of symmetricBricks) {
-                    const originalBlock = (brickPos.x === brick.x && brickPos.y === brick.y);
+                    const originalBrick: boolean = (brickPos.x === brick.x && brickPos.y === brick.y);
                     brick.x = drawCoordsFromBrickCoords("x", brick.x, this.settings) + this.settings.brickWidth / 2;
                     brick.y = drawCoordsFromBrickCoords("y", brick.y, this.settings) + this.settings.brickHeight / 2;
 
                     // Only highlight the original block, where the mouse pointer actually is
-                    this.drawEditorCursorBlock(brick, originalBlock);
+                    this.drawEditorCursorBlock(brick, originalBrick);
                 }
             }
         }
