@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, levelCenter, Rect, snapSymmetryCenter } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, levelCenter, Rect, snapSymmetryCenter, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 
@@ -176,8 +176,9 @@ export class Editor {
         if (!pos)
             return;
 
-        for (let symmetricPosition of calculateSymmetricPositions(pos, this.horizontalSymmetry, this.verticalSymmetry, this.settings.levelWidth, this.settings.levelHeight)) {
-            this.placeBrickAtPosition(symmetricPosition, (this.activeBrick === "brick_delete" || rightClick));
+        for (let symmetricPosition of calculateSymmetricPositions(pos, this.symmetryCenter, this.horizontalSymmetry, this.verticalSymmetry, this.settings)) {
+            if (validBrickPosition(symmetricPosition, this.settings))
+                this.placeBrickAtPosition(symmetricPosition, (this.activeBrick === "brick_delete" || rightClick));
         }
     }
 
@@ -347,6 +348,11 @@ export class Editor {
             // Click is in the palette
             if (index < this.brickPalette.length)
                 this.activeBrick = `brick${this.brickPalette[index]}`;
+
+            // Change modes if necessary
+            this.setSymmetryCenter = false;
+            if (this.symmetryCenterButton)
+                this.symmetryCenterButton.enabled = false;
         }
         else if (!this.setSymmetryCenter) {
             // Click is in the game area

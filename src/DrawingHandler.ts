@@ -3,7 +3,7 @@ import { Editor } from "./Editor";
 import { Game } from "./Game";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 
 export class DrawingHandler {
@@ -307,9 +307,11 @@ export class DrawingHandler {
                 brickPos.x = brickCoordsFromDrawCoords("x", e.cursor.x, this.settings);
                 brickPos.y = brickCoordsFromDrawCoords("y", e.cursor.y, this.settings);
 
-                const symmetricBricks = calculateSymmetricPositions(brickPos, e.horizontalSymmetry, e.verticalSymmetry, this.settings.levelWidth, this.settings.levelHeight);
+                const symmetricBricks = calculateSymmetricPositions(brickPos, e.symmetryCenter, e.horizontalSymmetry, e.verticalSymmetry, this.settings);
 
                 for (let brick of symmetricBricks) {
+                    if (!validBrickPosition(brick, this.settings))
+                        continue;
                     const originalBrick: boolean = (brickPos.x === brick.x && brickPos.y === brick.y);
                     brick.x = drawCoordsFromBrickCoords("x", brick.x, this.settings) + this.settings.brickWidth / 2;
                     brick.y = drawCoordsFromBrickCoords("y", brick.y, this.settings) + this.settings.brickHeight / 2;

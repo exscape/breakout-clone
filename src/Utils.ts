@@ -112,29 +112,38 @@ export function copyBrickArray(src: BrickOrEmpty[][], dst: BrickOrEmpty[][], cop
     }
 }
 
-function calculateOneSymmetricPosition(axis: "x" | "y", pos: BrickPosition, maxValue: number) {
+function calculateOneSymmetricPosition(axis: "x" | "y", symmetryCenter: number, pos: BrickPosition, settings: Settings) {
+    // Okay. symmetryCenter is a already-snapped *pixel* value, not a brick value.
+    // It's positioned either on a brick edge OR at a brick center, separately, on the x and y axes.
+    // First, calculate the brick position, allowing half values.
+    // We use round, but this should produce exact values even without rounding to the nearest half, and in my testing did so.
+    const brickSize = (axis === "x") ? settings.brickWidth : settings.brickHeight;
+    const center = Math.round(2 * (symmetryCenter - settings.brickSpacing / 2) / (settings.brickSpacing + brickSize)) / 2;
+
     let newPos = new BrickPosition(pos);
     if (axis === "x")
-        newPos.x = maxValue - pos.x - 1;
+        newPos.x = 2*center - pos.x - 1;
     else
-        newPos.y = maxValue - pos.y - 1;
+        newPos.y = 2*center - pos.y - 1;
+
     return newPos;
 }
 
-export function calculateSymmetricPositions(pos: BrickPosition, horizontalSymmetry: boolean, verticalSymmetry: boolean, maxX: number, maxY: number) {
+// Note: This can return out-of-bounds block positions. Check each return with validBrickPosition()!
+export function calculateSymmetricPositions(pos: BrickPosition, symmetryCenter: Vec2, horizontalSymmetry: boolean, verticalSymmetry: boolean, settings: Settings) {
     let result: BrickPosition[] = [new BrickPosition(pos)];
 
     let newPosH = pos; // Needs a value to silence the compiler, even though we know it's never used when undefined
     if (horizontalSymmetry) {
-        newPosH = calculateOneSymmetricPosition("x", pos, maxX);
+        newPosH = calculateOneSymmetricPosition("x", symmetryCenter.x, pos, settings);
         result.push(newPosH);
     }
 
     if (verticalSymmetry)
-        result.push(calculateOneSymmetricPosition("y", pos, maxY));
+        result.push(calculateOneSymmetricPosition("y", symmetryCenter.y, pos, settings));
 
     if (horizontalSymmetry && verticalSymmetry)
-        result.push(calculateOneSymmetricPosition("y", newPosH, maxY));
+        result.push(calculateOneSymmetricPosition("y", symmetryCenter.y, newPosH, settings));
 
     return result;
 }
@@ -158,4 +167,10 @@ export function levelCenter(axis: "x" | "y", settings: Settings) {
         return settings.canvasWidth / 2;
     else
         return drawCoordsFromBrickCoords("y", Math.floor(settings.levelHeight / 2), settings) - (settings.brickHeight / 2) - settings.brickSpacing;
+}
+
+export function validBrickPosition(brick: BrickPosition, settings: Settings) {
+    return (brick.x >= 0 && brick.x < settings.levelWidth &&
+            brick.y >= 0 && brick.y < settings.levelHeight);
+
 }
