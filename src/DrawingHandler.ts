@@ -288,6 +288,9 @@ export class DrawingHandler {
             this.drawCursor("icon_symmetry_center", true, e.symmetryCenter);
         }
 
+        // Draw tooltips on toolbar icon hover
+        this.drawTooltips();
+
         // Draw the active brick / mouse pointer (last of all, so that it is on top)
         const maxY = (this.settings.levelHeight - 1) * this.settings.brickHeight + (this.settings.levelHeight - 1) * this.settings.brickSpacing;
 
@@ -323,6 +326,29 @@ export class DrawingHandler {
         }
         else
             this.drawCursor("cursor_regular", false);
+    }
+
+    drawTooltips() {
+        for (let button of this.editor.toolbarButtons) {
+            if (button.rect.isInsideRect(this.editor.cursor)) {
+                this.ctx.font = "14px Arial";
+                this.ctx.strokeStyle = "black";
+                this.ctx.textBaseline = "middle";
+                const width = this.ctx.measureText(button.tooltip).width;
+                const height = parseInt(this.ctx.font) + 4;
+                const padding = 8;
+                const dist = 16; // Distance from button
+                this.ctx.fillStyle = "#e9e9e9";
+                this.ctx.strokeStyle = "black";
+                this.ctx.lineWidth = 1;
+
+                const left = button.rect.left - width - padding - dist;
+                const top = (button.rect.bottom + button.rect.top)/2 - height/2 - padding;
+                this.ctx.fillRect(left, top, width + 2 * padding, height + 2 * padding);
+                this.ctx.strokeRect(left, top, width + 2 * padding, height + 2 * padding);
+                this.drawText(button.tooltip, "14px Arial", "black", "left", button.rect.left - width - dist, (button.rect.bottom + button.rect.top)/2);
+            }
+        }
     }
 
     drawGrid() {
