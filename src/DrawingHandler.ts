@@ -36,13 +36,13 @@ export class DrawingHandler {
         const horizontalLine = (y: number) => {
             context.beginPath();
             context.moveTo(0, y);
-            context.lineTo(this.settings.canvasWidth, y);
+            context.lineTo(lineWidth + this.settings.levelWidth * (this.settings.brickSpacing + this.settings.brickWidth), y);
             context.stroke();
         };
         const verticalLine = (x: number) => {
             context.beginPath();
             context.moveTo(x, 0);
-            context.lineTo(x, this.settings.canvasHeight); // TODO: not correct
+            context.lineTo(x, lineWidth + (this.settings.levelHeight - 1) * (this.settings.brickSpacing + this.settings.brickHeight));
             context.stroke();
         };
 
