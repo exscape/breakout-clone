@@ -1,7 +1,25 @@
-import { result } from "lodash";
-import { Brick, BrickOrEmpty } from "./Brick";
+import { BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
 import { BrickPosition, Vec2 } from "./Vec2";
+
+export class Rect {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+
+    constructor(left: number, top: number, width: number, height: number) {
+        this.left = left;
+        this.top = top;
+        this.right = left + width;
+        this.bottom = top + height;
+    }
+
+    isInsideRect(pos: Vec2): boolean {
+        return pos.x >= this.left && pos.x < this.right &&
+               pos.y >= this.top && pos.y < this.bottom;
+    }
+}
 
 export function generatePairs(list: any[]): any[] {
     let pairs: any[] = [];

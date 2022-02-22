@@ -348,6 +348,8 @@ export class Game {
         this.statusbarCanvas.style.display = "none";
         this.canvas.style.borderBottom = "2px solid black";
         this.helpElement.innerHTML = this.EDITOR_HELP_TEXT;
+
+        this.canvas.width = this.settings.canvasWidth + this.settings.editorToolbarWidth;
     }
 
     exitEditor() {
@@ -355,6 +357,7 @@ export class Game {
         this.statusbarCanvas.style.display = "block";
         this.canvas.style.borderBottom = "none";
         this.helpElement.innerHTML = this.GAME_HELP_TEXT;
+        this.canvas.width = this.settings.canvasWidth;
     }
 
     togglePause() { this.gamePaused = !this.gamePaused; }

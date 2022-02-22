@@ -21,6 +21,7 @@ window.addEventListener('DOMContentLoaded', () => {
         canvasWidth: 0,  // calculated below
         canvasHeight: 0, // calculated below
         statusbarHeight: 44,
+        editorToolbarWidth: 48,
         ballRadius: 13,
         paddleThickness: 25,
         ballSpeed: 0.64,
@@ -37,6 +38,8 @@ window.addEventListener('DOMContentLoaded', () => {
         aimLineLength: 150,
         paletteY: 0 // calculated below
     }
+
+    // NOTE: canvasWidth EXCLUDES the width of the editor toolbar. canvasWidth matches the width of the <canvas> in the game, but not in the editor.
     settings.canvasWidth = settings.levelWidth * settings.brickWidth + settings.brickSpacing * (settings.levelWidth + 1);
     settings.canvasHeight = (settings.levelHeight + 1) * settings.brickHeight + settings.brickSpacing * (settings.levelHeight + 2);
     settings.paletteY = settings.canvasHeight - settings.brickHeight - settings.brickSpacing;

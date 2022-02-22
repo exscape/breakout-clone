@@ -25,7 +25,8 @@ export class DrawingHandler {
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
-                              "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete"];
+                              "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete",
+                              "button_pushed", "button_unpushed", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -196,19 +197,35 @@ export class DrawingHandler {
         this.ctx.drawImage(this.images[imageName], e.cursor.x - (offset ? width/2 : 0), e.cursor.y - (offset ? height/2 : 0));
     }
 
+    drawEditorToolbar() {
+        let y = 4;
+        for (let button of this.game.editor.toolbarButtons) {
+            const foregroundImage = this.images[button.image];
+            const backgroundImage = button.enabled ? this.images["button_pushed"] : this.images["button_unpushed"];
+            this.ctx.drawImage(backgroundImage, this.settings.canvasWidth, y);
+            this.ctx.drawImage(foregroundImage, this.settings.canvasWidth, y);
+
+            y += 48;
+        }
+    }
+
     drawEditorFrame() {
         const e = this.game.editor;
 
         // Clear the frame
         this.ctx.fillStyle = this.settings.canvasBackground;
-        this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+        this.ctx.fillRect(0, 0, this.settings.canvasWidth + this.settings.editorToolbarWidth, this.settings.canvasHeight);
+        this.ctx.fillStyle = "#e5e5e5";
+        this.ctx.fillRect(this.settings.canvasWidth, 0, this.settings.editorToolbarWidth, this.settings.canvasHeight);
+
+        this.drawEditorToolbar();
 
         this.drawBricks();
 
         // Draw the active brick / mouse pointer (last of all, so that it is on top)
         const maxY = (this.settings.levelHeight - 1) * this.settings.brickHeight + (this.settings.levelHeight - 1) * this.settings.brickSpacing;
 
-        if (e.cursor.y < maxY) {
+        if (e.cursor.y < maxY && e.cursor.x < this.settings.canvasWidth) {
             // Cursor is in the level area
             if (e.shiftDown)
                 this.drawCursor("cursor_select", true);

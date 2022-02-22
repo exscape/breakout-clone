@@ -2,9 +2,25 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, Rect } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
+
+export class ToolbarButton {
+    image: string;
+    clickCallback: (enabled: boolean) => void;
+    tooltip: string;
+    enabled: boolean;
+    rect: Rect;
+
+    constructor(rect: Rect, image: string, tooltip: string, initiallyEnabled: boolean, clickCallback: (enabled: boolean) => void) {
+        this.image = image;
+        this.clickCallback = clickCallback;
+        this.enabled = initiallyEnabled;
+        this.tooltip = tooltip;
+        this.rect = rect;
+    }
+}
 
 export class Editor {
     game: Game;
@@ -29,14 +45,17 @@ export class Editor {
     altDown: boolean = false;
     ctrlDown: boolean = false;
 
-    verticalSymmetry: boolean = true;
-    horizontalSymmetry: boolean = true;
+    toolbarButtons: ToolbarButton[] = [];
+    verticalSymmetry: boolean = false;
+    horizontalSymmetry: boolean = false;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
         this.settings = settings;
         this.cursor = new Vec2(this.settings.canvasWidth / 2, this.settings.canvasHeight / 2);
         this.emptyLevelText = (".".repeat(this.settings.levelWidth) + "\n").repeat(this.settings.levelHeight);
+
+        this.setupToolbarButtons();
 
         this.clearLevel();
     }
@@ -71,6 +90,27 @@ export class Editor {
             lines.push(line.join(""));
         }
         return lines.join("");
+    }
+
+    setupToolbarButtons() {
+        const x = this.settings.canvasWidth;
+        let y = 4;
+
+        this.toolbarButtons.push(new ToolbarButton(new Rect(x, y, 48, 48), "icon_hsymmetry", "Horizontal symmetry", false, (enabled: boolean) => {
+            console.log("HSymmetry clicked, enabled: " + enabled);
+            this.horizontalSymmetry = enabled;
+        }));
+        y += 48;
+
+        this.toolbarButtons.push(new ToolbarButton(new Rect(x, y, 48, 48), "icon_vsymmetry", "Vertical symmetry", false, (enabled: boolean) => {
+            console.log("VSymmetry clicked, enabled: " + enabled);
+            this.verticalSymmetry = enabled;
+        }));
+        y += 48;
+
+        this.toolbarButtons.push(new ToolbarButton(new Rect(x, y, 48, 48), "icon_symmetry_center", "Set symmetry centerpoint", false, (enabled: boolean) => {
+            console.log("symmetry center icon clicked, enabled: " + enabled);
+        }));
     }
 
     selectBrickAtCursor(selectOrDeselect: "select" | "deselect" = "select") {
@@ -240,10 +280,10 @@ export class Editor {
     }
 
     mouseMoved(e: MouseEvent) {
-        this.cursor.x = clamp(this.cursor.x + e.movementX, 0, this.settings.canvasWidth - 3);
+        this.cursor.x = clamp(this.cursor.x + e.movementX, 0, this.settings.canvasWidth + this.settings.editorToolbarWidth - 3);
         this.cursor.y = clamp(this.cursor.y + e.movementY, 0, this.settings.canvasHeight - 1);
 
-        if (this.leftButtonDown || this.rightButtonDown) {
+        if (this.cursor.x < this.settings.canvasWidth && (this.leftButtonDown || this.rightButtonDown)) {
             if (this.currentlyDragging)
                 this.dragMoved();
             else if (this.shiftDown)
@@ -270,6 +310,20 @@ export class Editor {
             this.leftButtonDown = true;
         else if (e.button === 2)
             this.rightButtonDown = true;
+
+        // Handle toolbar clicks
+        if (this.cursor.x >= this.settings.canvasWidth) {
+            for (let button of this.toolbarButtons) {
+                if (button.rect.isInsideRect(this.cursor)) {
+                    button.enabled = !button.enabled;
+                    button.clickCallback(button.enabled);
+                    return;
+                }
+            }
+
+            // Return even if no button was clicked
+            return;
+         }
 
         const index = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
         if (this.cursor.y >= this.settings.paletteY && this.cursor.y < this.settings.paletteY + this.settings.brickHeight) {
