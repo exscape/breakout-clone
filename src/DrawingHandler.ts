@@ -255,8 +255,15 @@ export class DrawingHandler {
     }
 
     drawEditorToolbar() {
+        this.ctx.globalAlpha = 1.0;
         this.ctx.fillStyle = "#e5e5e5";
         this.ctx.fillRect(this.settings.canvasWidth, 0, this.settings.editorToolbarWidth, this.settings.canvasHeight);
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = "black";
+        this.ctx.lineWidth = 1;
+        this.ctx.moveTo(this.settings.canvasWidth - 1, 0);
+        this.ctx.lineTo(this.settings.canvasWidth - 1, this.settings.canvasHeight);
+        this.ctx.stroke();
 
         let y = 4;
         for (let button of this.editor.toolbarButtons) {
