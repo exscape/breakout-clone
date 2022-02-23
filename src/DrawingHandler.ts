@@ -28,11 +28,11 @@ export class DrawingHandler {
         canvas.height = this.settings.canvasHeight;
 
         let context = canvas.getContext('2d')!;
-        // Draws a grid, for the editor
         context.globalAlpha = 0.3;
         context.strokeStyle = "black";
         context.lineWidth = lineWidth;
         context.lineCap = "butt";
+
         const horizontalLine = (y: number) => {
             context.beginPath();
             context.moveTo(0, y);
@@ -139,7 +139,6 @@ export class DrawingHandler {
         this.drawStatusBar();
 
         // Draw the paddle
-        // paddleThickness/2 is also the end cap radius, so we need to subtract that from x as well
         const paddleCenter = this.game.paddle.position;
         const leftCapWidth = this.images["paddle_left"].width;
         const rightCapWidth = this.images["paddle_right"].width;
@@ -154,7 +153,7 @@ export class DrawingHandler {
         if (this.game.paddle.sticky) {
             this.ctx.globalAlpha = 0.5;
             this.ctx.beginPath();
-            this.ctx.strokeStyle = "#21c00a"; // "#45ff45";
+            this.ctx.strokeStyle = "#21c00a";
             this.ctx.lineCap = "round";
             const lineCapWidth = this.settings.paddleThickness / 2;
             this.ctx.moveTo(paddleCenter.x - this.game.paddle.width / 2 + lineCapWidth, paddleCenter.y);

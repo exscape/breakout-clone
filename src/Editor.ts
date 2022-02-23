@@ -261,7 +261,7 @@ export class Editor {
             }
         }
 
-        // Step 3: if shift is pressed, COPY instead of move. In other words, add the selected bricks back at their original locations
+        // Step 3: if ctrl is pressed, COPY instead of move. In other words, add the selected bricks back at their original locations
         if (this.ctrlDown) {
             copyBrickArray(this.bricksBeforeDrag, this.bricks, true, false, (b: BrickOrEmpty) => {
                 if (b)
@@ -275,12 +275,10 @@ export class Editor {
         copyBrickArray(this.bricks, this.bricksBeforeDrag, true, true);
         this.dragStartPos = this.brickPositionAtCursor()!;
         this.lastDragPos = this.dragStartPos;
-        console.log(`Start drag at (${this.dragStartPos.x},${this.dragStartPos.y})`);
     }
 
     stopDrag() {
         this.currentlyDragging = false;
-        console.log("Stop drag at " + Date.now());
     }
 
     abortDrag() {
