@@ -5,5 +5,11 @@
     "lodash": "^4.17.21",
     "parcel": "^2.0.0-rc.0",
     "typescript": "^4.5.5"
-  }
+  },
+  "devDependencies": {
+    "parcel-resolver-ignore": "^2.0.0"
+  },
+  "parcelIgnore": [
+      "login.php"
+  ]
 }

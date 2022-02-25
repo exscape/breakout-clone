@@ -1,2 +1,8 @@
 #!/bin/bash
-npx parcel -p 1337 --no-hmr --public-url /game/ $* index.htm img/*
+
+while :; do
+        echo Restarting Parcel...
+        npx parcel -p 1337 --no-hmr --public-url /game/ $* index.htm img/*
+        sleep 2;
+        echo
+done
