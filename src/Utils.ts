@@ -21,6 +21,22 @@ export class Rect {
     }
 }
 
+export class UIButton {
+    image: string | null;
+    clickCallback: (enabled: boolean) => void;
+    tooltip: string;
+    enabled: boolean;
+    rect: Rect;
+
+    constructor(rect: Rect, image: string | null, text: string, initiallyEnabled: boolean, clickCallback: (enabled: boolean) => void) {
+        this.image = image;
+        this.clickCallback = clickCallback;
+        this.enabled = initiallyEnabled;
+        this.tooltip = text;
+        this.rect = rect;
+    }
+}
+
 export function generatePairs(list: any[]): any[] {
     let pairs: any[] = [];
     if (list.length < 2) return []
@@ -70,9 +86,9 @@ export function lerp(a: number, b: number, r: number) {
 }
 
 // Convert from e.g. the brick at (4, 2) to the pixel coordinates (of the top-left corner)
-export function drawCoordsFromBrickCoords(type: "x" | "y", coord: number, settings: Settings): number {
+export function drawCoordsFromBrickCoords(type: "x" | "y", coord: number, settings: Settings, offset: number = 0): number {
     const size = (type === "x") ? settings.brickWidth : settings.brickHeight;
-    return settings.brickSpacing + coord * (size + (coord > 0 ? settings.brickSpacing : 0));
+    return offset + settings.brickSpacing + coord * (size + (coord > 0 ? settings.brickSpacing : 0));
 }
 
 // Convert from a screen coordinate anywhere inside a brick to its brick coordinate

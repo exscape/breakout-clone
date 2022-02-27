@@ -121,7 +121,7 @@ export class Game {
 
             this.level.bricks.length = 0;
             this.level.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
-            if (!this.loadLevel(this.levelText!!, this.level.bricks)) {
+            if (!this.loadLevelText(this.levelText!!, this.level.bricks)) {
                 this.loadingCompleted = false;
                 this.loadingFailed = true;
             }
@@ -135,6 +135,9 @@ export class Game {
         let ball = new Ball(new Vec2(), new Vec2());
         this.balls.push(ball);
         this.paddle.setStuckBall(ball);
+
+        if (!partialReset)
+            this.enterEditor();
     }
 
     fetchLevelIndex() {
@@ -197,7 +200,7 @@ export class Game {
         this.gameWon = true;
     }
 
-    loadLevel(levelText: string, target: BrickOrEmpty[][]): boolean {
+    loadLevelText(levelText: string, target: BrickOrEmpty[][]): boolean {
         let level2D: string[][] = [];
 
         let count = 0;

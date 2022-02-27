@@ -1,9 +1,10 @@
 import _ from "lodash";
 import { Editor } from "./Editor";
 import { Game } from "./Game";
+import { LevelSelector } from "./LevelSelector";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 
 export class DrawingHandler {
@@ -27,7 +28,7 @@ export class DrawingHandler {
         canvas.width = this.settings.canvasWidth;
         canvas.height = this.settings.canvasHeight;
 
-        let context = canvas.getContext('2d')!;
+        let context = canvas.getContext('2d', { alpha: false })!;
         context.globalAlpha = 0.3;
         context.strokeStyle = "black";
         context.lineWidth = lineWidth;
@@ -77,8 +78,8 @@ export class DrawingHandler {
         this.canvas = canvas;
         this.gridCanvas = this.generateGridCanvas();
         this.statusbarCanvas = statusbarCanvas;
-        this.ctx = canvas.getContext('2d')!!;
-        this.sctx = statusbarCanvas.getContext('2d')!!
+        this.ctx = canvas.getContext('2d', { alpha: false })!;
+        this.sctx = statusbarCanvas.getContext('2d', { alpha: false })!
 
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
@@ -105,6 +106,7 @@ export class DrawingHandler {
     }
 
     drawText(text: string, font: string, fillStyle: string, textAlign: CanvasTextAlign, x: number, y: number, context = this.ctx) {
+        context.beginPath();
         context.font = font;
         context.fillStyle = fillStyle;
         context.textAlign = textAlign;
@@ -125,6 +127,7 @@ export class DrawingHandler {
         // Clear the frame
         this.ctx.fillStyle = this.settings.canvasBackground;
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
+        this.ctx.beginPath();
 
         if (!this.game.loadingCompleted && !this.game.loadingFailed) {
             this.drawText("Loading images...", "30px Arial", "#ee3030", "center", 0, 400);
@@ -247,7 +250,6 @@ export class DrawingHandler {
 
     // Only used for actual mouse cursors, not blocks about to be placed
     drawCursor(imageName: string, offset: boolean, pos: Vec2 = this.editor.cursor) {
-        const e = this.editor;
         const width = this.images[imageName].width;
         const height = this.images[imageName].height;
         this.ctx.drawImage(this.images[imageName], pos.x - (offset ? width/2 : 0), pos.y - (offset ? height/2 : 0));
@@ -264,14 +266,35 @@ export class DrawingHandler {
         this.ctx.lineTo(this.settings.canvasWidth - 1, this.settings.canvasHeight);
         this.ctx.stroke();
 
-        let y = 4;
         for (let button of this.editor.toolbarButtons) {
+            this.drawButton(button);
+        }
+    }
+
+    drawButton(button: UIButton) {
+        if (button.image) {
+            // Draw an icon-based button
             const foregroundImage = this.images[button.image];
             const backgroundImage = button.enabled ? this.images["button_pushed"] : this.images["button_unpushed"];
-            this.ctx.drawImage(backgroundImage, this.settings.canvasWidth, y);
-            this.ctx.drawImage(foregroundImage, this.settings.canvasWidth, y);
+            this.ctx.drawImage(backgroundImage, button.rect.left, button.rect.top);
+            this.ctx.drawImage(foregroundImage, button.rect.left, button.rect.top);
+        }
+        else {
+            // Draw a text button
+            this.ctx.beginPath();
+            this.ctx.fillStyle = "#efefef";
+            this.ctx.strokeStyle = "black";
+            this.ctx.lineWidth = 1;
+            this.ctx.fillRect(button.rect.left, button.rect.top, button.rect.right - button.rect.left, button.rect.bottom - button.rect.top);
+            this.ctx.strokeRect(button.rect.left, button.rect.top, button.rect.right - button.rect.left, button.rect.bottom - button.rect.top);
+            this.ctx.fillStyle = "black";
+            const old = this.ctx.textBaseline;
+            this.ctx.textBaseline = "middle";
+            this.ctx.textAlign = "start";
+            const {width: textWidth} = this.ctx.measureText(button.tooltip);
+            this.ctx.fillText(button.tooltip, button.rect.left + (button.rect.right - button.rect.left - textWidth) / 2, button.rect.top + (button.rect.bottom - button.rect.top)/2);
 
-            y += 48;
+            this.ctx.textBaseline = old;
         }
     }
 
@@ -279,6 +302,7 @@ export class DrawingHandler {
         const e = this.editor;
 
         // Clear the frame
+        this.ctx.beginPath();
         this.ctx.fillStyle = this.settings.canvasBackground;
         this.ctx.fillRect(0, 0, this.settings.canvasWidth + this.settings.editorToolbarWidth, this.settings.canvasHeight);
 
@@ -294,13 +318,20 @@ export class DrawingHandler {
             this.drawCursor("icon_symmetry_center", true, e.symmetryCenter);
         }
 
+        if (e.levelSelector) {
+            this.drawLevelSelector(e.levelSelector);
+            this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
+            this.drawCursor("cursor_regular", false);
+            return;
+        }
+
         // Draw tooltips on toolbar icon hover
         this.drawTooltips();
 
         // Draw the active brick / mouse pointer (last of all, so that it is on top)
         const maxY = (this.settings.levelHeight - 1) * this.settings.brickHeight + (this.settings.levelHeight - 1) * this.settings.brickSpacing;
 
-        if (e.cursor.y < maxY && e.cursor.x < this.settings.canvasWidth) {
+        if (!e.levelSelector && e.cursor.y < maxY && e.cursor.x < this.settings.canvasWidth) {
             // Cursor is in the level area
             if (e.setSymmetryCenter) {
                 let pos = snapSymmetryCenter(this.editor.cursor, this.settings);
@@ -332,11 +363,24 @@ export class DrawingHandler {
         }
         else
             this.drawCursor("cursor_regular", false);
+
+    }
+
+    drawLevelSelector(sel: LevelSelector) {
+        this.ctx.translate(sel.pos.x, sel.pos.y);
+        sel.draw(this.ctx, this.game.level.bricks, this.images);
+
+        for (let button of sel.buttons) {
+            this.drawButton(button);
+        }
+
+        this.ctx.translate(-sel.pos.x, -sel.pos.y);
     }
 
     drawTooltips() {
         for (let button of this.editor.toolbarButtons) {
             if (button.rect.isInsideRect(this.editor.cursor)) {
+                this.ctx.beginPath();
                 this.ctx.font = "14px Arial";
                 this.ctx.strokeStyle = "black";
                 this.ctx.textBaseline = "middle";
@@ -369,6 +413,7 @@ export class DrawingHandler {
 
         if (highlight) {
             // Draw a border around the image; otherwise, the mouse location is invisible when hovering over blocks of the same color.
+            this.ctx.beginPath();
             this.ctx.strokeStyle = "red";
             this.ctx.lineWidth = 2;
             this.ctx.strokeRect(pos.x - this.settings.brickWidth / 2 - 2, pos.y - this.settings.brickHeight / 2 - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
@@ -383,6 +428,7 @@ export class DrawingHandler {
             this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
 
             if (brick.selected) {
+                this.ctx.beginPath();
                 this.ctx.strokeStyle = "blue";
                 this.ctx.globalAlpha = 1.0;
                 this.ctx.lineWidth = 2;
@@ -438,6 +484,7 @@ export class DrawingHandler {
             lives = "🕱";
             width = 1;
         }
+        this.sctx.beginPath();
         this.drawText(lives, `${fontSize}px ${fontName}`, textColor, "left", x, textY, this.sctx);
         x += 4 + iconTextSpacing + width * charWidth;
 
@@ -494,10 +541,7 @@ export class DrawingHandler {
         }
 
         // Draw the current framerate
-        /*
-        this.sctx.textBaseline = "middle";
-        this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, this.settings.statusbarHeight / 2, this.sctx);
-        this.sctx.textBaseline = "alphabetic";
-        */
+        this.sctx.beginPath();
+        this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
     }
 }
