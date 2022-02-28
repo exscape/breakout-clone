@@ -320,7 +320,7 @@ export class DrawingHandler {
 
         if (e.levelSelector) {
             this.drawLevelSelector(e.levelSelector);
-            this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
+//            this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
             this.drawCursor("cursor_regular", false);
             return;
         }
@@ -541,7 +541,6 @@ export class DrawingHandler {
         }
 
         // Draw the current framerate
-        this.sctx.beginPath();
-        this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
+//        this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
     }
 }
