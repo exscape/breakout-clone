@@ -2,6 +2,11 @@ import { BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
 import { BrickPosition, Vec2 } from "./Vec2";
 
+export type LevelType = "campaign" | "standalone";
+export type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, filename: string, author: string };
+export type LevelIndexResult = { "campaign": LevelMetadata[], "standalone": LevelMetadata[] };
+export type Mode = "game" | "editor";
+
 export class Rect {
     left: number;
     right: number;
@@ -189,4 +194,50 @@ export function validBrickPosition(brick: BrickPosition, settings: Settings) {
     return (brick.x >= 0 && brick.x < settings.levelWidth &&
             brick.y >= 0 && brick.y < settings.levelHeight);
 
+}
+
+export function fetchLevelIndex(levelType: "standalone" | "campaign", callback: (levels: LevelMetadata[]) => void) {
+    fetch('/game/level_index.php', {
+            method: "GET",
+            cache: 'no-cache'
+    })
+    .then(response => response.json())
+    .then(json => {
+        if ("type" in json && json.type === "error") {
+            alert("Failed to read level index: " + json.error);
+            return;
+        }
+        else if (!("result" in json)) {
+            alert("Invalid answer from server");
+            return;
+        }
+
+        let result = json.result as LevelIndexResult;
+        if (levelType === "standalone")
+            callback(result.standalone);
+        else if (levelType === "campaign")
+            callback(result.campaign);
+    })
+    .catch(error => {
+        alert("Failed to download level index: " + error);
+    });
+}
+
+export function fetchLevel(filename: string, callback: (levelText: string) => void) {
+    fetch(`/game/levels/${filename}`, {
+            method: "GET",
+            cache: 'no-cache'
+    })
+    .then(response => {
+        if (response.ok)
+            return response.text()
+        else
+            throw new Error("HTTP error (this is probably a bug, though!)");
+    })
+    .then(text => {
+        callback(text);
+    })
+    .catch(error => {
+        alert("Failed to download level index: " + error);
+    });
 }

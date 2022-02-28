@@ -7,17 +7,12 @@ import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
 import { DrawingHandler } from './DrawingHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
-import { debugAlert, drawCoordsFromBrickCoords, lerp } from './Utils';
+import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, fetchLevel } from './Utils';
 import { Editor } from './Editor';
 
 export class LevelTemp {
     bricks: BrickOrEmpty[][] = [];
 }
-
-type LevelType = "campaign" | "standalone";
-type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, filename: string, author: string };
-type LevelIndexResult = { "campaign": LevelMetadata[], "standalone": LevelMetadata[] };
-type Mode = "game" | "editor";
 
 export class Game {
     canvas: HTMLCanvasElement;
@@ -84,14 +79,14 @@ export class Game {
         this.paddle = new Paddle(settings);
         this.collisionHandler = new CollisionHandler(settings);
 
-        this.fetchLevelIndex("campaign", (levels: LevelMetadata[]) => {
+        fetchLevelIndex("campaign", (levels: LevelMetadata[]) => {
             if (levels.length <= 0) {
                 alert("No campaign levels found in level index!");
                 return;
             }
 
             let firstLevel = levels[0];
-            this.fetchLevel(`${firstLevel.filename}`, (text: string) => {
+            fetchLevel(`${firstLevel.filename}`, (text: string) => {
                 this.levelLoadingCompleted = true;
                 this.levelText = text;
                 if (this.imageLoadingCompleted) {
@@ -152,52 +147,6 @@ export class Game {
 
         if (!partialReset)
             this.enterEditor();
-    }
-
-    fetchLevelIndex(levelType: "standalone" | "campaign", callback: (json: LevelMetadata[]) => void) {
-        fetch('/game/level_index.php', {
-                method: "GET",
-                cache: 'no-cache'
-        })
-        .then(response => response.json())
-        .then(json => {
-            if ("type" in json && json.type === "error") {
-                alert("Failed to read level index: " + json.error);
-                return;
-            }
-            else if (!("result" in json)) {
-                alert("Invalid answer from server");
-                return;
-            }
-
-            let result = json.result as LevelIndexResult;
-            if (levelType === "standalone")
-                callback(result.standalone);
-            else if (levelType === "campaign")
-                callback(result.campaign);
-        })
-        .catch(error => {
-            alert("Failed to download level index: " + error);
-        });
-    }
-
-    fetchLevel(filename: string, callback: (levelText: string) => void) {
-        fetch(`/game/levels/${filename}`, {
-                method: "GET",
-                cache: 'no-cache'
-        })
-        .then(response => {
-            if (response.ok)
-                return response.text()
-            else
-                throw new Error("HTTP error (this is probably a bug, though!)");
-        })
-        .then(text => {
-            callback(text);
-        })
-        .catch(error => {
-            alert("Failed to download level index: " + error);
-        });
     }
 
     win() {
