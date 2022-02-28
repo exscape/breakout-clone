@@ -1,4 +1,4 @@
-import { BrickOrEmpty } from "./Brick";
+import { Brick, BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
 import { BrickPosition, Vec2 } from "./Vec2";
 
@@ -240,4 +240,46 @@ export function fetchLevel(filename: string, callback: (levelText: string) => vo
     .catch(error => {
         alert("Failed to download level index: " + error);
     });
+}
+
+export function loadBricksFromLevelText(levelText: string, target: BrickOrEmpty[][], settings: Settings): boolean {
+    let level2D: string[][] = [];
+
+    let count = 0;
+    for (let row of levelText.split('\n')) {
+        count++;
+        if (count > settings.levelHeight)
+            break;
+
+        let chars = row.split('');
+        if (chars.length !== settings.levelWidth) {
+            alert(`Invalid level: one or more lines is not exactly ${settings.levelWidth} characters`);
+            return false;
+        }
+        level2D.push(chars);
+    }
+    if (level2D.length !== settings.levelHeight) {
+        alert(`Invalid level: not exactly ${settings.levelHeight} lines`);
+        return false;
+    }
+
+    for (let y = 0; y < settings.levelHeight; y++) {
+        for (let x = 0; x < settings.levelWidth; x++) {
+            let xCoord = drawCoordsFromBrickCoords("x", x, settings);
+            let yCoord = drawCoordsFromBrickCoords("y", y, settings);
+            let c = level2D[y][x];
+            let num = parseInt(c, 16);
+            if (!isNaN(num)) {
+                target[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick${num}`, settings, 10, 1);
+            }
+            else if (c === '*') {
+                target[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick_indestructible`, settings, 10, 1, true);
+            }
+            else if (c === '.') {
+                target[y][x] = undefined;
+            }
+        }
+    }
+
+    return true;
 }

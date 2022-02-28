@@ -7,7 +7,7 @@ import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
 import { DrawingHandler } from './DrawingHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
-import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, fetchLevel } from './Utils';
+import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, fetchLevel, loadBricksFromLevelText } from './Utils';
 import { Editor } from './Editor';
 
 export class LevelTemp {
@@ -130,7 +130,7 @@ export class Game {
 
             this.level.bricks.length = 0;
             this.level.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
-            if (!this.loadLevelText(this.levelText!!, this.level.bricks)) {
+            if (!loadBricksFromLevelText(this.levelText!, this.level.bricks, this.settings)) {
                 this.loadingCompleted = false;
                 this.loadingFailed = true;
             }
@@ -151,45 +151,6 @@ export class Game {
 
     win() {
         this.gameWon = true;
-    }
-
-    loadLevelText(levelText: string, target: BrickOrEmpty[][]): boolean {
-        let level2D: string[][] = [];
-
-        let count = 0;
-        for (let row of levelText.split('\n')) {
-            count++;
-            if (count > this.settings.levelHeight)
-                break;
-
-            let chars = row.split('');
-            if (chars.length !== this.settings.levelWidth) {
-                alert(`Invalid level: one or more lines is not exactly ${this.settings.levelWidth} characters`);
-                return false;
-            }
-            level2D.push(chars);
-        }
-        if (level2D.length !== this.settings.levelHeight) {
-            alert(`Invalid level: not exactly ${this.settings.levelHeight} lines`);
-            return false;
-        }
-
-        for (let y = 0; y < this.settings.levelHeight; y++) {
-            for (let x = 0; x < this.settings.levelWidth; x++) {
-                let xCoord = drawCoordsFromBrickCoords("x", x, this.settings);
-                let yCoord = drawCoordsFromBrickCoords("y", y, this.settings);
-                let c = level2D[y][x];
-                let num = parseInt(c, 16);
-                if (!isNaN(num)) {
-                    target[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick${num}`, this.settings, 10, 1);
-                }
-                else if (c === '*') {
-                    target[y][x] = new Brick(new Vec2(xCoord, yCoord), `brick_indestructible`, this.settings, 10, 1, true);
-                }
-            }
-        }
-
-        return true;
     }
 
     mouseMoved(e: MouseEvent) {
