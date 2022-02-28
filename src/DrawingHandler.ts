@@ -28,7 +28,7 @@ export class DrawingHandler {
         canvas.width = this.settings.canvasWidth;
         canvas.height = this.settings.canvasHeight;
 
-        let context = canvas.getContext('2d', { alpha: false })!;
+        let context = canvas.getContext('2d', { alpha: true })!;
         context.globalAlpha = 0.3;
         context.strokeStyle = "black";
         context.lineWidth = lineWidth;

@@ -5,14 +5,15 @@ import { drawCoordsFromBrickCoords, Rect, UIButton } from "./Utils";
 import { Vec2 } from "./Vec2";
 
 export class LevelSelector {
-
     settings: Settings;
     readonly width = 687;
-    readonly height = 605;
+    readonly height = 603;
     readonly padding = 5;
     pos: Vec2;
     windowTitle: string;
     levelName: string;
+
+    levelRects: Rect[] = [];
 
     saveCallback: ((levelName: string) => void);
     cancelCallback: (() => void);
@@ -58,15 +59,12 @@ export class LevelSelector {
         ctx.fillText(this.windowTitle, 0 + this.padding, 0 + this.padding);
 
         // List of levels, with scrollbar if needed
-        ctx.beginPath();
-        const levelListHeight = 185;
         const levelListY = lineY + this.padding;
-        ctx.fillStyle = this.settings.canvasBackground;
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
-        ctx.fillStyle = "#fdfdfd";
-        ctx.fillRect(this.padding, levelListY, this.width - 2 * this.padding, levelListHeight);
-        ctx.strokeRect(this.padding, levelListY, this.width - 2 * this.padding, levelListHeight);
+        ctx.translate(this.padding, levelListY);
+        const levelListHeight = 185;
+        const offset = new Vec2(this.pos.x + this.padding, this.pos.y + levelListY);
+        this.drawLevelList(offset, ctx, images, brickSource, levelListHeight);
+        ctx.translate(-this.padding, -levelListY);
 
         // Label, textedit, buttons
         ctx.beginPath();
@@ -106,17 +104,66 @@ export class LevelSelector {
         // TODO: I figure that assuming we only draw the levels that are ACTUALLY VISIBLE on screen it should be no problem whatsoever.
 
         // Selected level preview (large)
-        const levelPreviewY = levelNameY + 2 * this.padding + parseInt(ctx.font) + this.padding;
         let previewSettings = _.clone(this.settings);
+        const levelPreviewY = levelNameY + 2 * this.padding + parseInt(ctx.font) + this.padding;
         previewSettings.brickHeight = this.settings.brickHeight / 2;
         previewSettings.brickWidth = this.settings.brickWidth / 2;
         previewSettings.brickSpacing = this.settings.brickSpacing / 2;
         this.drawLevelPreview(ctx, brickSource, images, previewSettings, new Vec2(this.padding, levelPreviewY));
     }
 
+    drawLevelList(offset: Vec2, ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, currentLevelBrickSource: BrickOrEmpty[][], height: number) {
+        // Outline
+        const outerWidth = this.width - 2 * this.padding;
+        const innerWidth = outerWidth - 2 * this.padding;
+        ctx.beginPath();
+        ctx.fillStyle = this.settings.canvasBackground;
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        ctx.fillStyle = "#fdfdfd";
+        ctx.fillRect(0, 0, outerWidth, height);
+        ctx.strokeRect(0, 0, outerWidth, height);
+
+        // Initialize click areas for the levels
+        if (this.levelRects.length === 0) {
+            for (let x = 0; x < 3; x++) {
+                this.levelRects.push(new Rect(offset.x + this.padding + x * innerWidth/3, offset.y + this.padding, innerWidth/3, height - 2 * this.padding));
+            }
+        }
+
+        // TODO: remove later, except for the currently selected level
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < this.levelRects.length; i++) {
+            if (i == 0) ctx.fillStyle = "#ccccff";
+            if (i == 1) ctx.fillStyle = "#ffcccc";
+            if (i == 2) ctx.fillStyle = "#ccffcc";
+            const r = this.levelRects[i];
+            ctx.fillRect(r.left - offset.x, r.top - offset.y, r.right - r.left, r.bottom - r.top);
+            ctx.strokeRect(r.left - offset.x, r.top - offset.y, r.right - r.left, r.bottom - r.top);
+        }
+
+        // Draw the levels
+        const levelsToShow = 3; // TODO: calculate from total standalone level count + scroll position
+
+        for (let i = 0; i < Math.min(3, levelsToShow); i++) {
+            this.drawLevelThumbnail(offset, this.levelRects[i], ctx, currentLevelBrickSource, images);
+        }
+    }
+
+    private drawLevelThumbnail(offset: Vec2, rect: Rect, ctx: CanvasRenderingContext2D, currentLevelBrickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>) {
+        let previewSettings = _.clone(this.settings);
+        previewSettings.brickHeight = this.settings.brickHeight / 7;
+        previewSettings.brickWidth = this.settings.brickWidth / 7;
+        previewSettings.brickSpacing = 0;
+        const x = rect.left - offset.x + (rect.right - rect.left - 185) / 2;
+        this.drawLevelPreview(ctx, currentLevelBrickSource, images, previewSettings, new Vec2(x, rect.bottom - offset.y - this.padding - 86));
+    }
+
     drawLevelPreview(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>, settings: Settings, pos: Vec2) {
         const previewWidth = settings.brickSpacing * (settings.levelWidth + 1) + settings.brickWidth * settings.levelWidth;
         const previewHeight = settings.brickSpacing * (settings.levelHeight) + settings.brickHeight * settings.levelHeight;
+        console.log(`Drawing preview of size ${previewWidth} x ${previewHeight}`);
         ctx.beginPath();
         ctx.strokeRect(pos.x, pos.y, previewWidth, previewHeight);
         ctx.fillStyle = this.settings.canvasBackground;
