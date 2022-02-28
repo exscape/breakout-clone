@@ -368,10 +368,12 @@ export class DrawingHandler {
 
     drawLevelSelector(sel: LevelSelector) {
         this.ctx.translate(sel.pos.x, sel.pos.y);
-        sel.draw(this.ctx, this.game.level.bricks, this.images);
+        const source = (this.game.currentMode === "game") ? this.game.level.bricks : this.editor.bricks;
 
-        for (let button of sel.buttons) {
-            this.drawButton(button);
+        if (sel.draw(this.ctx, source, this.images)) {
+            for (let button of sel.buttons) {
+                this.drawButton(button);
+            }
         }
 
         this.ctx.translate(-sel.pos.x, -sel.pos.y);

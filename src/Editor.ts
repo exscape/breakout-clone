@@ -76,8 +76,9 @@ export class Editor {
 
     showSaveDialog() {
         const saveCallback = (levelName: string) => { alert ("Save for " + levelName); this.levelSelector = null; };
-        const cancelCallback = () => { alert("Cancel"); this.levelSelector = null; };
-        this.levelSelector = new LevelSelector("Save level", this.cursor, this.settings, saveCallback, cancelCallback);
+        const cancelCallback = () => { this.levelSelector = null; };
+
+        this.levelSelector = new LevelSelector("save", null, this.cursor, this.settings, saveCallback, cancelCallback);
     }
 
     clearLevel() {

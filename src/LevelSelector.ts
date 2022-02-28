@@ -12,8 +12,11 @@ export class LevelSelector {
     pos: Vec2;
     windowTitle: string;
     levelName: string;
+    selectorType: "load" | "save";
 
     levelRects: Rect[] = [];
+
+    loadingLevelList: boolean = true;
 
     saveCallback: ((levelName: string) => void);
     cancelCallback: (() => void);
@@ -26,24 +29,56 @@ export class LevelSelector {
     cursor: Vec2;
     buttons: UIButton[] = [];
 
-    constructor(title: string, cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
-        this.windowTitle = title;
+    constructor(type: "load" | "save", levelName: string | null, cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
+        this.windowTitle = (type === "load") ? "Load level" : "Save level";
         this.settings = settings;
         this.cursor = cursor;
         this.pos = new Vec2(Math.floor((this.settings.canvasWidth - this.width) / 2), Math.floor((this.settings.canvasHeight - this.height) / 2));
-        this.levelName = "Untitled";
+        if (type === "save")
+            this.levelName = "Untitled";
+        else if (!levelName)
+            throw new Error("levelName can't be null for a load window");
+        else
+            this.levelName = levelName;
+        this.selectorType = type;
 
         this.saveCallback = saveCallback;
         this.cancelCallback = cancelCallback;
     }
 
-    draw(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>) {
+    draw(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>): boolean {
         // Full window
         ctx.beginPath();
         ctx.textAlign = "start";
         ctx.fillStyle = "#e5e5e5";
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
+
+        // Show a loading screen while fetching from the server
+        if (this.loadingLevelList) {
+            const loadingWidth = 280;
+            const loadingHeight = 80;
+            ctx.fillRect((this.width - loadingWidth) / 2, (this.height - loadingHeight) / 2, loadingWidth, loadingHeight);
+            ctx.strokeRect((this.width - loadingWidth) / 2, (this.height - loadingHeight) / 2, loadingWidth, loadingHeight);
+
+            ctx.fillStyle = "black";
+            ctx.font = "18px Arial";
+            const text = "Loading level list..."
+            let {width: textWidth} = ctx.measureText(text);
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, this.width / 2, this.height / 2);
+            ctx.textAlign = "left";
+            ctx.textBaseline = "alphabetic";
+
+            // Abort drawing of everything else, e.g. buttons, in DrawingHandler
+            return false;
+        }
+
+        // TODO: Handle failure when fetching from the server
+
+
+
         ctx.fillRect(0, 0, this.width, this.height);
         ctx.strokeRect(0, 0, this.width, this.height);
 
@@ -111,6 +146,7 @@ export class LevelSelector {
         // TODO: Do we need to draw the levels in advance and save thumbnail images, or can we draw them as needed here?
         // TODO: I figure that assuming we only draw the levels that are ACTUALLY VISIBLE on screen it should be no problem whatsoever.
 
+        return true;
     }
 
     drawLevelList(offset: Vec2, ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, currentLevelBrickSource: BrickOrEmpty[][], height: number) {
@@ -163,7 +199,7 @@ export class LevelSelector {
     drawLevelPreview(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>, settings: Settings, pos: Vec2) {
         const previewWidth = settings.brickSpacing * (settings.levelWidth + 1) + settings.brickWidth * settings.levelWidth;
         const previewHeight = settings.brickSpacing * (settings.levelHeight) + settings.brickHeight * settings.levelHeight;
-        console.log(`Drawing preview of size ${previewWidth} x ${previewHeight}`);
+//        console.log(`Drawing preview of size ${previewWidth} x ${previewHeight}`);
         ctx.beginPath();
         ctx.strokeRect(pos.x, pos.y, previewWidth, previewHeight);
         ctx.fillStyle = this.settings.canvasBackground;
@@ -183,6 +219,7 @@ export class LevelSelector {
     }
 
     onmousedown(e: MouseEvent) {
+        if (this.loadingLevelList) return;
         for (let button of this.buttons) {
             // Handle the fact that the Rect position is drawn relative to the window's top left, but the cursor is in global coordinates...
             let offsetCursor = _.clone(this.cursor);
@@ -193,14 +230,21 @@ export class LevelSelector {
         }
     }
     onmouseup(e: MouseEvent) {
+        if (this.loadingLevelList) return;
     }
     keyUp(ev: KeyboardEvent) {
+        if (this.loadingLevelList) return;
     }
     keyDown(ev: KeyboardEvent) {
+        if (this.loadingLevelList) return;
         if ((ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
             this.levelName = this.levelName.substring(0, this.levelName.length - 1);
         else if (ev.key == "Enter") {
             this.ourSaveCallback(true);
+        }
+        else if (ev.key == "Escape") {
+            ev.preventDefault();
+            this.cancelCallback();
         }
         else if (this.validCharacters.includes(ev.key) && this.levelName.length < this.maxLevelnameLength)
             this.levelName += ev.key;
