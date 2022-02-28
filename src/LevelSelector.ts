@@ -8,19 +8,24 @@ export class LevelSelector {
 
     settings: Settings;
     readonly width = 687;
-    readonly height = 582;
+    readonly height = 605;
     readonly padding = 5;
     pos: Vec2;
     windowTitle: string;
     levelName: string;
 
-    saveCallback: (() => void);
+    saveCallback: ((levelName: string) => void);
     cancelCallback: (() => void);
-
+    readonly validCharacters: string[] = "abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-".split("");
+    readonly maxLevelnameLength = 28;
+    readonly ourSaveCallback = (_: boolean) => {
+            console.log("Save");
+            this.saveCallback(this.levelName);
+    };
     cursor: Vec2;
     buttons: UIButton[] = [];
 
-    constructor(title: string, cursor: Vec2, settings: Settings, saveCallback: () => void, cancelCallback: () => void) {
+    constructor(title: string, cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
         this.windowTitle = title;
         this.settings = settings;
         this.cursor = cursor;
@@ -54,7 +59,7 @@ export class LevelSelector {
 
         // List of levels, with scrollbar if needed
         ctx.beginPath();
-        const levelListHeight = 162;
+        const levelListHeight = 185;
         const levelListY = lineY + this.padding;
         ctx.fillStyle = this.settings.canvasBackground;
         ctx.strokeStyle = "black";
@@ -78,7 +83,7 @@ export class LevelSelector {
         const textY = levelNameY + parseInt(ctx.font)/2 + this.padding/2;
         ctx.fillText(labelText, this.padding, textY);
         ctx.fillStyle = "black";
-        ctx.fillText(this.levelName, 3 * this.padding + width, textY);
+        ctx.fillText(this.levelName + "_", 3 * this.padding + width, textY);
 
         ctx.textBaseline = old;
 
@@ -91,10 +96,7 @@ export class LevelSelector {
 
         this.buttons.length = 0; // TODO: HACK to save performance -- we SHOULD NOT recreate these every frame!!!
 
-        this.buttons.push (new UIButton(saveRect, null, "Save", true, (_: boolean) => {
-            console.log("Save");
-            this.saveCallback();
-        }));
+        this.buttons.push (new UIButton(saveRect, null, "Save", true, this.ourSaveCallback));
         this.buttons.push(new UIButton(cancelRect, null, "Cancel", true, (_: boolean) => {
             console.log("Cancel");
             this.cancelCallback();
@@ -148,5 +150,14 @@ export class LevelSelector {
     keyUp(ev: KeyboardEvent) {
     }
     keyDown(ev: KeyboardEvent) {
+        if ((ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
+            this.levelName = this.levelName.substring(0, this.levelName.length - 1);
+        else if (ev.key == "Enter") {
+            this.ourSaveCallback(true);
+        }
+        else if (this.validCharacters.includes(ev.key) && this.levelName.length < this.maxLevelnameLength)
+            this.levelName += ev.key;
+        else
+            console.log("Invalid key: " + ev.key);
     }
 }
