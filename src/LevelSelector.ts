@@ -66,9 +66,17 @@ export class LevelSelector {
         this.drawLevelList(offset, ctx, images, brickSource, levelListHeight);
         ctx.translate(-this.padding, -levelListY);
 
+        // Selected level preview (large)
+        let previewSettings = _.clone(this.settings);
+        const levelPreviewY = levelListY + levelListHeight + this.padding;
+        previewSettings.brickHeight = this.settings.brickHeight / 2;
+        previewSettings.brickWidth = this.settings.brickWidth / 2;
+        previewSettings.brickSpacing = this.settings.brickSpacing / 2;
+        this.drawLevelPreview(ctx, brickSource, images, previewSettings, new Vec2(this.padding, levelPreviewY));
+
         // Label, textedit, buttons
         ctx.beginPath();
-        const levelNameY = levelListY + levelListHeight + 2 * this.padding;
+        const levelNameY = levelPreviewY + 344 + 2 * this.padding + 2;
         const labelText = "Level name: ";
         const {width} = ctx.measureText(labelText);
         const old = ctx.textBaseline;
@@ -103,31 +111,23 @@ export class LevelSelector {
         // TODO: Do we need to draw the levels in advance and save thumbnail images, or can we draw them as needed here?
         // TODO: I figure that assuming we only draw the levels that are ACTUALLY VISIBLE on screen it should be no problem whatsoever.
 
-        // Selected level preview (large)
-        let previewSettings = _.clone(this.settings);
-        const levelPreviewY = levelNameY + 2 * this.padding + parseInt(ctx.font) + this.padding;
-        previewSettings.brickHeight = this.settings.brickHeight / 2;
-        previewSettings.brickWidth = this.settings.brickWidth / 2;
-        previewSettings.brickSpacing = this.settings.brickSpacing / 2;
-        this.drawLevelPreview(ctx, brickSource, images, previewSettings, new Vec2(this.padding, levelPreviewY));
     }
 
     drawLevelList(offset: Vec2, ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, currentLevelBrickSource: BrickOrEmpty[][], height: number) {
         // Outline
-        const outerWidth = this.width - 2 * this.padding;
-        const innerWidth = outerWidth - 2 * this.padding;
+        const width = this.width - 2 * this.padding;
         ctx.beginPath();
         ctx.fillStyle = this.settings.canvasBackground;
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
         ctx.fillStyle = "#fdfdfd";
-        ctx.fillRect(0, 0, outerWidth, height);
-        ctx.strokeRect(0, 0, outerWidth, height);
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeRect(0, 0, width, height);
 
         // Initialize click areas for the levels
         if (this.levelRects.length === 0) {
             for (let x = 0; x < 3; x++) {
-                this.levelRects.push(new Rect(offset.x + this.padding + x * innerWidth/3, offset.y + this.padding, innerWidth/3, height - 2 * this.padding));
+                this.levelRects.push(new Rect(offset.x + x * width/3, offset.y, width/3, height));
             }
         }
 
