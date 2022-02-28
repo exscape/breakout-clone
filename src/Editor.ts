@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, levelCenter, Rect, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, levelCenter, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./LevelSelector";
@@ -85,36 +85,10 @@ export class Editor {
         this.bricks.length = 0;
         this.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
         this.bricksBeforeDrag = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
-        this.game.loadLevelText(this.emptyLevelText, this.bricks);
+        loadBricksFromLevelText(this.emptyLevelText, this.bricks, this.settings);
         this.changesMade = false;
 
         this.symmetryCenter = new Vec2(levelCenter("x", this.settings), levelCenter("y", this.settings));
-    }
-
-    generateLevelText(): string {
-        // Generates a string containing the level text, ready to be sent to the server.
-        let lines: string[] = [];
-        for (let y = 0; y < this.settings.levelHeight; y++) {
-            let line: string[] = [];
-            for (let x = 0; x < this.settings.levelWidth; x++) {
-                const name = (this.bricks[y][x] !== undefined) ? this.bricks[y][x]!.name.substring(5) : "empty";
-
-                let n = parseInt(name, 10);
-
-                if (this.bricks[y][x] === undefined)
-                    line.push(".");
-                else if ((n = parseInt(name, 10)) > 0)
-                    line.push(n.toString(16).toUpperCase());
-                else if (name === "_indestructible")
-                    line.push("*");
-                else
-                    alert("BUG: invalid brick type in exportLevel");
-            }
-            line.push("\n");
-            lines.push(line.join(""));
-        }
-
-        return lines.join("");
     }
 
     setupToolbarButtons() {

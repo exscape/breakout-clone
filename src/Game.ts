@@ -7,7 +7,7 @@ import { Vec2 } from "./Vec2";
 import { CollisionHandler } from './CollisionHandler';
 import { DrawingHandler } from './DrawingHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
-import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, fetchLevel, loadBricksFromLevelText } from './Utils';
+import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, loadBricksFromLevelText, generateEmptyBrickArray } from './Utils';
 import { Editor } from './Editor';
 
 export class LevelTemp {
@@ -85,15 +85,12 @@ export class Game {
                 return;
             }
 
-            let firstLevel = levels[0];
-            fetchLevel(`${firstLevel.filename}`, (text: string) => {
-                this.levelLoadingCompleted = true;
-                this.levelText = text;
-                if (this.imageLoadingCompleted) {
-                    this.loadingCompleted = true;
-                    this.init();
-                }
-            });
+            this.levelText = levels[0].leveltext;
+            this.levelLoadingCompleted = true;
+            if (this.imageLoadingCompleted) {
+                this.loadingCompleted = true;
+                this.init();
+            }
         });
 
         this.lastRender = 0;
@@ -129,7 +126,7 @@ export class Game {
             this.totalGameTime = 0;
 
             this.level.bricks.length = 0;
-            this.level.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
+            this.level.bricks = generateEmptyBrickArray(this.settings);
             if (!loadBricksFromLevelText(this.levelText!, this.level.bricks, this.settings)) {
                 this.loadingCompleted = false;
                 this.loadingFailed = true;

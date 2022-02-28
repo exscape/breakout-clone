@@ -3,7 +3,7 @@ import { Settings } from "./Settings";
 import { BrickPosition, Vec2 } from "./Vec2";
 
 export type LevelType = "campaign" | "standalone";
-export type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, filename: string, author: string };
+export type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, leveltext: string, author: string };
 export type LevelIndexResult = { "campaign": LevelMetadata[], "standalone": LevelMetadata[] };
 export type Mode = "game" | "editor";
 
@@ -223,25 +223,6 @@ export function fetchLevelIndex(levelType: "standalone" | "campaign", callback: 
     });
 }
 
-export function fetchLevel(filename: string, callback: (levelText: string) => void) {
-    fetch(`/game/levels/${filename}`, {
-            method: "GET",
-            cache: 'no-cache'
-    })
-    .then(response => {
-        if (response.ok)
-            return response.text()
-        else
-            throw new Error("HTTP error (this is probably a bug, though!)");
-    })
-    .then(text => {
-        callback(text);
-    })
-    .catch(error => {
-        alert("Failed to download level index: " + error);
-    });
-}
-
 export function loadBricksFromLevelText(levelText: string, target: BrickOrEmpty[][], settings: Settings): boolean {
     let level2D: string[][] = [];
 
@@ -282,4 +263,54 @@ export function loadBricksFromLevelText(levelText: string, target: BrickOrEmpty[
     }
 
     return true;
+}
+
+export function generateLevelTextFromBricks(bricks: BrickOrEmpty[][], settings: Settings): string {
+    // Generates a string containing the level text, ready to be sent to the server.
+    let lines: string[] = [];
+    for (let y = 0; y < settings.levelHeight; y++) {
+        let line: string[] = [];
+        for (let x = 0; x < settings.levelWidth; x++) {
+            const name = (bricks[y][x] !== undefined) ? bricks[y][x]!.name.substring(5) : "empty";
+
+            let n = parseInt(name, 10);
+
+            if (bricks[y][x] === undefined)
+                line.push(".");
+            else if ((n = parseInt(name, 10)) > 0)
+                line.push(n.toString(16).toUpperCase());
+            else if (name === "_indestructible")
+                line.push("*");
+            else
+                alert("BUG: invalid brick type in exportLevel");
+        }
+        line.push("\n");
+        lines.push(line.join(""));
+    }
+
+    return lines.join("");
+}
+
+export function generateEmptyBrickArray(settings: Settings): BrickOrEmpty[][] {
+    return Array(settings.levelHeight).fill(undefined).map(_ => Array(settings.levelWidth).fill(undefined));
+}
+
+export function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+    var words = text.split(" ");
+    var lines = [];
+    var currentLine = words[0];
+
+    for (var i = 1; i < words.length; i++) {
+        var word = words[i];
+        var width = ctx.measureText(currentLine + " " + word).width;
+        if (width < maxWidth) {
+            currentLine += " " + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    lines.push(currentLine);
+
+    return lines;
 }
