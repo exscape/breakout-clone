@@ -13,11 +13,20 @@ export class Rect {
     top: number;
     bottom: number;
 
+    width: number;
+    height: number;
+    horizontalCenter: number;
+    verticalCenter: number;
+
     constructor(left: number, top: number, width: number, height: number) {
         this.left = left;
         this.top = top;
         this.right = left + width;
         this.bottom = top + height;
+        this.width = width;
+        this.height = height;
+        this.horizontalCenter = left + width / 2;
+        this.verticalCenter = top + height / 2;
     }
 
     isInsideRect(pos: Vec2): boolean {

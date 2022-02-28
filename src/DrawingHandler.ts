@@ -285,16 +285,16 @@ export class DrawingHandler {
             this.ctx.fillStyle = "#efefef";
             this.ctx.strokeStyle = "black";
             this.ctx.lineWidth = 1;
-            this.ctx.fillRect(button.rect.left, button.rect.top, button.rect.right - button.rect.left, button.rect.bottom - button.rect.top);
-            this.ctx.strokeRect(button.rect.left, button.rect.top, button.rect.right - button.rect.left, button.rect.bottom - button.rect.top);
+            this.ctx.fillRect(button.rect.left, button.rect.top, button.rect.width, button.rect.height);
+            this.ctx.strokeRect(button.rect.left, button.rect.top, button.rect.width, button.rect.height);
             this.ctx.fillStyle = "black";
             const old = this.ctx.textBaseline;
             this.ctx.textBaseline = "middle";
-            this.ctx.textAlign = "start";
-            const {width: textWidth} = this.ctx.measureText(button.tooltip);
-            this.ctx.fillText(button.tooltip, button.rect.left + (button.rect.right - button.rect.left - textWidth) / 2, button.rect.top + (button.rect.bottom - button.rect.top)/2);
+            this.ctx.textAlign = "center";
+            this.ctx.fillText(button.tooltip, button.rect.horizontalCenter, button.rect.verticalCenter);
 
             this.ctx.textBaseline = old;
+            this.ctx.textAlign = "start";
         }
     }
 
