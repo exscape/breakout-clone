@@ -232,6 +232,28 @@ export function fetchLevelIndex(levelType: "standalone" | "campaign", callback: 
     });
 }
 
+export function uploadNewLevel(levelName: string, levelText: string) {
+    let formData = new FormData();
+    formData.append("action", "add");
+    formData.append("levelName", levelName);
+    formData.append("levelText", levelText);
+    formData.append("type", "standalone");
+    // formData.append("levelNumber", ...);
+
+    fetch('/game/level_upload.php', {
+        method: "POST",
+        cache: 'no-cache',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(json => {
+        console.log(json);
+    })
+    .catch(error => {
+        alert(error.message);
+    });
+}
+
 export function loadBricksFromLevelText(levelText: string, target: BrickOrEmpty[][], settings: Settings): boolean {
     let level2D: string[][] = [];
 

@@ -17,10 +17,11 @@ export class LevelSelector {
     levelRects: Rect[] = [];
 
     loadingLevelList: boolean = true;
+    levelList: LevelMetadata[] = [];
 
     saveCallback: ((levelName: string) => void);
     cancelCallback: (() => void);
-    readonly validCharacters: string[] = "abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-".split("");
+    readonly validCharacters: string[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-".split("");
     readonly maxLevelnameLength = 28;
     readonly ourSaveCallback = (_: boolean) => {
             console.log("Save");
@@ -28,6 +29,10 @@ export class LevelSelector {
     };
     cursor: Vec2;
     buttons: UIButton[] = [];
+
+    // For loading: disabled if no valid level is selected
+    // For saving: disabled if the name is already used, name is empty, or name is Untitled
+    enableOkButton: boolean = false;
 
     constructor(type: "load" | "save", levelName: string | null, cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
         this.windowTitle = (type === "load") ? "Load level" : "Save level";
@@ -44,6 +49,20 @@ export class LevelSelector {
 
         this.saveCallback = saveCallback;
         this.cancelCallback = cancelCallback;
+
+        this.fetchLevelList();
+    }
+
+    fetchLevelList() {
+        try {
+            fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
+                this.levelList = levels;
+                this.loadingLevelList = false;
+            });
+        }
+        catch (e: any) {
+            this.cancelCallback();
+        }
     }
 
     draw(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>): boolean {
@@ -57,14 +76,13 @@ export class LevelSelector {
         // Show a loading screen while fetching from the server
         if (this.loadingLevelList) {
             const loadingWidth = 280;
-            const loadingHeight = 80;
+            const loadingHeight = 70;
             ctx.fillRect((this.width - loadingWidth) / 2, (this.height - loadingHeight) / 2, loadingWidth, loadingHeight);
             ctx.strokeRect((this.width - loadingWidth) / 2, (this.height - loadingHeight) / 2, loadingWidth, loadingHeight);
 
             ctx.fillStyle = "black";
-            ctx.font = "18px Arial";
+            ctx.font = "22px Arial";
             const text = "Loading level list..."
-            let {width: textWidth} = ctx.measureText(text);
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(text, this.width / 2, this.height / 2);
@@ -137,7 +155,15 @@ export class LevelSelector {
 
         this.buttons.length = 0; // TODO: HACK to save performance -- we SHOULD NOT recreate these every frame!!!
 
-        this.buttons.push (new UIButton(saveRect, null, "Save", true, this.ourSaveCallback));
+        if (this.selectorType === "load") {
+            this.enableOkButton = false; // TODO: update correctly
+        }
+        else {
+            this.enableOkButton = (this.levelName.length > 0 && this.levelName != "Untitled" &&
+                                   !this.levelList.some(lev => lev.name.trim() === this.levelName.trim()));
+        }
+
+        this.buttons.push (new UIButton(saveRect, null, "Save", this.enableOkButton, this.ourSaveCallback));
         this.buttons.push(new UIButton(cancelRect, null, "Cancel", true, (_: boolean) => {
             console.log("Cancel");
             this.cancelCallback();
@@ -180,10 +206,37 @@ export class LevelSelector {
         }
 
         // Draw the levels
-        const levelsToShow = 3; // TODO: calculate from total standalone level count + scroll position
+        const levelsToShow = Math.min(3, this.levelList.length); // TODO: calculate from total standalone level count + scroll position
+
+        // TODO:
+        // TODO: remember that #1 when saving should be the NEW LEVEL + icon, not an existing level!
+        // TODO:
 
         for (let i = 0; i < Math.min(3, levelsToShow); i++) {
-            this.drawLevelThumbnail(offset, this.levelRects[i], ctx, currentLevelBrickSource, images);
+            // TODO: index used in loadBricks AND this.levelRects is incorrect -- update after pagination is implemented!!
+            // TODO:
+            let level = this.levelList[i];
+            let levelBricks = generateEmptyBrickArray(this.settings);
+            loadBricksFromLevelText(level.leveltext, levelBricks, this.settings);
+            this.drawLevelThumbnail(offset, this.levelRects[i], ctx, levelBricks, images);
+
+            const oldFont = ctx.font;
+            ctx.fillStyle = "black";
+            ctx.textAlign = "center";
+            let y = 2 * this.padding;
+            ctx.font = "14px Arial";
+            ctx.fillText(`By ${level.author}`, this.levelRects[i].horizontalCenter - offset.x, 72);
+            ctx.font = "18px Arial";
+
+            // TODO: test with too many lines AND too long words!
+            let lines = wrapText(ctx, level.name + " " + level.name + " " + level.name + " " + level.name, this.levelRects[i].width - 6 * this.padding);
+            for (let line of lines.slice(0,2)) {
+                ctx.fillText(line, this.levelRects[i].horizontalCenter - offset.x, y)
+                y += parseInt(ctx.font) + 4;
+            }
+
+            ctx.textAlign = "left";
+            ctx.font = oldFont;
         }
     }
 
@@ -225,7 +278,7 @@ export class LevelSelector {
             let offsetCursor = _.clone(this.cursor);
             offsetCursor.x -= this.pos.x;
             offsetCursor.y -= this.pos.y;
-            if (button.rect.isInsideRect(offsetCursor))
+            if (button.rect.isInsideRect(offsetCursor) && button.enabled)
                 button.clickCallback(true);
         }
     }

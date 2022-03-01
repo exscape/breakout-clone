@@ -291,10 +291,13 @@ export class DrawingHandler {
             const old = this.ctx.textBaseline;
             this.ctx.textBaseline = "middle";
             this.ctx.textAlign = "center";
+            if (!button.enabled)
+                this.ctx.fillStyle = "#afafaf";
             this.ctx.fillText(button.tooltip, button.rect.horizontalCenter, button.rect.verticalCenter);
 
             this.ctx.textBaseline = old;
             this.ctx.textAlign = "start";
+            this.ctx.strokeStyle = "black";
         }
     }
 

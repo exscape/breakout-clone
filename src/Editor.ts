@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, levelCenter, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, generateLevelTextFromBricks, levelCenter, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadNewLevel, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./LevelSelector";
@@ -75,7 +75,12 @@ export class Editor {
     }
 
     showSaveDialog() {
-        const saveCallback = (levelName: string) => { alert ("Save for " + levelName); this.levelSelector = null; };
+        const saveCallback = (levelName: string) => {
+            let levelText = generateLevelTextFromBricks(this.bricks, this.settings);
+            uploadNewLevel(levelName, levelText);
+
+            this.levelSelector = null;
+        };
         const cancelCallback = () => { this.levelSelector = null; };
 
         this.levelSelector = new LevelSelector("save", null, this.cursor, this.settings, saveCallback, cancelCallback);
