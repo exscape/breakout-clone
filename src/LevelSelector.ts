@@ -15,6 +15,7 @@ export class LevelSelector {
     selectorType: "load" | "save";
 
     levelRects: Rect[] = [];
+    selectedRect: number = 0;
 
     loadingLevelList: boolean = true;
     levelList: LevelMetadata[] = [];
@@ -193,17 +194,26 @@ export class LevelSelector {
             }
         }
 
-        // TODO: remove later, except for the currently selected level
+        // Draw the background for the highlighted level
+        if (this.selectedRect >= 0 && this.selectedRect <= 2) {
+            const r = this.levelRects[this.selectedRect];
+            ctx.fillStyle = "#dedeff";
+            ctx.fillRect(r.left - offset.x + 1, r.top - offset.y + 1, r.right - r.left - 2, r.bottom - r.top - 2);
+        }
+        else
+            alert("BUG: invalid value for selectedRect in LevelSelector");
+
+        // Draw separators between the levels
+        ctx.beginPath();
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
-        for (let i = 0; i < this.levelRects.length; i++) {
-            if (i == 0) ctx.fillStyle = "#ccccff";
-            if (i == 1) ctx.fillStyle = "#ffcccc";
-            if (i == 2) ctx.fillStyle = "#ccffcc";
-            const r = this.levelRects[i];
-            ctx.fillRect(r.left - offset.x, r.top - offset.y, r.right - r.left, r.bottom - r.top);
-            ctx.strokeRect(r.left - offset.x, r.top - offset.y, r.right - r.left, r.bottom - r.top);
-        }
+        ctx.moveTo(this.levelRects[0].right - offset.x, this.levelRects[0].top - offset.y);
+        ctx.lineTo(this.levelRects[0].right - offset.x, this.levelRects[0].bottom - offset.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(this.levelRects[1].right - offset.x, this.levelRects[1].top - offset.y);
+        ctx.lineTo(this.levelRects[1].right - offset.x, this.levelRects[1].bottom - offset.y);
+        ctx.stroke();
 
         // Draw the levels
         const levelsToShow = Math.min(3, this.levelList.length); // TODO: calculate from total standalone level count + scroll position
@@ -212,32 +222,46 @@ export class LevelSelector {
         // TODO: remember that #1 when saving should be the NEW LEVEL + icon, not an existing level!
         // TODO:
 
-        for (let i = 0; i < Math.min(3, levelsToShow); i++) {
+        const oldFont = ctx.font;
+        ctx.fillStyle = "black";
+        ctx.textAlign = "center";
+        ctx.font = "18px Arial";
+
+        if (this.selectorType === "save") {
+            // Draw the first entry as an empty, "new level" icon only
+            const img = images["new_level"];
+            ctx.drawImage(img, Math.floor(this.levelRects[0].left - offset.x + (this.levelRects[0].width - img.width) / 2),
+                               Math.floor(this.levelRects[0].top - offset.y + (this.levelRects[0].height - img.height) / 2));
+            ctx.fillText("New level", this.levelRects[0].horizontalCenter - offset.x, this.levelRects[0].bottom - offset.y - parseInt(ctx.font) - 3 * this.padding);
+        }
+
+        const indexOffset = (this.selectorType === "load") ? 0 : 1;
+        for (let i = indexOffset; i < Math.min(3, levelsToShow); i++) {
             // TODO: index used in loadBricks AND this.levelRects is incorrect -- update after pagination is implemented!!
             // TODO:
-            let level = this.levelList[i];
+            let level = this.levelList[i - indexOffset];
             let levelBricks = generateEmptyBrickArray(this.settings);
             loadBricksFromLevelText(level.leveltext, levelBricks, this.settings);
             this.drawLevelThumbnail(offset, this.levelRects[i], ctx, levelBricks, images);
 
-            const oldFont = ctx.font;
-            ctx.fillStyle = "black";
-            ctx.textAlign = "center";
             let y = 2 * this.padding;
             ctx.font = "14px Arial";
+            ctx.fillStyle = "black";
             ctx.fillText(`By ${level.author}`, this.levelRects[i].horizontalCenter - offset.x, 72);
             ctx.font = "18px Arial";
 
             // TODO: test with too many lines AND too long words!
-            let lines = wrapText(ctx, level.name + " " + level.name + " " + level.name + " " + level.name, this.levelRects[i].width - 6 * this.padding);
+            // TODO: center vertically? Keep in mind separate centering is required for each case: 1 line or 2 lines
+            let lines = wrapText(ctx, level.name, this.levelRects[i].width - 6 * this.padding);
             for (let line of lines.slice(0,2)) {
                 ctx.fillText(line, this.levelRects[i].horizontalCenter - offset.x, y)
                 y += parseInt(ctx.font) + 4;
             }
 
-            ctx.textAlign = "left";
-            ctx.font = oldFont;
         }
+
+        ctx.textAlign = "left";
+        ctx.font = oldFont;
     }
 
     private drawLevelThumbnail(offset: Vec2, rect: Rect, ctx: CanvasRenderingContext2D, currentLevelBrickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>) {
@@ -273,13 +297,29 @@ export class LevelSelector {
 
     onmousedown(e: MouseEvent) {
         if (this.loadingLevelList) return;
+
         for (let button of this.buttons) {
             // Handle the fact that the Rect position is drawn relative to the window's top left, but the cursor is in global coordinates...
             let offsetCursor = _.clone(this.cursor);
             offsetCursor.x -= this.pos.x;
             offsetCursor.y -= this.pos.y;
-            if (button.rect.isInsideRect(offsetCursor) && button.enabled)
+            if (button.rect.isInsideRect(offsetCursor) && button.enabled) {
                 button.clickCallback(true);
+                return;
+            }
+        }
+
+        for (let i = 0; i < this.levelRects.length; i++) {
+            if (this.levelRects[i].isInsideRect(this.cursor)) {
+                this.selectedRect = i;
+                if (this.selectorType === "load")
+                    this.levelName = this.levelList[i].name;
+                else if (i > 0) // Handle the offset from the "New level" icon being at index 0
+                    this.levelName = this.levelList[i - 1].name;
+                else
+                    this.levelName = "Untitled";
+                return;
+            }
         }
     }
     onmouseup(e: MouseEvent) {
