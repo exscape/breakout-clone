@@ -205,7 +205,7 @@ export function validBrickPosition(brick: BrickPosition, settings: Settings) {
 
 }
 
-export function fetchLevelIndex(levelType: "standalone" | "campaign", callback: (levels: LevelMetadata[]) => void) {
+export function fetchLevelIndex(levelType: "standalone" | "campaign", successCallback: (levels: LevelMetadata[]) => void, failureCallback: () => void) {
     fetch('/game/level_index.php', {
             method: "GET",
             cache: 'no-cache'
@@ -214,21 +214,23 @@ export function fetchLevelIndex(levelType: "standalone" | "campaign", callback: 
     .then(json => {
         if ("type" in json && json.type === "error") {
             alert("Failed to read level index: " + json.error);
-            return;
+            failureCallback();
         }
         else if (!("result" in json)) {
             alert("Invalid answer from server");
-            return;
+            failureCallback();
         }
 
         let result = json.result as LevelIndexResult;
         if (levelType === "standalone")
-            callback(result.standalone);
+            successCallback(result.standalone);
         else if (levelType === "campaign")
-            callback(result.campaign);
+            successCallback(result.campaign);
+
     })
     .catch(error => {
         alert("Failed to download level index: " + error);
+        failureCallback();
     });
 }
 

@@ -125,7 +125,10 @@ export class DrawingHandler {
 
     drawLoadingScreen() {
         let screen = (this.game.currentMode === "game") ? this.game.loadingScreen : this.editor.loadingScreen;
-        screen?.draw(this.ctx);
+        if (screen) {
+            this.dim();
+            screen.draw(this.ctx);
+        }
     }
 
     drawGameFrame() {

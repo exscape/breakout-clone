@@ -100,10 +100,15 @@ export class Editor {
         this.loadingScreen = new LoadingScreen("Loading level list...", this.settings);
 
         fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
+            // Success callback
             this.loadingScreen!.finished;
             this.loadingScreen = null;
 
             this.levelSelector = new LevelSelector("save", levels, this.cursor, this.settings, saveCallback, cancelCallback);
+        }, () => {
+            // Failure callback
+            this.loadingScreen!.finished;
+            this.loadingScreen = null;
         });
     }
 

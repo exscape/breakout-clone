@@ -32,7 +32,9 @@ export class LevelSelector {
     readonly validCharacters: string[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-".split("");
     readonly maxLevelnameLength = 28;
     readonly ourSaveCallback = (_: boolean) => {
-            console.log("Save");
+            if (this.saveButton)
+                this.saveButton.enabled = false;
+
             this.saveCallback(this.levelName);
     };
     cursor: Vec2;

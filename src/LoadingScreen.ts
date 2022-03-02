@@ -20,7 +20,7 @@ export class LoadingScreen {
         ctx.textBaseline = "middle";
         const {width: textWidth} = ctx.measureText(this.message);
 
-        ctx.fillStyle = "#e5e5e5";
+        ctx.fillStyle = "#f5f5f5";
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
 

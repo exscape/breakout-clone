@@ -83,6 +83,7 @@ export class Game {
         this.collisionHandler = new CollisionHandler(settings);
 
         fetchLevelIndex("campaign", (levels: LevelMetadata[]) => {
+            // Success callback
             if (levels.length <= 0) {
                 alert("No campaign levels found in level index!");
                 return;
@@ -94,6 +95,9 @@ export class Game {
                 this.loadingCompleted = true;
                 this.init();
             }
+        }, () => {
+            // Failure callback
+            // Alert is showed by fetchLevelIndex, so we don't need to do much
         });
 
         this.lastRender = 0;
