@@ -243,10 +243,10 @@ export class LevelSelector {
             const nextRect = new Rect(this.levelRects[2].left - offset.x + this.padding,               this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
             const endRect  = new Rect(this.levelRects[2].left - offset.x + this.padding + buttonWidth, this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
 
-            this.homeButton = new UIButton(homeRect, null, "<<<", false, () => { this.currentPage = 0; });
-            this.prevButton = new UIButton(prevRect, null, "<<", false, () => { this.currentPage = clamp(this.currentPage - 1, 0, this.totalPages - 1); });
-            this.nextButton = new UIButton(nextRect, null, ">>", false, () => { this.currentPage = clamp(this.currentPage + 1, 0, this.totalPages - 1); });
-            this.endButton = new UIButton(endRect, null, ">>>", false, () => { this.currentPage = this.totalPages - 1; });
+            this.homeButton = new UIButton(homeRect, null, "<<<", false, () => { this.currentPage = 0; this.updateLevelSelection(0); });
+            this.prevButton = new UIButton(prevRect, null, "<<", false, () => { this.currentPage = clamp(this.currentPage - 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
+            this.nextButton = new UIButton(nextRect, null, ">>", false, () => { this.currentPage = clamp(this.currentPage + 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
+            this.endButton = new UIButton(endRect, null, ">>>", false, () => { this.currentPage = this.totalPages - 1; this.updateLevelSelection(0); });
 
             this.buttons.push(this.homeButton);
             this.buttons.push(this.prevButton);
@@ -295,7 +295,7 @@ export class LevelSelector {
 
         // -1 as the numbers returned are human-readable
         for (let i = this.firstLevelOnPage(this.currentPage) - 1; i <= this.lastLevelOnPage(this.currentPage) - 1; i++) {
-            const rectIndex = this.levelRectIndex(i);
+            const rectIndex = this.rectIndexFromLevelIndex(i);
             let level = this.levelList[i];
             let levelBricks = generateEmptyBrickArray(this.settings);
             loadBricksFromLevelText(level.leveltext, levelBricks, this.settings);
@@ -348,7 +348,8 @@ export class LevelSelector {
             return Math.min(3 * (pageNumber + 1), this.levelList.length);
     }
 
-    private levelRectIndex(index: number) {
+    // In which level slot (0 - 2) should we draw the level with this index?
+    private rectIndexFromLevelIndex(index: number) {
         // For page 0: index 1 and 2 are valid
         // For other pages: indexes 0, 1, 2 are valid
         // 0 -> 1, 1 -> 2; after that: 2 -> 0, 3 -> 1, 4 -> 2, 5 -> 0, 6 -> 1, 7 -> 2, 8 -> 0, ...
@@ -356,6 +357,25 @@ export class LevelSelector {
             return index + 1;
         else
             return (index - 2) % 3;
+    }
+
+    // If the rect of level slot 0 - 2 was clicked, which level was just selected?
+    private levelIndexFromRectIndex(page: number, rectIndex: number) {
+        if (this.selectorType === "save" && page === 0 && rectIndex === 0)
+            throw new Error("Invalid values in levelIndexFromRectIndex");
+        else if (this.selectorType === "save")
+        // page 0: 1 -> level 0, 2 -> level 1; other pages: 0 -> level 2, 1 -> level 3, 2 -> level 4,  ///  0 -> level 5
+            return (this.currentPage === 0) ? rectIndex - 1 : 2 + ((page - 1) * 3) + rectIndex;
+        else
+            return 1;
+    }
+
+    private updateLevelSelection(rectIndex: number) {
+        this.selectedRect = rectIndex as (0 | 1 | 2);
+        if (this.selectorType === "save" && this.currentPage === 0 && rectIndex === 0)
+            this.levelName = "Untitled";
+        else // For both save and load, in every other case
+            this.levelName = this.levelList[this.levelIndexFromRectIndex(this.currentPage, rectIndex)].name;
     }
 
     private drawLevelThumbnail(offset: Vec2, rect: Rect, ctx: CanvasRenderingContext2D, currentLevelBrickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>) {
@@ -404,14 +424,9 @@ export class LevelSelector {
         }
 
         for (let i = 0; i < this.levelRects.length; i++) {
-            if (this.levelRects[i].isInsideRect(this.cursor)) {
-                this.selectedRect = i as (0 | 1 | 2);
-                if (this.selectorType === "load")
-                    this.levelName = this.levelList[i].name;
-                else if (i > 0) // Handle the offset from the "New level" icon being at index 0
-                    this.levelName = this.levelList[i - 1].name;
-                else
-                    this.levelName = "Untitled";
+            const isNewLevel = (this.selectorType === "save" && this.currentPage === 0 && i === 0);
+            if (this.levelRects[i].isInsideRect(this.cursor) && (isNewLevel || (this.levelIndexFromRectIndex(this.currentPage, i) < this.levelList.length))) {
+                this.updateLevelSelection(i);
                 return;
             }
         }
