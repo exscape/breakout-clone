@@ -9,6 +9,7 @@ import { DrawingHandler } from './DrawingHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
 import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, loadBricksFromLevelText, generateEmptyBrickArray } from './Utils';
 import { Editor } from './Editor';
+import { LoadingScreen } from './LoadingScreen';
 
 export class LevelTemp {
     bricks: BrickOrEmpty[][] = [];
@@ -43,6 +44,8 @@ export class Game {
     imageLoadingCompleted: boolean = false;
     loadingCompleted: boolean = false;
     loadingFailed: boolean = false;
+
+    loadingScreen: LoadingScreen | null = null;
 
     levelText: string | undefined;
 

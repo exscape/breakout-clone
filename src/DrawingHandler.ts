@@ -123,6 +123,11 @@ export class DrawingHandler {
         this.ctx.globalAlpha = 1.0;
     }
 
+    drawLoadingScreen() {
+        let screen = (this.game.currentMode === "game") ? this.game.loadingScreen : this.editor.loadingScreen;
+        screen?.draw(this.ctx);
+    }
+
     drawGameFrame() {
         // Clear the frame
         this.ctx.fillStyle = this.settings.canvasBackground;
@@ -221,6 +226,8 @@ export class DrawingHandler {
                 this.ctx.stroke();
             }
         }
+
+        this.drawLoadingScreen();
 
         if (this.game.devMenuOpen) {
             this.drawText("1  Sticky", "20px Arial", "black", "left", 10, 500);
@@ -324,9 +331,12 @@ export class DrawingHandler {
         if (e.levelSelector) {
             this.drawLevelSelector(e.levelSelector);
 //            this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
+            this.drawLoadingScreen();
             this.drawCursor("cursor_regular", false);
             return;
         }
+
+        this.drawLoadingScreen();
 
         // Draw tooltips on toolbar icon hover
         this.drawTooltips();

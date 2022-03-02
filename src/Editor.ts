@@ -2,10 +2,11 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, generateLevelTextFromBricks, levelCenter, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadNewLevel, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadNewLevel, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./LevelSelector";
+import { LoadingScreen } from "./LoadingScreen";
 
 export class Editor {
     game: Game;
@@ -41,6 +42,7 @@ export class Editor {
 
     // Level selector/UI stuff
     levelSelector: LevelSelector | null = null;
+    loadingScreen: LoadingScreen | null = null;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
@@ -75,15 +77,34 @@ export class Editor {
     }
 
     showSaveDialog() {
+        // Set up callbacks first...
         const saveCallback = (levelName: string) => {
             let levelText = generateLevelTextFromBricks(this.bricks, this.settings);
-            uploadNewLevel(levelName, levelText);
 
-            this.levelSelector = null;
-        };
+            // Note: this uses a Promise returned by fetch, so this code
+            // is asynchronous and will most likely finish *after* we return from this method.
+            uploadNewLevel(levelName, levelText).then(json => {
+                if ("type" in json && json.type === "error")
+                    alert("Level upload failed: " + json.message);
+                else {
+                    alert("Level upload successful!"); // TODO: Change to something less annoying than an alert!
+                    this.levelSelector = null;
+                }
+            }).catch(reason => {
+                alert("Level upload failed: " + reason.message);
+            });
+        }
         const cancelCallback = () => { this.levelSelector = null; };
 
-        this.levelSelector = new LevelSelector("save", this.cursor, this.settings, saveCallback, cancelCallback);
+        // Then show a loading screen, fetch the level index, and then show the save dialog.
+        this.loadingScreen = new LoadingScreen("Loading level list...", this.settings);
+
+        fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
+            this.loadingScreen!.finished;
+            this.loadingScreen = null;
+
+            this.levelSelector = new LevelSelector("save", levels, this.cursor, this.settings, saveCallback, cancelCallback);
+        });
     }
 
     clearLevel() {

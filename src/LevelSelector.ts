@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
-import { clamp, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "./Utils";
+import { clamp, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "./Utils";
 import { Vec2 } from "./Vec2";
 
 // BEWARE: This code is by FAR the worst in this codebase as of when it's being written.
@@ -23,10 +23,9 @@ export class LevelSelector {
     levelRects: Rect[] = [];
     selectedRect: 0 | 1 | 2 = 0;
 
-    loadingLevelList: boolean = true;
-    levelList: LevelMetadata[] = [];
-    currentPage: number = 0;
-    totalPages: number = 0;
+    levelList: LevelMetadata[];
+    currentPage: number;
+    totalPages: number;
 
     saveCallback: ((levelName: string) => void);
     cancelCallback: (() => void);
@@ -53,8 +52,9 @@ export class LevelSelector {
     // For saving: disabled if the name is already used, name is empty, or name is Untitled
     enableOkButton: boolean = false;
 
-    constructor(type: "load" | "save",  cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
+    constructor(type: "load" | "save", levelList: LevelMetadata[], cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
         this.windowTitle = (type === "load") ? "Load level" : "Save level";
+        this.levelList = levelList;
         this.settings = settings;
         this.cursor = cursor;
         this.pos = new Vec2(Math.floor((this.settings.canvasWidth - this.width) / 2), Math.floor((this.settings.canvasHeight - this.height) / 2));
@@ -67,21 +67,8 @@ export class LevelSelector {
         this.saveCallback = saveCallback;
         this.cancelCallback = cancelCallback;
 
-        this.fetchLevelList();
-    }
-
-    fetchLevelList() {
-        try {
-            fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
-                this.levelList = levels;
-                this.loadingLevelList = false;
-                this.currentPage = 0;
-                this.totalPages = Math.ceil(levels.length / 3);
-            });
-        }
-        catch (e: any) {
-            this.cancelCallback();
-        }
+        this.currentPage = 0;
+        this.totalPages = Math.ceil(levelList.length / 3);
     }
 
     draw(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>): boolean {
@@ -91,31 +78,6 @@ export class LevelSelector {
         ctx.fillStyle = "#e5e5e5";
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
-
-        // Show a loading screen while fetching from the server
-        if (this.loadingLevelList) {
-            const loadingWidth = 280;
-            const loadingHeight = 70;
-            ctx.fillRect((this.width - loadingWidth) / 2, (this.height - loadingHeight) / 2, loadingWidth, loadingHeight);
-            ctx.strokeRect((this.width - loadingWidth) / 2, (this.height - loadingHeight) / 2, loadingWidth, loadingHeight);
-
-            ctx.fillStyle = "black";
-            ctx.font = "22px Arial";
-            const text = "Loading level list..."
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(text, this.width / 2, this.height / 2);
-            ctx.textAlign = "left";
-            ctx.textBaseline = "alphabetic";
-
-            // Abort drawing of everything else, e.g. buttons, in DrawingHandler
-            return false;
-        }
-
-        // TODO: Handle failure when fetching from the server
-
-
-
         ctx.fillRect(0, 0, this.width, this.height);
         ctx.strokeRect(0, 0, this.width, this.height);
 
@@ -410,8 +372,6 @@ export class LevelSelector {
     }
 
     onmousedown(e: MouseEvent) {
-        if (this.loadingLevelList) return;
-
         for (let button of this.buttons) {
             // Handle the fact that the Rect position is drawn relative to the window's top left, but the cursor is in global coordinates...
             let offsetCursor = _.clone(this.cursor);
@@ -432,13 +392,10 @@ export class LevelSelector {
         }
     }
     onmouseup(e: MouseEvent) {
-        if (this.loadingLevelList) return;
     }
     keyUp(ev: KeyboardEvent) {
-        if (this.loadingLevelList) return;
     }
     keyDown(ev: KeyboardEvent) {
-        if (this.loadingLevelList) return;
         if ((ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
             this.levelName = this.levelName.substring(0, this.levelName.length - 1);
         else if (ev.key == "Enter") {

@@ -240,18 +240,12 @@ export function uploadNewLevel(levelName: string, levelText: string) {
     formData.append("type", "standalone");
     // formData.append("levelNumber", ...);
 
-    fetch('/game/level_upload.php', {
+    return fetch('/game/level_upload.php', {
         method: "POST",
         cache: 'no-cache',
         body: formData
     })
-    .then(response => response.json())
-    .then(json => {
-        console.log(json);
-    })
-    .catch(error => {
-        alert(error.message);
-    });
+    .then(response => response.json());
 }
 
 export function loadBricksFromLevelText(levelText: string, target: BrickOrEmpty[][], settings: Settings): boolean {
