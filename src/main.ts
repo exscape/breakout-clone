@@ -10,7 +10,7 @@ window.addEventListener('DOMContentLoaded', () => {
     gameCanvasElement = document.getElementById('main-canvas') as HTMLCanvasElement;
     statusCanvasElement = document.getElementById('statusbar-canvas') as HTMLCanvasElement;
 
-    if (!gameCanvasElement || !statusCanvasElement /*|| !gameContext || !statusContext */) {
+    if (!gameCanvasElement || !statusCanvasElement) {
         alert("Unable to load game!");
         return;
     }

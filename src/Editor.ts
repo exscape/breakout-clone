@@ -83,7 +83,7 @@ export class Editor {
         };
         const cancelCallback = () => { this.levelSelector = null; };
 
-        this.levelSelector = new LevelSelector("save", null, this.cursor, this.settings, saveCallback, cancelCallback);
+        this.levelSelector = new LevelSelector("save", this.cursor, this.settings, saveCallback, cancelCallback);
     }
 
     clearLevel() {

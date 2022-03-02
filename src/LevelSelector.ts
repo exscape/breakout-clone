@@ -1,24 +1,32 @@
 import _ from "lodash";
 import { BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
-import { drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "./Utils";
+import { clamp, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "./Utils";
 import { Vec2 } from "./Vec2";
+
+// BEWARE: This code is by FAR the worst in this codebase as of when it's being written.
+// I don't have the patience to write a proper windowing system for a single dialog, so this is FULL of
+// horrifying hacks that I'm ashamed have created.
 
 export class LevelSelector {
     settings: Settings;
     readonly width = 687;
-    readonly height = 603;
+    readonly height = 623;
     readonly padding = 5;
     pos: Vec2;
     windowTitle: string;
     levelName: string;
     selectorType: "load" | "save";
 
+    // There are always three rects, regardless of level count.
+    // 1-3 are used for each page of levels.
     levelRects: Rect[] = [];
-    selectedRect: number = 0;
+    selectedRect: 0 | 1 | 2 = 0;
 
     loadingLevelList: boolean = true;
     levelList: LevelMetadata[] = [];
+    currentPage: number = 0;
+    totalPages: number = 0;
 
     saveCallback: ((levelName: string) => void);
     cancelCallback: (() => void);
@@ -30,22 +38,30 @@ export class LevelSelector {
     };
     cursor: Vec2;
     buttons: UIButton[] = [];
+    saveButton: UIButton | null = null;
+    cancelButton: UIButton | null = null;
+    homeButton: UIButton | null = null;
+    prevButton: UIButton | null = null;
+    nextButton: UIButton | null = null;
+    endButton: UIButton | null = null;
+
+    // TODO: Remove later, when initializiation isn't a hack in the draw methods
+    saveCancelButtonsInitialized = false;
+    navigationButtonsInitialized = false;
 
     // For loading: disabled if no valid level is selected
     // For saving: disabled if the name is already used, name is empty, or name is Untitled
     enableOkButton: boolean = false;
 
-    constructor(type: "load" | "save", levelName: string | null, cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
+    constructor(type: "load" | "save",  cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
         this.windowTitle = (type === "load") ? "Load level" : "Save level";
         this.settings = settings;
         this.cursor = cursor;
         this.pos = new Vec2(Math.floor((this.settings.canvasWidth - this.width) / 2), Math.floor((this.settings.canvasHeight - this.height) / 2));
         if (type === "save")
             this.levelName = "Untitled";
-        else if (!levelName)
-            throw new Error("levelName can't be null for a load window");
         else
-            this.levelName = levelName;
+            this.levelName = "";
         this.selectorType = type;
 
         this.saveCallback = saveCallback;
@@ -59,6 +75,8 @@ export class LevelSelector {
             fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
                 this.levelList = levels;
                 this.loadingLevelList = false;
+                this.currentPage = 0;
+                this.totalPages = Math.ceil(levels.length / 3);
             });
         }
         catch (e: any) {
@@ -115,9 +133,9 @@ export class LevelSelector {
         // List of levels, with scrollbar if needed
         const levelListY = lineY + this.padding;
         ctx.translate(this.padding, levelListY);
-        const levelListHeight = 185;
+        const levelListHeight = 200;
         const offset = new Vec2(this.pos.x + this.padding, this.pos.y + levelListY);
-        this.drawLevelList(offset, ctx, images, brickSource, levelListHeight);
+        this.drawLevelList(offset, ctx, images, levelListHeight);
         ctx.translate(-this.padding, -levelListY);
 
         // Selected level preview (large)
@@ -147,36 +165,38 @@ export class LevelSelector {
 
         ctx.textBaseline = old;
 
-        // Create the buttons, hacky right alignment
-        // TODO: This creates NEW buttons EVERY FRAME!
-        const buttonWidth = 80;
-        const buttonHeight = 20;
-        const saveRect = new Rect(this.width - this.padding - buttonWidth, levelNameY, buttonWidth, buttonHeight);
-        const cancelRect = new Rect(this.width - this.padding - 2 * buttonWidth - 2 * this.padding, levelNameY, buttonWidth, buttonHeight);
-
-        this.buttons.length = 0; // TODO: HACK to save performance -- we SHOULD NOT recreate these every frame!!!
-
         if (this.selectorType === "load") {
             this.enableOkButton = false; // TODO: update correctly
         }
         else {
             this.enableOkButton = (this.levelName.length > 0 && this.levelName != "Untitled" &&
-                                   !this.levelList.some(lev => lev.name.trim() === this.levelName.trim()));
+                                !this.levelList.some(lev => lev.name.trim() === this.levelName.trim()));
         }
 
-        this.buttons.push (new UIButton(saveRect, null, "Save", this.enableOkButton, this.ourSaveCallback));
-        this.buttons.push(new UIButton(cancelRect, null, "Cancel", true, (_: boolean) => {
-            console.log("Cancel");
-            this.cancelCallback();
-        }));
+        // Create the buttons, hacky right alignment
+        if (!this.saveCancelButtonsInitialized) {
+            const buttonWidth = 80;
+            const buttonHeight = 20;
+            const saveRect = new Rect(this.width - this.padding - buttonWidth, levelNameY, buttonWidth, buttonHeight);
+            const cancelRect = new Rect(this.width - this.padding - 2 * buttonWidth - 2 * this.padding, levelNameY, buttonWidth, buttonHeight);
 
-        // TODO: Do we need to draw the levels in advance and save thumbnail images, or can we draw them as needed here?
-        // TODO: I figure that assuming we only draw the levels that are ACTUALLY VISIBLE on screen it should be no problem whatsoever.
+            this.saveButton = new UIButton(saveRect, null, "Save", this.enableOkButton, this.ourSaveCallback);
+            this.cancelButton = new UIButton(cancelRect, null, "Cancel", true, (_: boolean) => {
+                console.log("Cancel");
+                this.cancelCallback();
+            });
+
+            this.buttons.push(this.saveButton);
+            this.buttons.push(this.cancelButton);
+            this.saveCancelButtonsInitialized = true;
+        }
+        else if (this.saveButton)
+            this.saveButton.enabled = this.enableOkButton;
 
         return true;
     }
 
-    drawLevelList(offset: Vec2, ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, currentLevelBrickSource: BrickOrEmpty[][], height: number) {
+    drawLevelList(offset: Vec2, ctx: CanvasRenderingContext2D, images: Record<string, HTMLImageElement>, height: number) {
         // Outline
         const width = this.width - 2 * this.padding;
         ctx.beginPath();
@@ -187,21 +207,19 @@ export class LevelSelector {
         ctx.fillRect(0, 0, width, height);
         ctx.strokeRect(0, 0, width, height);
 
+        const buttonHeight = 20;
         // Initialize click areas for the levels
         if (this.levelRects.length === 0) {
             for (let x = 0; x < 3; x++) {
-                this.levelRects.push(new Rect(offset.x + x * width/3, offset.y, width/3, height));
+                this.levelRects.push(new Rect(offset.x + x * width/3 + 1, offset.y + 1, width/3 - 2, height - buttonHeight - 2));
             }
         }
+        const buttonWidth = this.levelRects[0].width / 2;
 
         // Draw the background for the highlighted level
-        if (this.selectedRect >= 0 && this.selectedRect <= 2) {
-            const r = this.levelRects[this.selectedRect];
-            ctx.fillStyle = "#dedeff";
-            ctx.fillRect(r.left - offset.x + 1, r.top - offset.y + 1, r.right - r.left - 2, r.bottom - r.top - 2);
-        }
-        else
-            alert("BUG: invalid value for selectedRect in LevelSelector");
+        const r = this.levelRects[this.selectedRect];
+        ctx.fillStyle = "#dedeff";
+        ctx.fillRect(r.left - offset.x, r.top - offset.y, r.right - r.left, r.bottom - r.top);
 
         // Draw separators between the levels
         ctx.beginPath();
@@ -211,23 +229,63 @@ export class LevelSelector {
         ctx.lineTo(this.levelRects[0].right - offset.x, this.levelRects[0].bottom - offset.y);
         ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(this.levelRects[1].right - offset.x, this.levelRects[1].top - offset.y);
-        ctx.lineTo(this.levelRects[1].right - offset.x, this.levelRects[1].bottom - offset.y);
+        ctx.moveTo(this.levelRects[2].left - offset.x, this.levelRects[1].top - offset.y);
+        ctx.lineTo(this.levelRects[2].left - offset.x, this.levelRects[1].bottom - offset.y);
         ctx.stroke();
 
-        // Draw the levels
-        const levelsToShow = Math.min(3, this.levelList.length); // TODO: calculate from total standalone level count + scroll position
+        // Create buttons for navigation
+        // I genuinely don't know why this offset is required... and the fact that it's 1.5 times the button height is just perplexing. Is that just random chance or what?!
+        // I spent perhaps 30 minutes trying to get this right a more reasonable way, but in the end gave up.
+        const wtf = buttonHeight * 1.5;
+        if (!this.navigationButtonsInitialized) {
+            const homeRect = new Rect(this.levelRects[0].left - offset.x + this.padding,               this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
+            const prevRect = new Rect(this.levelRects[0].left - offset.x + this.padding + buttonWidth, this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
+            const nextRect = new Rect(this.levelRects[2].left - offset.x + this.padding,               this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
+            const endRect  = new Rect(this.levelRects[2].left - offset.x + this.padding + buttonWidth, this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
 
-        // TODO:
-        // TODO: remember that #1 when saving should be the NEW LEVEL + icon, not an existing level!
-        // TODO:
+            this.homeButton = new UIButton(homeRect, null, "<<<", false, () => { this.currentPage = 0; });
+            this.prevButton = new UIButton(prevRect, null, "<<", false, () => { this.currentPage = clamp(this.currentPage - 1, 0, this.totalPages - 1); });
+            this.nextButton = new UIButton(nextRect, null, ">>", false, () => { this.currentPage = clamp(this.currentPage + 1, 0, this.totalPages - 1); });
+            this.endButton = new UIButton(endRect, null, ">>>", false, () => { this.currentPage = this.totalPages - 1; });
+
+            this.buttons.push(this.homeButton);
+            this.buttons.push(this.prevButton);
+            this.buttons.push(this.nextButton);
+            this.buttons.push(this.endButton);
+
+            this.navigationButtonsInitialized = true;
+        }
+        else {
+            if (this.homeButton) this.homeButton.enabled = this.currentPage !== 0 && this.totalPages > 1;
+            if (this.prevButton) this.prevButton.enabled = this.currentPage !== 0 && this.totalPages > 1;
+            if (this.nextButton) this.nextButton.enabled = this.totalPages > this.currentPage + 1;
+            if (this.endButton) this.endButton.enabled = this.currentPage !== this.totalPages - 1;
+        }
+
+        // Draw the pagination stats
+        ctx.fillStyle = "#efefef";
+        ctx.fillRect(this.levelRects[1].left - offset.x - 1, this.levelRects[1].bottom - offset.y + 1, buttonWidth * 2 + 2, buttonHeight);
+        ctx.strokeRect(this.levelRects[1].left - offset.x - 1, this.levelRects[1].bottom - offset.y + 1, buttonWidth * 2 + 2, buttonHeight);
+        ctx.fillStyle = "black";
+        ctx.textAlign = "center";
+        const oldBaseline = ctx.textBaseline;
+        ctx.textBaseline = "middle";
+        ctx.font = "14px Arial";
+
+        const first = this.firstLevelOnPage(this.currentPage);
+        const last = this.lastLevelOnPage(this.currentPage);
+        const text = (first !== last) ? `Levels ${first}-${last} of ${this.levelList.length}` : `Level ${first} of ${this.levelList.length}`;
+        ctx.fillText(text, this.levelRects[1].horizontalCenter - offset.x, this.levelRects[1].bottom - offset.y + buttonHeight / 2 + 2);
+        ctx.textBaseline = oldBaseline;
+
+        // Draw the levels
 
         const oldFont = ctx.font;
         ctx.fillStyle = "black";
         ctx.textAlign = "center";
         ctx.font = "18px Arial";
 
-        if (this.selectorType === "save") {
+        if (this.selectorType === "save" && this.currentPage === 0) {
             // Draw the first entry as an empty, "new level" icon only
             const img = images["new_level"];
             ctx.drawImage(img, Math.floor(this.levelRects[0].left - offset.x + (this.levelRects[0].width - img.width) / 2),
@@ -235,33 +293,69 @@ export class LevelSelector {
             ctx.fillText("New level", this.levelRects[0].horizontalCenter - offset.x, this.levelRects[0].bottom - offset.y - parseInt(ctx.font) - 3 * this.padding);
         }
 
-        const indexOffset = (this.selectorType === "load") ? 0 : 1;
-        for (let i = indexOffset; i < Math.min(3, levelsToShow); i++) {
-            // TODO: index used in loadBricks AND this.levelRects is incorrect -- update after pagination is implemented!!
-            // TODO:
-            let level = this.levelList[i - indexOffset];
+        // -1 as the numbers returned are human-readable
+        for (let i = this.firstLevelOnPage(this.currentPage) - 1; i <= this.lastLevelOnPage(this.currentPage) - 1; i++) {
+            const rectIndex = this.levelRectIndex(i);
+            let level = this.levelList[i];
             let levelBricks = generateEmptyBrickArray(this.settings);
             loadBricksFromLevelText(level.leveltext, levelBricks, this.settings);
-            this.drawLevelThumbnail(offset, this.levelRects[i], ctx, levelBricks, images);
+            this.drawLevelThumbnail(offset, this.levelRects[rectIndex], ctx, levelBricks, images);
 
             let y = 2 * this.padding;
             ctx.font = "14px Arial";
             ctx.fillStyle = "black";
-            ctx.fillText(`By ${level.author}`, this.levelRects[i].horizontalCenter - offset.x, 72);
+            ctx.fillText(`By ${level.author}`, this.levelRects[rectIndex].horizontalCenter - offset.x, 66);
             ctx.font = "18px Arial";
 
             // TODO: test with too many lines AND too long words!
             // TODO: center vertically? Keep in mind separate centering is required for each case: 1 line or 2 lines
-            let lines = wrapText(ctx, level.name, this.levelRects[i].width - 6 * this.padding);
+            let lines = wrapText(ctx, level.name, this.levelRects[rectIndex].width - 6 * this.padding);
             for (let line of lines.slice(0,2)) {
-                ctx.fillText(line, this.levelRects[i].horizontalCenter - offset.x, y)
+                ctx.fillText(line, this.levelRects[rectIndex].horizontalCenter - offset.x, y)
                 y += parseInt(ctx.font) + 4;
             }
-
         }
 
         ctx.textAlign = "left";
         ctx.font = oldFont;
+    }
+
+    // Helper methods
+    // Most of these have a special case: the first page for saving has 2 level entries, all other pages 3,
+    // due to the "new level" icon being present there.
+    // For loading, every page has 3 entries and so the math is easier.
+    private numLevelsOnPage(pageNumber: number) {
+        return (pageNumber === 0 && this.selectorType === "save") ? Math.min(2, this.levelList.length) : Math.min(3, this.levelList.length);
+    }
+
+    // Note: human-readable numbers, so the first page has levels 1 and 2, the second page 3, 4, 5 etc.
+    private firstLevelOnPage(pageNumber: number) {
+        if (pageNumber === 0)
+            return 1;
+        else if (this.selectorType === "save")
+            return 3 * pageNumber;
+        else
+            return 1 + 3 * pageNumber;
+    }
+
+    // Note: human-readable numbers, so the first page has levels 1 and 2, the second page 3, 4, 5 etc.
+    private lastLevelOnPage(pageNumber: number) {
+       if (pageNumber === 0 && this.selectorType === "save")
+            return Math.min(2, this.levelList.length);
+        else if (this.selectorType === "save")
+            return Math.min(2 + 3 * pageNumber, this.levelList.length);
+        else
+            return Math.min(3 * (pageNumber + 1), this.levelList.length);
+    }
+
+    private levelRectIndex(index: number) {
+        // For page 0: index 1 and 2 are valid
+        // For other pages: indexes 0, 1, 2 are valid
+        // 0 -> 1, 1 -> 2; after that: 2 -> 0, 3 -> 1, 4 -> 2, 5 -> 0, 6 -> 1, 7 -> 2, 8 -> 0, ...
+        if (index <= 1)
+            return index + 1;
+        else
+            return (index - 2) % 3;
     }
 
     private drawLevelThumbnail(offset: Vec2, rect: Rect, ctx: CanvasRenderingContext2D, currentLevelBrickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>) {
@@ -311,7 +405,7 @@ export class LevelSelector {
 
         for (let i = 0; i < this.levelRects.length; i++) {
             if (this.levelRects[i].isInsideRect(this.cursor)) {
-                this.selectedRect = i;
+                this.selectedRect = i as (0 | 1 | 2);
                 if (this.selectorType === "load")
                     this.levelName = this.levelList[i].name;
                 else if (i > 0) // Handle the offset from the "New level" icon being at index 0
