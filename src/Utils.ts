@@ -234,11 +234,17 @@ export function fetchLevelIndex(levelType: "standalone" | "campaign", successCal
     });
 }
 
-export function uploadNewLevel(levelName: string, levelText: string) {
+export function uploadLevel(level: LevelMetadata) {
     let formData = new FormData();
-    formData.append("action", "add");
-    formData.append("levelName", levelName);
-    formData.append("levelText", levelText);
+    if (level.level_id === 0) {
+        formData.append("action", "add");
+    }
+    else {
+        formData.append("action", "update");
+        formData.append("id", level.level_id.toString());
+    }
+    formData.append("levelName", level.name);
+    formData.append("levelText", level.leveltext);
     formData.append("type", "standalone");
     // formData.append("levelNumber", ...);
 

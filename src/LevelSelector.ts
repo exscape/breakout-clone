@@ -27,15 +27,26 @@ export class LevelSelector {
     currentPage: number;
     totalPages: number;
 
-    saveCallback: ((levelName: string) => void);
+    saveCallback: ((metadataOrName: LevelMetadata | string) => void);
     cancelCallback: (() => void);
     readonly validCharacters: string[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-".split("");
     readonly maxLevelnameLength = 28;
     readonly ourSaveCallback = (_: boolean) => {
-            if (this.saveButton)
-                this.saveButton.enabled = false;
+        if (this.saveButton)
+            this.saveButton.enabled = false;
 
+        const newLevel = this.currentPage === 0 && this.selectedRect === 0;
+        if (newLevel)
             this.saveCallback(this.levelName);
+        else {
+            let level = this.selectedLevel();
+            if (level) {
+                level.name = this.levelName;
+                this.saveCallback(level);
+            }
+            else
+                alert("BUG: selectedLevel() returned null");
+        }
     };
     cursor: Vec2;
     buttons: UIButton[] = [];
@@ -54,7 +65,7 @@ export class LevelSelector {
     // For saving: disabled if the name is already used, name is empty, or name is Untitled
     enableOkButton: boolean = false;
 
-    constructor(type: "load" | "save", levelList: LevelMetadata[], cursor: Vec2, settings: Settings, saveCallback: (levelName: string) => void, cancelCallback: () => void) {
+    constructor(type: "load" | "save", levelList: LevelMetadata[], cursor: Vec2, settings: Settings, saveCallback: (selectedLevel: LevelMetadata | string) => void, cancelCallback: () => void) {
         this.windowTitle = (type === "load") ? "Load level" : "Save level";
         this.levelList = levelList;
         this.settings = settings;
@@ -133,8 +144,10 @@ export class LevelSelector {
             this.enableOkButton = false; // TODO: update correctly
         }
         else {
-            this.enableOkButton = (this.levelName.length > 0 && this.levelName != "Untitled" &&
-                                !this.levelList.some(lev => lev.name.trim() === this.levelName.trim()));
+            const nameUsedByOtherLevel = this.levelList.some(lev => lev.level_id !== this.selectedLevel()?.level_id && lev.name.trim() === this.levelName.trim());
+
+            this.enableOkButton = (this.levelName.length > 0 && this.levelName != "Untitled") &&
+                                !nameUsedByOtherLevel;
         }
 
         // Create the buttons, hacky right alignment
@@ -342,6 +355,12 @@ export class LevelSelector {
             this.levelName = this.levelList[this.levelIndexFromRectIndex(this.currentPage, rectIndex)].name;
     }
 
+    private selectedLevel() {
+        if (this.levelList.length === 0 || (this.selectorType === "save" && this.currentPage === 0 && this.selectedRect === 0))
+            return null;
+        else
+            return this.levelList[this.levelIndexFromRectIndex(this.currentPage, this.selectedRect)];
+    }
     private drawLevelThumbnail(offset: Vec2, rect: Rect, ctx: CanvasRenderingContext2D, currentLevelBrickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>) {
         let previewSettings = _.clone(this.settings);
         previewSettings.brickHeight = this.settings.brickHeight / 7;

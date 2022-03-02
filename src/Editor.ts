@@ -2,11 +2,12 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadNewLevel, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadLevel, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./LevelSelector";
 import { LoadingScreen } from "./LoadingScreen";
+import _ from "lodash";
 
 export class Editor {
     game: Game;
@@ -78,12 +79,32 @@ export class Editor {
 
     showSaveDialog() {
         // Set up callbacks first...
-        const saveCallback = (levelName: string) => {
-            let levelText = generateLevelTextFromBricks(this.bricks, this.settings);
+        const saveCallback = (selectedLevel: LevelMetadata | string) => {
+            const newLevelText = generateLevelTextFromBricks(this.bricks, this.settings);
+
+            // Ensure we can update leveltext without the Save dialog thumbnail updating -- otherwise, it will update prior to the upload
+            // finishing, and even if the upload fails
+            selectedLevel = _.clone(selectedLevel);
+
+            if (typeof selectedLevel === "string") {
+                // This is a new level
+                // level_id and author are assigned/set, respectively, by the backend
+                const name = selectedLevel;
+                selectedLevel = { level_id: 0, name: name, type: "standalone", levelnumber: 0, leveltext: newLevelText, author: "" } as LevelMetadata;
+            }
+            else {
+                // This is an old level that we should update (and possibly rename)
+                // Make sure to use the ID
+                selectedLevel.leveltext = newLevelText;
+            }
+
+            this.loadingScreen = new LoadingScreen("Uploading level...", this.settings);
 
             // Note: this uses a Promise returned by fetch, so this code
             // is asynchronous and will most likely finish *after* we return from this method.
-            uploadNewLevel(levelName, levelText).then(json => {
+            uploadLevel(selectedLevel).then(json => {
+                if (this.loadingScreen) this.loadingScreen.finished = true;
+                this.loadingScreen = null;
                 if ("type" in json && json.type === "error")
                     alert("Level upload failed: " + json.message);
                 else {
@@ -92,6 +113,8 @@ export class Editor {
                 }
             }).catch(reason => {
                 alert("Level upload failed: " + reason.message);
+                if (this.loadingScreen) this.loadingScreen.finished = true;
+                this.loadingScreen = null;
             });
         }
         const cancelCallback = () => { this.levelSelector = null; };
