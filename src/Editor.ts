@@ -240,48 +240,6 @@ export class Editor {
         this.changesMade = true;
     }
 
-    keyDown(ev: KeyboardEvent) {
-        if (this.loadingScreen && !this.loadingScreen.finished) return;
-        if (this.levelSelector) {
-            this.levelSelector.keyDown(ev);
-            return;
-        }
-        if (ev.shiftKey) this.shiftDown = true;
-        if (ev.ctrlKey) this.ctrlDown = true;
-        if (ev.altKey) { ev.preventDefault(); this.altDown = true; }
-        if (ev.ctrlKey && (ev.key == "x" || ev.key == "X")) {
-            // TODO: add checks about modified data / ask about saving etc.
-            ev.preventDefault();
-            this.game.exitEditor();
-        }
-        else if (ev.ctrlKey && (ev.key == "s" || ev.key == "S")) {
-            ev.preventDefault();
-            this.showSaveDialog();
-        }
-        else if (ev.ctrlKey && (ev.key == "a" || ev.key == "A")) {
-            ev.preventDefault();
-            this.selectAll();
-        }
-        else if (ev.ctrlKey && (ev.key == "d" || ev.key == "D")) {
-            ev.preventDefault();
-            this.deselectAll();
-        }
-        else if (ev.key === "Delete") {
-            this.deleteSelectedBlocks();
-        }
-    }
-
-    keyUp(ev: KeyboardEvent) {
-        if (this.loadingScreen && !this.loadingScreen.finished) return;
-        if (this.levelSelector) {
-            this.levelSelector.keyUp(ev);
-            return;
-        }
-        if (!ev.shiftKey) this.shiftDown = false;
-        if (!ev.ctrlKey) this.ctrlDown = false;
-        if (!ev.altKey) { ev.preventDefault(); this.altDown = false; }
-    }
-
     dragMoved() {
         // Restore the original layout, then copy all selected bricks with the same offset as the selected brick.
         // Bricks that end up outside of the game area are ignored.
@@ -348,6 +306,48 @@ export class Editor {
             this.currentlyDragging = false;
             copyBrickArray(this.bricksBeforeDrag, this.bricks, true, true);
         }
+    }
+
+    keyDown(ev: KeyboardEvent) {
+        if (this.loadingScreen && !this.loadingScreen.finished) return;
+        if (this.levelSelector) {
+            this.levelSelector.keyDown(ev);
+            return;
+        }
+        if (ev.shiftKey) this.shiftDown = true;
+        if (ev.ctrlKey) this.ctrlDown = true;
+        if (ev.altKey) { ev.preventDefault(); this.altDown = true; }
+        if (ev.ctrlKey && (ev.key == "x" || ev.key == "X")) {
+            // TODO: add checks about modified data / ask about saving etc.
+            ev.preventDefault();
+            this.game.exitEditor();
+        }
+        else if (ev.ctrlKey && (ev.key == "s" || ev.key == "S")) {
+            ev.preventDefault();
+            this.showSaveDialog();
+        }
+        else if (ev.ctrlKey && (ev.key == "a" || ev.key == "A")) {
+            ev.preventDefault();
+            this.selectAll();
+        }
+        else if (ev.ctrlKey && (ev.key == "d" || ev.key == "D")) {
+            ev.preventDefault();
+            this.deselectAll();
+        }
+        else if (ev.key === "Delete") {
+            this.deleteSelectedBlocks();
+        }
+    }
+
+    keyUp(ev: KeyboardEvent) {
+        if (this.loadingScreen && !this.loadingScreen.finished) return;
+        if (this.levelSelector) {
+            this.levelSelector.keyUp(ev);
+            return;
+        }
+        if (!ev.shiftKey) this.shiftDown = false;
+        if (!ev.ctrlKey) this.ctrlDown = false;
+        if (!ev.altKey) { ev.preventDefault(); this.altDown = false; }
     }
 
     mouseMoved(e: MouseEvent) {
