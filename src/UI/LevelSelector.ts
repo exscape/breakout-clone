@@ -1,8 +1,10 @@
 import _ from "lodash";
+import { WindowManager } from "../WindowManager";
 import { BrickOrEmpty } from "../Brick";
 import { Settings } from "../Settings";
-import { clamp, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "../Utils";
+import { clamp, createConfirmationDialog, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
+import { ConfirmationDialog } from "./ConfirmationDialog";
 
 // BEWARE: This code is by FAR the worst in this codebase as of when it's being written.
 // I don't have the patience to write a proper windowing system for a single dialog, so this is FULL of
@@ -41,8 +43,19 @@ export class LevelSelector {
         else {
             let level = this.selectedLevel();
             if (level) {
-                level.name = this.levelName;
-                this.saveCallback(level);
+                createConfirmationDialog(`Overwrite existing level "${level.name}"?\nThis cannot be undone.`, "Overwrite", "Cancel", this.settings, () => {
+                    // Overwrite was clicked
+                    WindowManager.getInstance().removeConfirmationDialog(this);
+
+                    if (level) {
+                        level.name = this.levelName;
+                        this.saveCallback(level);
+                    }
+                },
+                () => {
+                    // Cancel was clicked
+                    WindowManager.getInstance().removeConfirmationDialog(this);
+                });
             }
             else
                 alert("BUG: selectedLevel() returned null");

@@ -63,8 +63,9 @@ export class WindowManager implements AcceptsInput {
             this.setActiveWindow(window);
     }
 
-    removeWindow(window: AcceptsInput) {
-        this.knownWindows.delete(window);
+    removeWindow(window: AcceptsInput | null) {
+        if (window)
+            this.knownWindows.delete(window);
     }
 
     setActiveWindow(window: AcceptsInput) {

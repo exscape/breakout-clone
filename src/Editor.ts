@@ -81,6 +81,8 @@ export class Editor implements AcceptsInput {
     showSaveDialog() {
         // Set up callbacks first...
         const saveCallback = (selectedLevel: LevelMetadata | string) => {
+            WindowManager.getInstance().removeWindow(this.levelSelector);
+            WindowManager.getInstance().setActiveWindow(this);
             const newLevelText = generateLevelTextFromBricks(this.bricks, this.settings);
 
             // Ensure we can update leveltext without the Save dialog thumbnail updating -- otherwise, it will update prior to the upload
@@ -117,7 +119,11 @@ export class Editor implements AcceptsInput {
                 alert("Level upload failed: " + reason.message);
             });
         }
-        const cancelCallback = () => { this.levelSelector = null; };
+        const cancelCallback = () => {
+            WindowManager.getInstance().removeWindow(this.levelSelector);
+            WindowManager.getInstance().setActiveWindow(this);
+            this.levelSelector = null;
+        }
 
         createLoadingScreen("Loading level list...", this.settings);
 
