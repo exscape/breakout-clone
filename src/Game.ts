@@ -273,10 +273,12 @@ export class Game implements AcceptsInput {
         this.statusbarCanvas.style.display = "none";
         this.canvas.style.borderBottom = "2px solid black";
         this.helpElement.innerHTML = this.EDITOR_HELP_TEXT;
-
-        InputManager.getInstance().setActiveWindow(this.editor);
-
         this.canvas.width = this.settings.canvasWidth + this.settings.editorToolbarWidth;
+
+        let inputManager = InputManager.getInstance();
+        inputManager.setActiveWindow(this.editor);
+        inputManager.setMaxWidth(this.settings.canvasWidth + this.settings.editorToolbarWidth);
+        inputManager.cursorFrozen = false;
     }
 
     exitEditor() {
@@ -285,7 +287,11 @@ export class Game implements AcceptsInput {
         this.canvas.style.borderBottom = "none";
         this.helpElement.innerHTML = this.GAME_HELP_TEXT;
         this.canvas.width = this.settings.canvasWidth;
-        InputManager.getInstance().setActiveWindow(this);
+
+        let inputManager = InputManager.getInstance();
+        inputManager.setActiveWindow(this);
+        inputManager.setMaxWidth(this.settings.canvasWidth);
+        inputManager.cursorFrozen = true;
     }
 
     togglePause() { this.gamePaused = !this.gamePaused; }

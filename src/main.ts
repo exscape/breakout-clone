@@ -72,6 +72,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     inputManager = InputManager.getInstance();
     game = new Game(gameCanvasElement!!, statusCanvasElement, settings);
+    inputManager.setSettings(settings);
+    inputManager.setMaxWidth(settings.canvasWidth);
+    inputManager.setMaxHeight(settings.canvasHeight);
 
     gameCanvasElement.onmousedown = onmousedownhandler;
     gameCanvasElement.onmouseup = onmouseuphandler;

@@ -7,7 +7,7 @@ import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./LevelSelector";
 import { LoadingScreen } from "./LoadingScreen";
-import { AcceptsInput } from "./InputManager";
+import { AcceptsInput, InputManager } from "./InputManager";
 import _ from "lodash";
 
 export class Editor implements AcceptsInput {
@@ -49,7 +49,7 @@ export class Editor implements AcceptsInput {
     constructor(game: Game, settings: Settings) {
         this.game = game;
         this.settings = settings;
-        this.cursor = new Vec2(this.settings.canvasWidth / 2, this.settings.canvasHeight / 2);
+        this.cursor = InputManager.getInstance().getCursor();
         this.emptyLevelText = (".".repeat(this.settings.levelWidth) + "\n").repeat(this.settings.levelHeight);
 
         this.setupToolbarButtons();
@@ -352,9 +352,6 @@ export class Editor implements AcceptsInput {
     }
 
     mouseMoved(e: MouseEvent) {
-        this.cursor.x = clamp(this.cursor.x + e.movementX, 0, this.settings.canvasWidth + this.settings.editorToolbarWidth - 3);
-        this.cursor.y = clamp(this.cursor.y + e.movementY, 0, this.settings.canvasHeight - 1);
-
         if (this.levelSelector)
             return;
 
