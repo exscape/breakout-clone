@@ -161,31 +161,16 @@ export class Game implements AcceptsInput {
     }
 
     mouseMoved(e: MouseEvent) {
-        if (this.currentMode === "editor") {
-            this.editor.mouseMoved(e);
-            return;
-        }
-
         if (!this.gamePaused && !this.gameLost && !this.gameWon && !this.lifeLost)
             this.paddle.move(e.movementX, this.shouldDrawAimLine() ? e.movementY : 0);
     }
 
     onmousedown(e: MouseEvent) {
-        if (this.currentMode === "editor") {
-            this.editor.onmousedown(e);
-            return;
-        }
-
         if (e.button !== 0)
             return;
     }
 
     onmouseup(e: MouseEvent) {
-        if (this.currentMode === "editor") {
-            this.editor.onmouseup(e);
-            return;
-        }
-
         if (e.button !== 0)
             return;
 
@@ -219,11 +204,6 @@ export class Game implements AcceptsInput {
     }
 
     keyDown(ev: KeyboardEvent) {
-        if (this.currentMode === "editor") {
-            this.editor.keyDown(ev);
-            return;
-        }
-
         if (ev.key == "p" || ev.key == "P")
             this.togglePause();
         else if (ev.key == "a" || ev.key == "A") {
@@ -261,10 +241,6 @@ export class Game implements AcceptsInput {
     }
 
     keyUp(ev: KeyboardEvent) {
-        if (this.currentMode === "editor") {
-            this.editor.keyUp(ev);
-            return;
-        }
     }
 
     enterEditor() {
