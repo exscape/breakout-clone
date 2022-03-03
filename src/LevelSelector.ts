@@ -257,18 +257,15 @@ export class LevelSelector {
 
         // Draw the levels
 
-        const oldFont = ctx.font;
-        ctx.fillStyle = "black";
-        ctx.textAlign = "center";
-        ctx.font = "18px Arial";
 
         if (this.selectorType === "save" && this.currentPage === 0) {
             // Draw the first entry as an empty, "new level" icon only
             const img = images["new_level"];
             ctx.drawImage(img, Math.floor(this.levelRects[0].left - offset.x + (this.levelRects[0].width - img.width) / 2),
-                               Math.floor(this.levelRects[0].top - offset.y + (this.levelRects[0].height - img.height) / 2));
-            ctx.fillText("New level", this.levelRects[0].horizontalCenter - offset.x, this.levelRects[0].bottom - offset.y - parseInt(ctx.font) - 3 * this.padding);
+                               Math.floor(this.levelRects[0].top - offset.y + (this.levelRects[0].height - img.height) / 2) + 5);
         }
+
+        const oldFont = ctx.font;
 
         // -1 as the numbers returned are human-readable
         for (let i = this.firstLevelOnPage(this.currentPage) - 1; i <= this.lastLevelOnPage(this.currentPage) - 1; i++) {
@@ -281,6 +278,7 @@ export class LevelSelector {
             let y = 2 * this.padding;
             ctx.font = "14px Arial";
             ctx.fillStyle = "black";
+            ctx.textAlign = "center";
             ctx.fillText(`By ${level.author}`, this.levelRects[rectIndex].horizontalCenter - offset.x, 66);
             ctx.font = "18px Arial";
 
