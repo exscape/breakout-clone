@@ -1,6 +1,6 @@
 import { Rect, UIButton, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
-import { AcceptsInput, InputManager } from "../InputManager";
+import { AcceptsInput, WindowManager } from "../WindowManager";
 import { Settings } from "../Settings";
 
 export class ConfirmationDialog implements AcceptsInput {
@@ -56,7 +56,7 @@ export class ConfirmationDialog implements AcceptsInput {
     }
 
     onmousedown(e: MouseEvent) {
-        const cursor = InputManager.getInstance().cursor;
+        const cursor = WindowManager.getInstance().cursor;
         if (this.positiveButton.rect.isInsideRect(cursor))
             this.positiveButton.clickCallback(true);
         else if (this.negativeButton.rect.isInsideRect(cursor))

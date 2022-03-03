@@ -1,4 +1,4 @@
-import { AcceptsInput } from "../InputManager";
+import { AcceptsInput } from "../WindowManager";
 import { Settings } from "../Settings";
 
 export class LoadingScreen implements AcceptsInput {

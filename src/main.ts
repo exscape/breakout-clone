@@ -1,11 +1,11 @@
 import { Game } from './Game';
-import { InputManager } from './InputManager';
+import { WindowManager } from './WindowManager';
 import { Settings } from './Settings';
 
 let gameCanvasElement: HTMLCanvasElement | null = null;
 let statusCanvasElement: HTMLCanvasElement | null = null;
 
-let inputManager: InputManager | undefined;
+let inputManager: WindowManager | undefined;
 let game: Game | undefined;
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -70,7 +70,7 @@ window.addEventListener('DOMContentLoaded', () => {
             inputManager?.onmouseup(e);
     };
 
-    inputManager = InputManager.getInstance();
+    inputManager = WindowManager.getInstance();
     game = new Game(gameCanvasElement!!, statusCanvasElement, settings);
     inputManager.setSettings(settings);
     inputManager.setMaxWidth(settings.canvasWidth);

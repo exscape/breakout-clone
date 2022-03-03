@@ -7,7 +7,7 @@ import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./UI/LevelSelector";
 import { LoadingScreen } from "./UI/LoadingScreen";
-import { AcceptsInput, InputManager } from "./InputManager";
+import { AcceptsInput, WindowManager } from "./WindowManager";
 import _ from "lodash";
 import { ConfirmationDialog } from "./UI/ConfirmationDialog";
 
@@ -51,7 +51,7 @@ export class Editor implements AcceptsInput {
     constructor(game: Game, settings: Settings) {
         this.game = game;
         this.settings = settings;
-        this.cursor = InputManager.getInstance().getCursor();
+        this.cursor = WindowManager.getInstance().getCursor();
         this.emptyLevelText = (".".repeat(this.settings.levelWidth) + "\n").repeat(this.settings.levelHeight);
 
         this.setupToolbarButtons();
@@ -73,7 +73,7 @@ export class Editor implements AcceptsInput {
         .then(json => {
             // Fetch the campaign level with the lowest levelnumber
             if (!("type" in json && json.type === "success"))
-                alert("Warning: you are not logged in, and won't be able to save your level! Pleas click the login link below the editor area and reload the page once logged in.");
+                alert("Warning: you are not logged in, and won't be able to save your level! Please click the login link below the editor area and reload the page once logged in.");
         })
         .catch(error => {
             alert("Failed to check login status: " + error);
@@ -133,15 +133,30 @@ export class Editor implements AcceptsInput {
         });
     }
 
+    createConfirmationDialog(text: string, positiveText: string, negativeText: string, settings: Settings, positiveCallback: () => void, negativeCallback: () => void) {
+        this.confirmationDialog = new ConfirmationDialog(text, positiveText, negativeText, this.settings, positiveCallback, negativeCallback);
+        WindowManager.getInstance().addWindow(this.confirmationDialog, true);
+    }
+
+    removeConfirmationDialog() {
+        WindowManager.getInstance().setActiveWindow(this);
+        if (this.confirmationDialog)
+            WindowManager.getInstance().removeWindow(this.confirmationDialog);
+        this.confirmationDialog = null;
+    }
+
     createLoadingScreen(text: string) {
         this.loadingScreen = new LoadingScreen(text, this.settings);
-        InputManager.getInstance().setActiveWindow(this.loadingScreen);
+        WindowManager.getInstance().addWindow(this.loadingScreen, true);
     }
 
     removeLoadingScreen() {
-        if (this.loadingScreen) this.loadingScreen.finished = true;
+        WindowManager.getInstance().setActiveWindow(this);
+        if (this.loadingScreen) {
+            WindowManager.getInstance().removeWindow(this.loadingScreen);
+            this.loadingScreen.finished = true;
+        }
         this.loadingScreen = null;
-        InputManager.getInstance().setActiveWindow(this);
     }
 
     clearLevel() {

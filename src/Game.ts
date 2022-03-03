@@ -10,7 +10,7 @@ import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, Repetitio
 import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, loadBricksFromLevelText, generateEmptyBrickArray } from './Utils';
 import { Editor } from './Editor';
 import { LoadingScreen } from './UI/LoadingScreen';
-import { InputManager, AcceptsInput } from './InputManager';
+import { WindowManager, AcceptsInput } from './WindowManager';
 
 export class LevelTemp {
     bricks: BrickOrEmpty[][] = [];
@@ -68,9 +68,9 @@ export class Game implements AcceptsInput {
         this.statusbarCanvas = statusbarCanvas;
         this.helpElement = document.getElementById("helptext")! as HTMLHeadingElement;
 
-        InputManager.getInstance().setActiveWindow(this);
-
+        WindowManager.getInstance().addWindow(this, true);
         this.editor = new Editor(this, settings);
+        WindowManager.getInstance().addWindow(this.editor);
 
         this.drawingHandler = new DrawingHandler(this, this.editor, canvas, statusbarCanvas, settings, () => {
             this.imageLoadingCompleted = true;
@@ -251,7 +251,7 @@ export class Game implements AcceptsInput {
         this.helpElement.innerHTML = this.EDITOR_HELP_TEXT;
         this.canvas.width = this.settings.canvasWidth + this.settings.editorToolbarWidth;
 
-        let inputManager = InputManager.getInstance();
+        let inputManager = WindowManager.getInstance();
         inputManager.setActiveWindow(this.editor);
         inputManager.setMaxWidth(this.settings.canvasWidth + this.settings.editorToolbarWidth);
         inputManager.cursorFrozen = false;
@@ -264,7 +264,7 @@ export class Game implements AcceptsInput {
         this.helpElement.innerHTML = this.GAME_HELP_TEXT;
         this.canvas.width = this.settings.canvasWidth;
 
-        let inputManager = InputManager.getInstance();
+        let inputManager = WindowManager.getInstance();
         inputManager.setActiveWindow(this);
         inputManager.setMaxWidth(this.settings.canvasWidth);
         inputManager.cursorFrozen = true;

@@ -1,4 +1,6 @@
 import { Settings } from "./Settings";
+import { ConfirmationDialog } from "./UI/ConfirmationDialog";
+import { LoadingScreen } from "./UI/LoadingScreen";
 import { clamp } from "./Utils";
 import { Vec2 } from "./Vec2";
 
@@ -11,12 +13,13 @@ export interface AcceptsInput {
     focusLost?(): void;
 }
 
-export class InputManager implements AcceptsInput {
-    private static instance: InputManager;
+export class WindowManager implements AcceptsInput {
+    private static instance: WindowManager;
     private constructor() {
         this.cursor = new Vec2();
     }
 
+    knownWindows: Set<AcceptsInput> = new Set();
     activeWindow: AcceptsInput | null = null;
     settings: Settings | null = null;
     cursor: Vec2;
@@ -26,11 +29,11 @@ export class InputManager implements AcceptsInput {
     maxHeight: number = 0;
 
     public static getInstance() {
-        if (!InputManager.instance) {
-            InputManager.instance = new InputManager();
+        if (!WindowManager.instance) {
+            WindowManager.instance = new WindowManager();
         }
 
-        return InputManager.instance;
+        return WindowManager.instance;
     }
 
     getCursor() {
@@ -53,8 +56,37 @@ export class InputManager implements AcceptsInput {
         this.maxHeight = height;
     }
 
+    addWindow(window: AcceptsInput, setAsActive: boolean = false) {
+        this.knownWindows.add(window);
+
+        if (setAsActive)
+            this.setActiveWindow(window);
+    }
+
+    removeWindow(window: AcceptsInput) {
+        this.knownWindows.delete(window);
+    }
+
     setActiveWindow(window: AcceptsInput) {
         this.activeWindow = window;
+    }
+
+    getLoadingScreen(): LoadingScreen | null {
+        for (let window of this.knownWindows) {
+            if (window instanceof LoadingScreen)
+                return window;
+        }
+
+        return null;
+    }
+
+    getConfirmationDialog(): ConfirmationDialog | null {
+        for (let window of this.knownWindows) {
+            if (window instanceof ConfirmationDialog)
+                return window;
+        }
+
+        return null;
     }
 
     keyDown(ev: KeyboardEvent): void {
