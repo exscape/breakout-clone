@@ -1,6 +1,7 @@
+import { AcceptsInput } from "./InputManager";
 import { Settings } from "./Settings";
 
-export class LoadingScreen {
+export class LoadingScreen implements AcceptsInput {
     message: string;
     settings: Settings;
     finished: boolean = false;
@@ -34,4 +35,7 @@ export class LoadingScreen {
         ctx.textAlign = "left";
         ctx.textBaseline = "alphabetic";
     }
+
+    // Ignore mouse clicks -- keyboard events are also ignored as we don't even implement their (optional) handlers
+    onmousedown(e: MouseEvent) {}
 }

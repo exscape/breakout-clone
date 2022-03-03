@@ -99,13 +99,13 @@ export class Editor implements AcceptsInput {
                 selectedLevel.leveltext = newLevelText;
             }
 
-            this.loadingScreen = new LoadingScreen("Uploading level...", this.settings);
+            this.createLoadingScreen("Uploading level...");
 
             // Note: this uses a Promise returned by fetch, so this code
             // is asynchronous and will most likely finish *after* we return from this method.
             uploadLevel(selectedLevel).then(json => {
-                if (this.loadingScreen) this.loadingScreen.finished = true;
-                this.loadingScreen = null;
+                this.removeLoadingScreen();
+
                 if ("type" in json && json.type === "error")
                     alert("Level upload failed: " + json.message);
                 else {
@@ -113,27 +113,33 @@ export class Editor implements AcceptsInput {
                     this.levelSelector = null;
                 }
             }).catch(reason => {
+                this.removeLoadingScreen();
                 alert("Level upload failed: " + reason.message);
-                if (this.loadingScreen) this.loadingScreen.finished = true;
-                this.loadingScreen = null;
             });
         }
         const cancelCallback = () => { this.levelSelector = null; };
 
-        // Then show a loading screen, fetch the level index, and then show the save dialog.
-        this.loadingScreen = new LoadingScreen("Loading level list...", this.settings);
+        this.createLoadingScreen("Loading level list...");
 
         fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
             // Success callback
-            this.loadingScreen!.finished;
-            this.loadingScreen = null;
-
+            this.removeLoadingScreen();
             this.levelSelector = new LevelSelector("save", levels, this.cursor, this.settings, saveCallback, cancelCallback);
         }, () => {
             // Failure callback
-            this.loadingScreen!.finished;
-            this.loadingScreen = null;
+            this.removeLoadingScreen();
         });
+    }
+
+    createLoadingScreen(text: string) {
+        this.loadingScreen = new LoadingScreen(text, this.settings);
+        InputManager.getInstance().setActiveWindow(this.loadingScreen);
+    }
+
+    removeLoadingScreen() {
+        if (this.loadingScreen) this.loadingScreen.finished = true;
+        this.loadingScreen = null;
+        InputManager.getInstance().setActiveWindow(this);
     }
 
     clearLevel() {
@@ -310,7 +316,6 @@ export class Editor implements AcceptsInput {
     }
 
     keyDown(ev: KeyboardEvent) {
-        if (this.loadingScreen && !this.loadingScreen.finished) return;
         if (this.levelSelector) {
             this.levelSelector.keyDown(ev);
             return;
@@ -341,7 +346,6 @@ export class Editor implements AcceptsInput {
     }
 
     keyUp(ev: KeyboardEvent) {
-        if (this.loadingScreen && !this.loadingScreen.finished) return;
         if (this.levelSelector) {
             this.levelSelector.keyUp(ev);
             return;
@@ -368,7 +372,6 @@ export class Editor implements AcceptsInput {
     }
 
     onmouseup(e: MouseEvent) {
-        if (this.loadingScreen && !this.loadingScreen.finished) return;
         if (this.levelSelector) {
             this.levelSelector.onmouseup(e);
             return;
@@ -390,7 +393,6 @@ export class Editor implements AcceptsInput {
     }
 
     onmousedown(e: MouseEvent) {
-        if (this.loadingScreen && !this.loadingScreen.finished) return;
         if (this.levelSelector) {
             this.levelSelector.onmousedown(e);
             return;
