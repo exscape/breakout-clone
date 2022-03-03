@@ -4,7 +4,7 @@ import { Game } from "./Game";
 import { LevelSelector } from "./UI/LevelSelector";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 
 export class DrawingHandler {
@@ -115,9 +115,9 @@ export class DrawingHandler {
         context.fillText(text, x, y);
     }
 
-    dim() {
+    dim(amount: number = 0.3) {
         // Draw a partially transparent overlay
-        this.ctx.globalAlpha = 0.3;
+        this.ctx.globalAlpha = clamp(amount, 0.01, 0.99);
         this.ctx.fillStyle = "black";
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
         this.ctx.globalAlpha = 1.0;
@@ -128,6 +128,16 @@ export class DrawingHandler {
         if (screen) {
             this.dim();
             screen.draw(this.ctx);
+        }
+    }
+
+    drawConfirmationDialog() {
+        let dialog = /* (this.game.currentMode === "game") ? this.game.confirmationDialog : */ this.editor.confirmationDialog;
+        if (dialog) {
+            this.dim(0.2);
+            dialog.draw(this.ctx);
+            this.drawButton(dialog.positiveButton);
+            this.drawButton(dialog.negativeButton);
         }
     }
 
@@ -230,6 +240,7 @@ export class DrawingHandler {
             }
         }
 
+        this.drawConfirmationDialog();
         this.drawLoadingScreen();
 
         if (this.game.devMenuOpen) {
@@ -303,8 +314,11 @@ export class DrawingHandler {
             this.ctx.textAlign = "center";
             if (!button.enabled)
                 this.ctx.fillStyle = "#afafaf";
+            const oldFont = this.ctx.font;
+            this.ctx.font = "14px Arial";
             this.ctx.fillText(button.tooltip, button.rect.horizontalCenter, button.rect.verticalCenter);
 
+            this.ctx.font = oldFont;
             this.ctx.textBaseline = old;
             this.ctx.textAlign = "start";
             this.ctx.strokeStyle = "black";
@@ -334,11 +348,13 @@ export class DrawingHandler {
         if (e.levelSelector) {
             this.drawLevelSelector(e.levelSelector);
 //            this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
+            this.drawConfirmationDialog();
             this.drawLoadingScreen();
             this.drawCursor("cursor_regular", false);
             return;
         }
 
+        this.drawConfirmationDialog();
         this.drawLoadingScreen();
 
         // Draw tooltips on toolbar icon hover

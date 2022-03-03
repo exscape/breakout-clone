@@ -9,6 +9,7 @@ import { LevelSelector } from "./UI/LevelSelector";
 import { LoadingScreen } from "./UI/LoadingScreen";
 import { AcceptsInput, InputManager } from "./InputManager";
 import _ from "lodash";
+import { ConfirmationDialog } from "./UI/ConfirmationDialog";
 
 export class Editor implements AcceptsInput {
     game: Game;
@@ -45,6 +46,7 @@ export class Editor implements AcceptsInput {
     // Level selector/UI stuff
     levelSelector: LevelSelector | null = null;
     loadingScreen: LoadingScreen | null = null;
+    confirmationDialog: ConfirmationDialog | null = null;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;

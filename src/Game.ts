@@ -225,7 +225,7 @@ export class Game implements AcceptsInput {
             else if (ev.key === "3") powerup = this.createPowerup("multiball");
             else if (ev.key === "4") powerup = this.createPowerup("fireball");
             else if (ev.key === "5") powerup = this.createPowerup("extralife");
-            else throw new Error("Quiet, compiler! (One of the above is ALWAYS true due to the prior above)");
+            else throw new Error("Quiet, compiler! (One of the above is ALWAYS true due to the return above)");
 
             let existingPowerup = this.getPowerup(powerup.type);
             if (existingPowerup)
