@@ -1,8 +1,8 @@
 import _ from "lodash";
-import { BrickOrEmpty } from "./Brick";
-import { Settings } from "./Settings";
-import { clamp, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "./Utils";
-import { Vec2 } from "./Vec2";
+import { BrickOrEmpty } from "../Brick";
+import { Settings } from "../Settings";
+import { clamp, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "../Utils";
+import { Vec2 } from "../Vec2";
 
 // BEWARE: This code is by FAR the worst in this codebase as of when it's being written.
 // I don't have the patience to write a proper windowing system for a single dialog, so this is FULL of

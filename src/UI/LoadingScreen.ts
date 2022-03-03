@@ -1,5 +1,5 @@
-import { AcceptsInput } from "./InputManager";
-import { Settings } from "./Settings";
+import { AcceptsInput } from "../InputManager";
+import { Settings } from "../Settings";
 
 export class LoadingScreen implements AcceptsInput {
     message: string;

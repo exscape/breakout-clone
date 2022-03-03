@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Editor } from "./Editor";
 import { Game } from "./Game";
-import { LevelSelector } from "./LevelSelector";
+import { LevelSelector } from "./UI/LevelSelector";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
 import { brickCoordsFromDrawCoords, calculateSymmetricPositions, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";

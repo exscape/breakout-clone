@@ -5,8 +5,8 @@ import { Settings } from "./Settings";
 import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadLevel, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
-import { LevelSelector } from "./LevelSelector";
-import { LoadingScreen } from "./LoadingScreen";
+import { LevelSelector } from "./UI/LevelSelector";
+import { LoadingScreen } from "./UI/LoadingScreen";
 import { AcceptsInput, InputManager } from "./InputManager";
 import _ from "lodash";
 

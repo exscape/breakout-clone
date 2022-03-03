@@ -9,7 +9,7 @@ import { DrawingHandler } from './DrawingHandler';
 import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
 import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, loadBricksFromLevelText, generateEmptyBrickArray } from './Utils';
 import { Editor } from './Editor';
-import { LoadingScreen } from './LoadingScreen';
+import { LoadingScreen } from './UI/LoadingScreen';
 import { InputManager, AcceptsInput } from './InputManager';
 
 export class LevelTemp {
