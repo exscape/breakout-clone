@@ -241,6 +241,7 @@ export class Editor {
     }
 
     keyDown(ev: KeyboardEvent) {
+        if (this.loadingScreen && !this.loadingScreen.finished) return;
         if (this.levelSelector) {
             this.levelSelector.keyDown(ev);
             return;
@@ -271,6 +272,7 @@ export class Editor {
     }
 
     keyUp(ev: KeyboardEvent) {
+        if (this.loadingScreen && !this.loadingScreen.finished) return;
         if (this.levelSelector) {
             this.levelSelector.keyUp(ev);
             return;
@@ -368,6 +370,7 @@ export class Editor {
     }
 
     onmouseup(e: MouseEvent) {
+        if (this.loadingScreen && !this.loadingScreen.finished) return;
         if (this.levelSelector) {
             this.levelSelector.onmouseup(e);
             return;
@@ -389,6 +392,7 @@ export class Editor {
     }
 
     onmousedown(e: MouseEvent) {
+        if (this.loadingScreen && !this.loadingScreen.finished) return;
         if (this.levelSelector) {
             this.levelSelector.onmousedown(e);
             return;
