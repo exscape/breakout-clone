@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadLevel, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadLevel, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./UI/LevelSelector";
@@ -45,8 +45,6 @@ export class Editor implements AcceptsInput {
 
     // Level selector/UI stuff
     levelSelector: LevelSelector | null = null;
-    loadingScreen: LoadingScreen | null = null;
-    confirmationDialog: ConfirmationDialog | null = null;
 
     constructor(game: Game, settings: Settings) {
         this.game = game;
@@ -101,12 +99,12 @@ export class Editor implements AcceptsInput {
                 selectedLevel.leveltext = newLevelText;
             }
 
-            this.createLoadingScreen("Uploading level...");
+            createLoadingScreen("Uploading level...", this.settings);
 
             // Note: this uses a Promise returned by fetch, so this code
             // is asynchronous and will most likely finish *after* we return from this method.
             uploadLevel(selectedLevel).then(json => {
-                this.removeLoadingScreen();
+                WindowManager.getInstance().removeLoadingScreen(this);
 
                 if ("type" in json && json.type === "error")
                     alert("Level upload failed: " + json.message);
@@ -115,48 +113,22 @@ export class Editor implements AcceptsInput {
                     this.levelSelector = null;
                 }
             }).catch(reason => {
-                this.removeLoadingScreen();
+                WindowManager.getInstance().removeLoadingScreen(this);
                 alert("Level upload failed: " + reason.message);
             });
         }
         const cancelCallback = () => { this.levelSelector = null; };
 
-        this.createLoadingScreen("Loading level list...");
+        createLoadingScreen("Loading level list...", this.settings);
 
         fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
             // Success callback
-            this.removeLoadingScreen();
+            WindowManager.getInstance().removeLoadingScreen(this);
             this.levelSelector = new LevelSelector("save", levels, this.cursor, this.settings, saveCallback, cancelCallback);
         }, () => {
             // Failure callback
-            this.removeLoadingScreen();
+            WindowManager.getInstance().removeLoadingScreen(this);
         });
-    }
-
-    createConfirmationDialog(text: string, positiveText: string, negativeText: string, settings: Settings, positiveCallback: () => void, negativeCallback: () => void) {
-        this.confirmationDialog = new ConfirmationDialog(text, positiveText, negativeText, this.settings, positiveCallback, negativeCallback);
-        WindowManager.getInstance().addWindow(this.confirmationDialog, true);
-    }
-
-    removeConfirmationDialog() {
-        WindowManager.getInstance().setActiveWindow(this);
-        if (this.confirmationDialog)
-            WindowManager.getInstance().removeWindow(this.confirmationDialog);
-        this.confirmationDialog = null;
-    }
-
-    createLoadingScreen(text: string) {
-        this.loadingScreen = new LoadingScreen(text, this.settings);
-        WindowManager.getInstance().addWindow(this.loadingScreen, true);
-    }
-
-    removeLoadingScreen() {
-        WindowManager.getInstance().setActiveWindow(this);
-        if (this.loadingScreen) {
-            WindowManager.getInstance().removeWindow(this.loadingScreen);
-            this.loadingScreen.finished = true;
-        }
-        this.loadingScreen = null;
     }
 
     clearLevel() {

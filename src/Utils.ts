@@ -1,6 +1,9 @@
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
+import { ConfirmationDialog } from "./UI/ConfirmationDialog";
+import { LoadingScreen } from "./UI/LoadingScreen";
 import { BrickPosition, Vec2 } from "./Vec2";
+import { WindowManager } from "./WindowManager";
 
 export type LevelType = "campaign" | "standalone";
 export type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, leveltext: string, author: string };
@@ -346,4 +349,14 @@ export function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: 
     lines.push(currentLine);
 
     return lines;
+}
+
+export function createConfirmationDialog(text: string, positiveText: string, negativeText: string, settings: Settings, positiveCallback: () => void, negativeCallback: () => void) {
+    let confirmationDialog = new ConfirmationDialog(text, positiveText, negativeText, settings, positiveCallback, negativeCallback);
+    WindowManager.getInstance().addWindow(confirmationDialog, true);
+}
+
+export function createLoadingScreen(text: string, settings: Settings) {
+    let loadingScreen = new LoadingScreen(text, settings);
+    WindowManager.getInstance().addWindow(loadingScreen, true);
 }

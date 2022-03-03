@@ -6,6 +6,7 @@ import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
 import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
+import { WindowManager } from "./WindowManager";
 
 export class DrawingHandler {
     canvas: HTMLCanvasElement;
@@ -124,7 +125,7 @@ export class DrawingHandler {
     }
 
     drawLoadingScreen() {
-        let screen = (this.game.currentMode === "game") ? this.game.loadingScreen : this.editor.loadingScreen;
+        let screen = WindowManager.getInstance().getLoadingScreen();
         if (screen) {
             this.dim();
             screen.draw(this.ctx);
@@ -132,7 +133,7 @@ export class DrawingHandler {
     }
 
     drawConfirmationDialog() {
-        let dialog = /* (this.game.currentMode === "game") ? this.game.confirmationDialog : */ this.editor.confirmationDialog;
+        let dialog = WindowManager.getInstance().getConfirmationDialog();
         if (dialog) {
             this.dim(0.2);
             dialog.draw(this.ctx);

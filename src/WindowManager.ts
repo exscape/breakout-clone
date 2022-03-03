@@ -80,6 +80,13 @@ export class WindowManager implements AcceptsInput {
         return null;
     }
 
+    removeLoadingScreen(newActiveWindow: AcceptsInput) {
+        this.setActiveWindow(newActiveWindow);
+        let window = this.getLoadingScreen();
+        if (window)
+            this.removeWindow(window);
+    }
+
     getConfirmationDialog(): ConfirmationDialog | null {
         for (let window of this.knownWindows) {
             if (window instanceof ConfirmationDialog)
@@ -87,6 +94,13 @@ export class WindowManager implements AcceptsInput {
         }
 
         return null;
+    }
+
+    removeConfirmationDialog(newActiveWindow: AcceptsInput) {
+        this.setActiveWindow(newActiveWindow);
+        let window = this.getConfirmationDialog();
+        if (window)
+            this.removeWindow(window);
     }
 
     keyDown(ev: KeyboardEvent): void {
