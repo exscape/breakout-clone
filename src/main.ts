@@ -1,9 +1,11 @@
 import { Game } from './Game';
+import { InputManager } from './InputManager';
 import { Settings } from './Settings';
 
 let gameCanvasElement: HTMLCanvasElement | null = null;
 let statusCanvasElement: HTMLCanvasElement | null = null;
 
+let inputManager: InputManager | undefined;
 let game: Game | undefined;
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -55,7 +57,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     let onmousedownhandler = (e: MouseEvent) => {
         if (document.pointerLockElement === gameCanvasElement)
-            game?.onmousedown(e);
+            inputManager?.onmousedown(e);
     };
 
     let onmouseuphandler = (e: MouseEvent) => {
@@ -65,32 +67,36 @@ window.addEventListener('DOMContentLoaded', () => {
             gameCanvasElement!!.requestPointerLock();
         }
         else
-            game?.onmouseup(e);
+            inputManager?.onmouseup(e);
     };
 
+    inputManager = InputManager.getInstance();
     game = new Game(gameCanvasElement!!, statusCanvasElement, settings);
 
     gameCanvasElement.onmousedown = onmousedownhandler;
     gameCanvasElement.onmouseup = onmouseuphandler;
 
     gameCanvasElement.onkeydown = (ev: KeyboardEvent) => {
-        game?.keyDown(ev);
+        inputManager?.keyDown(ev);
     }
 
     gameCanvasElement.onkeyup = (ev: KeyboardEvent) => {
-        game?.keyUp(ev);
+        inputManager?.keyUp(ev);
     }
 
     gameCanvasElement.tabIndex = 0
     gameCanvasElement.focus();
 });
 
-let mouseMovedHandler = (e: MouseEvent) => { game?.mouseMoved(e) };
+let mouseMovedHandler = (e: MouseEvent) => {
+    inputManager?.mouseMoved(e)
+};
+
 function pointerLockChange() {
     if (document.pointerLockElement === gameCanvasElement)
         document.addEventListener("mousemove", mouseMovedHandler, false);
     else {
         document.removeEventListener("mousemove", mouseMovedHandler, false);
-        game?.focusLost();
+        inputManager?.focusLost();
     }
 }

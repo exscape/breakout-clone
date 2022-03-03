@@ -10,12 +10,13 @@ import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, Repetitio
 import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, loadBricksFromLevelText, generateEmptyBrickArray } from './Utils';
 import { Editor } from './Editor';
 import { LoadingScreen } from './LoadingScreen';
+import { InputManager, AcceptsInput } from './InputManager';
 
 export class LevelTemp {
     bricks: BrickOrEmpty[][] = [];
 }
 
-export class Game {
+export class Game implements AcceptsInput {
     canvas: HTMLCanvasElement;
     statusbarCanvas: HTMLCanvasElement;
     helpElement: HTMLHeadingElement;
@@ -66,6 +67,8 @@ export class Game {
         this.canvas = canvas;
         this.statusbarCanvas = statusbarCanvas;
         this.helpElement = document.getElementById("helptext")! as HTMLHeadingElement;
+
+        InputManager.getInstance().setActiveWindow(this);
 
         this.editor = new Editor(this, settings);
 
@@ -271,6 +274,8 @@ export class Game {
         this.canvas.style.borderBottom = "2px solid black";
         this.helpElement.innerHTML = this.EDITOR_HELP_TEXT;
 
+        InputManager.getInstance().setActiveWindow(this.editor);
+
         this.canvas.width = this.settings.canvasWidth + this.settings.editorToolbarWidth;
     }
 
@@ -280,6 +285,7 @@ export class Game {
         this.canvas.style.borderBottom = "none";
         this.helpElement.innerHTML = this.GAME_HELP_TEXT;
         this.canvas.width = this.settings.canvasWidth;
+        InputManager.getInstance().setActiveWindow(this);
     }
 
     togglePause() { this.gamePaused = !this.gamePaused; }

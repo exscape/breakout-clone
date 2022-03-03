@@ -7,9 +7,10 @@ import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./LevelSelector";
 import { LoadingScreen } from "./LoadingScreen";
+import { AcceptsInput } from "./InputManager";
 import _ from "lodash";
 
-export class Editor {
+export class Editor implements AcceptsInput {
     game: Game;
     settings: Settings;
     cursor: Vec2;
