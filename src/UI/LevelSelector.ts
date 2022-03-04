@@ -24,6 +24,7 @@ export class LevelSelector {
     // 1-3 are used for each page of levels.
     levelRects: Rect[] = [];
     selectedRect: 0 | 1 | 2 = 0;
+    deleteButtons: UIButton[] = []; // One for each rect
 
     levelList: LevelMetadata[];
     currentPage: number;
@@ -251,6 +252,19 @@ export class LevelSelector {
             this.buttons.push(this.nextButton);
             this.buttons.push(this.endButton);
 
+            // Also create delete buttons for each of the three "level rects"
+            for (let i = 0; i < this.levelRects.length; i++) {
+                const levelRect = this.levelRects[i];
+                const img = images["icon_trash"];
+                const deleteRect = new Rect(levelRect.right - offset.x - img.width, levelRect.top - offset.y + this.padding + wtf, img.width, img.height);
+                const button = new UIButton(deleteRect, "icon_trash", "Delete level", true, false, (enabled: boolean) => {
+                    console.log("Delete for rect " + i + " = level " + this.levelIndexFromRectIndex(this.currentPage, i));
+                });
+
+                this.buttons.push(button);
+                this.deleteButtons.push(button);
+            }
+
             this.navigationButtonsInitialized = true;
         }
         else {
@@ -278,6 +292,9 @@ export class LevelSelector {
 
         // Draw the levels
 
+        // Those that should be visible are updated below
+        for (let i = 0; i < this.deleteButtons.length; i++)
+            this.deleteButtons[i].hidden = true;
 
         if (this.selectorType === "save" && this.currentPage === 0) {
             // Draw the first entry as an empty, "new level" icon only
@@ -285,6 +302,8 @@ export class LevelSelector {
             ctx.drawImage(img, Math.floor(this.levelRects[0].left - offset.x + (this.levelRects[0].width - img.width) / 2),
                                Math.floor(this.levelRects[0].top - offset.y + (this.levelRects[0].height - img.height) / 2) + 5);
         }
+        else if (this.deleteButtons.length > 0)
+            this.deleteButtons[0].hidden = false;
 
         const oldFont = ctx.font;
 
@@ -295,6 +314,7 @@ export class LevelSelector {
             let levelBricks = generateEmptyBrickArray(this.settings);
             loadBricksFromLevelText(level.leveltext, levelBricks, this.settings);
             this.drawLevelThumbnail(offset, this.levelRects[rectIndex], ctx, levelBricks, images);
+            this.deleteButtons[rectIndex].hidden = false;
 
             let y = 2 * this.padding;
             ctx.font = "14px Arial";
@@ -305,7 +325,7 @@ export class LevelSelector {
 
             // TODO: test with too many lines AND too long words!
             // TODO: center vertically? Keep in mind separate centering is required for each case: 1 line or 2 lines
-            let lines = wrapText(ctx, level.name, this.levelRects[rectIndex].width - 6 * this.padding);
+            let lines = wrapText(ctx, level.name, this.levelRects[rectIndex].width - 2 * this.padding - this.deleteButtons[0].rect.width);
             for (let line of lines.slice(0,2)) {
                 ctx.fillText(line, this.levelRects[rectIndex].horizontalCenter - offset.x, y)
                 y += parseInt(ctx.font) + 4;
@@ -417,7 +437,7 @@ export class LevelSelector {
             let offsetCursor = _.clone(this.cursor);
             offsetCursor.x -= this.pos.x;
             offsetCursor.y -= this.pos.y;
-            if (button.rect.isInsideRect(offsetCursor) && button.enabled) {
+            if (button.rect.isInsideRect(offsetCursor) && button.enabled && !button.hidden) {
                 button.clickCallback(true);
                 return;
             }

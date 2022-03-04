@@ -85,7 +85,8 @@ export class DrawingHandler {
         let imageFilenames = ["brick_indestructible", "paddle_left", "paddle_center", "paddle_right",
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
                               "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete",
-                              "button_pushed", "button_unpushed", "icon_grid", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center", "new_level"];
+                              "button_pushed", "button_unpushed", "icon_grid", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center", "new_level",
+                              "icon_trash"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
