@@ -4,12 +4,11 @@ import { BrickOrEmpty } from "../Brick";
 import { Settings } from "../Settings";
 import { clamp, createConfirmationDialog, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
-import { ConfirmationDialog } from "./ConfirmationDialog";
 import { LoadingScreen } from "./LoadingScreen";
 
 // BEWARE: This code is by FAR the worst in this codebase as of when it's being written.
 // I don't have the patience to write a proper windowing system for a single dialog, so this is FULL of
-// horrifying hacks that I'm ashamed have created.
+// horrifying hacks that I'm ashamed to have created.
 
 export class LevelSelector {
     settings: Settings;
@@ -31,17 +30,22 @@ export class LevelSelector {
     currentPage: number = 0;
     totalPages: number = 1;
 
-    saveCallback: ((metadataOrName: LevelMetadata | string) => void);
+    okCallback: ((metadataOrName: LevelMetadata | string) => void);
     cancelCallback: (() => void);
     readonly validCharacters: string[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-!?#%=".split("");
     readonly maxLevelnameLength = 28;
-    readonly ourSaveCallback = () => {
-        if (this.saveButton)
-            this.saveButton.enabled = false;
+    readonly ourOkCallback = () => {
+        if (this.okButton)
+            this.okButton.enabled = false;
+
+        if (this.selectorType === "load") {
+            this.okCallback(this.selectedLevel()!);
+            return;
+        }
 
         const newLevel = this.currentPage === 0 && this.selectedRect === 0;
         if (newLevel)
-            this.saveCallback(this.levelName);
+            this.okCallback(this.levelName);
         else {
             let level = this.selectedLevel();
             if (level) {
@@ -51,7 +55,7 @@ export class LevelSelector {
 
                     if (level) {
                         level.name = this.levelName;
-                        this.saveCallback(level);
+                        this.okCallback(level);
                     }
                 },
                 () => {
@@ -65,7 +69,7 @@ export class LevelSelector {
     };
     cursor: Vec2;
     buttons: UIButton[] = [];
-    saveButton: UIButton | null = null;
+    okButton: UIButton | null = null;
     cancelButton: UIButton | null = null;
     homeButton: UIButton | null = null;
     prevButton: UIButton | null = null;
@@ -73,7 +77,7 @@ export class LevelSelector {
     endButton: UIButton | null = null;
 
     // TODO: Remove later, when initializiation isn't a hack in the draw methods
-    saveCancelButtonsInitialized = false;
+    okCancelButtonsInitialized = false;
     navigationButtonsInitialized = false;
 
     // For loading: disabled if no valid level is selected
@@ -92,10 +96,11 @@ export class LevelSelector {
             this.levelName = "";
         this.selectorType = type;
 
-        this.saveCallback = saveCallback;
+        this.okCallback = saveCallback;
         this.cancelCallback = cancelCallback;
 
         this.levelListUpdated();
+        this.updateLevelSelection(0);
     }
 
     levelListUpdated() {
@@ -111,7 +116,9 @@ export class LevelSelector {
 
         this.currentPage = clamp(this.currentPage, 0, this.totalPages - 1);
 
-        if (!(this.currentPage === 0 && this.selectedRect === 0) && this.levelIndexFromRectIndex(this.currentPage, this.selectedRect) >= this.levelList.length)
+        // Also "clamp" the selection to something valid
+        if (!(this.selectorType === "save" && this.currentPage === 0 && this.selectedRect === 0) &&
+            this.levelIndexFromRectIndex(this.currentPage, this.selectedRect) >= this.levelList.length)
             this.updateLevelSelection(this.selectedRect - 1);
     }
 
@@ -159,21 +166,24 @@ export class LevelSelector {
         const {width} = ctx.measureText(labelText);
         const old = ctx.textBaseline;
         ctx.fillStyle = "#fdfdfd";
-        ctx.fillRect(2 * this.padding + width, levelNameY, 405, parseInt(ctx.font) + this.padding);
-        ctx.strokeRect(2 * this.padding + width, levelNameY, 405, parseInt(ctx.font) + this.padding);
+        if (this.selectorType === "save") {
+            // Draw this as a TextEdit-ish control
+            ctx.fillRect(2 * this.padding + width, levelNameY, 405, parseInt(ctx.font) + this.padding);
+            ctx.strokeRect(2 * this.padding + width, levelNameY, 405, parseInt(ctx.font) + this.padding);
+        }
 
         ctx.textBaseline = "middle";
         ctx.fillStyle = "black";
         const textY = levelNameY + parseInt(ctx.font)/2 + this.padding/2;
         ctx.fillText(labelText, this.padding, textY);
         ctx.fillStyle = "black";
-        ctx.fillText(this.levelName + "_", 3 * this.padding + width, textY);
+        const reallyFakeCursor = (this.selectorType === "save") ? "_" : "";
+        ctx.fillText(this.levelName + reallyFakeCursor, 3 * this.padding + width, textY);
 
         ctx.textBaseline = old;
 
-        if (this.selectorType === "load") {
-            this.enableOkButton = false; // TODO: update correctly
-        }
+        if (this.selectorType === "load")
+            this.enableOkButton = true;
         else {
             const nameUsedByOtherLevel = this.levelList.some(lev => lev.level_id !== this.selectedLevel()?.level_id && lev.name.trim() === this.levelName.trim());
 
@@ -182,24 +192,25 @@ export class LevelSelector {
         }
 
         // Create the buttons, hacky right alignment
-        if (!this.saveCancelButtonsInitialized) {
+        if (!this.okCancelButtonsInitialized) {
             const buttonWidth = 80;
             const buttonHeight = 20;
             const saveRect = new Rect(this.width - this.padding - buttonWidth, levelNameY, buttonWidth, buttonHeight);
             const cancelRect = new Rect(this.width - this.padding - 2 * buttonWidth - 2 * this.padding, levelNameY, buttonWidth, buttonHeight);
 
-            this.saveButton = new UIButton(saveRect, null, "Save", this.enableOkButton, false, this.ourSaveCallback);
+            const text = (this.selectorType === "load") ? "Load" : "Save";
+            this.okButton = new UIButton(saveRect, null, text, this.enableOkButton, false, this.ourOkCallback);
             this.cancelButton = new UIButton(cancelRect, null, "Cancel", true, false, (_: UIButton) => {
                 console.log("Cancel");
                 this.cancelCallback();
             });
 
-            this.buttons.push(this.saveButton);
+            this.buttons.push(this.okButton);
             this.buttons.push(this.cancelButton);
-            this.saveCancelButtonsInitialized = true;
+            this.okCancelButtonsInitialized = true;
         }
-        else if (this.saveButton)
-            this.saveButton.enabled = this.enableOkButton;
+        else if (this.okButton)
+            this.okButton.enabled = this.enableOkButton;
 
         return true;
     }
@@ -321,7 +332,7 @@ export class LevelSelector {
             ctx.drawImage(img, Math.floor(this.levelRects[0].left - offset.x + (this.levelRects[0].width - img.width) / 2),
                                Math.floor(this.levelRects[0].top - offset.y + (this.levelRects[0].height - img.height) / 2) + 5);
         }
-        else if (this.deleteButtons.length > 0)
+        else if (this.selectorType === "save" && this.deleteButtons.length > 0)
             this.deleteButtons[0].hidden = false;
 
         const oldFont = ctx.font;
@@ -333,7 +344,9 @@ export class LevelSelector {
             let levelBricks = generateEmptyBrickArray(this.settings);
             loadBricksFromLevelText(level.leveltext, levelBricks, this.settings);
             this.drawLevelThumbnail(offset, this.levelRects[rectIndex], ctx, levelBricks, images);
-            this.deleteButtons[rectIndex].hidden = false;
+
+            if (this.selectorType === "save")
+                this.deleteButtons[rectIndex].hidden = false;
 
             let y = 2 * this.padding;
             ctx.font = "14px Arial";
@@ -388,6 +401,11 @@ export class LevelSelector {
         // For page 0: index 1 and 2 are valid
         // For other pages: indexes 0, 1, 2 are valid
         // 0 -> 1, 1 -> 2; after that: 2 -> 0, 3 -> 1, 4 -> 2, 5 -> 0, 6 -> 1, 7 -> 2, 8 -> 0, ...
+        if (this.selectorType === "load") {
+            return index % 3;
+        }
+
+        // else we are saving, take care of the offset due to the "New level" icon taking the first slot on page 1
         if (index <= 1)
             return index + 1;
         else
@@ -400,9 +418,9 @@ export class LevelSelector {
             throw new Error("Invalid values in levelIndexFromRectIndex");
         else if (this.selectorType === "save")
         // page 0: 1 -> level 0, 2 -> level 1; other pages: 0 -> level 2, 1 -> level 3, 2 -> level 4,  ///  0 -> level 5
-            return (this.currentPage === 0) ? rectIndex - 1 : 2 + ((page - 1) * 3) + rectIndex;
+            return (page === 0) ? rectIndex - 1 : 2 + ((page - 1) * 3) + rectIndex;
         else
-            return 1;
+            return page * 3 + rectIndex;
     }
 
     private updateLevelSelection(rectIndex: number) {
@@ -454,7 +472,6 @@ export class LevelSelector {
     drawLevelPreview(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>, settings: Settings, pos: Vec2) {
         const previewWidth = settings.brickSpacing * (settings.levelWidth + 1) + settings.brickWidth * settings.levelWidth;
         const previewHeight = settings.brickSpacing * (settings.levelHeight) + settings.brickHeight * settings.levelHeight;
-//        console.log(`Drawing preview of size ${previewWidth} x ${previewHeight}`);
         ctx.beginPath();
         ctx.strokeRect(pos.x, pos.y, previewWidth, previewHeight);
         ctx.fillStyle = this.settings.canvasBackground;
@@ -500,8 +517,8 @@ export class LevelSelector {
     keyDown(ev: KeyboardEvent) {
         if ((ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
             this.levelName = this.levelName.substring(0, this.levelName.length - 1);
-        else if (ev.key == "Enter") {
-            this.ourSaveCallback();
+        else if (ev.key == "Enter" && this.okButton?.enabled) {
+            this.ourOkCallback();
         }
         else if (ev.key == "Escape") {
             ev.preventDefault();
