@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, createConfirmationDialog, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, createConfirmationDialog, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./UI/LevelSelector";
@@ -86,7 +86,8 @@ export class Editor implements AcceptsInput {
 
             WindowManager.getInstance().removeWindow(this.levelSelector);
             WindowManager.getInstance().setActiveWindow(this);
-            alert("Load level: " + selectedLevel.name);
+            this.levelSelector = null;
+            this.loadLevelText(selectedLevel.leveltext);
         };
         const cancelCallback = () => {
             WindowManager.getInstance().removeWindow(this.levelSelector);
@@ -166,13 +167,16 @@ export class Editor implements AcceptsInput {
     }
 
     newLevel() {
-        if (this.changesMade)
+        if (this.changesMade) {
             createConfirmationDialog("Discard changes and create a new level?\nYour changes won't be saved.", "New level", "Cancel", this.settings, () => {
                 WindowManager.getInstance().removeConfirmationDialog(this);
                 this.clearLevel();
             }, () => {
                 WindowManager.getInstance().removeConfirmationDialog(this);
             });
+        }
+        else
+            this.clearLevel();
     }
 
     loadLevel() {
@@ -190,11 +194,14 @@ export class Editor implements AcceptsInput {
 
     clearLevel() {
         this.bricks.length = 0;
-        this.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
-        this.bricksBeforeDrag = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
-        loadBricksFromLevelText(this.emptyLevelText, this.bricks, this.settings);
-        this.changesMade = false;
+        this.bricks = generateEmptyBrickArray(this.settings);
+        this.bricksBeforeDrag = generateEmptyBrickArray(this.settings);
+        this.loadLevelText(this.emptyLevelText);
+    }
 
+    loadLevelText(levelText: string) {
+        loadBricksFromLevelText(levelText, this.bricks, this.settings);
+        this.changesMade = false;
         this.symmetryCenter = new Vec2(levelCenter("x", this.settings), levelCenter("y", this.settings));
     }
 

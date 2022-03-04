@@ -206,7 +206,6 @@ export class LevelSelector {
             const text = (this.selectorType === "load") ? "Load" : "Save";
             this.okButton = new UIButton(saveRect, null, text, this.enableOkButton, false, this.ourOkCallback);
             this.cancelButton = new UIButton(cancelRect, null, "Cancel", true, false, (_: UIButton) => {
-                console.log("Cancel");
                 this.cancelCallback();
             });
 
