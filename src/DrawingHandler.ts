@@ -4,7 +4,7 @@ import { Game } from "./Game";
 import { LevelSelector } from "./UI/LevelSelector";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { WindowManager } from "./WindowManager";
 
@@ -86,7 +86,7 @@ export class DrawingHandler {
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
                               "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete",
                               "button_pushed", "button_unpushed", "icon_grid", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center", "new_level",
-                              "icon_trash"];
+                              "icon_trash", "icon_new", "icon_load", "icon_save", "separator"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -294,7 +294,15 @@ export class DrawingHandler {
         }
     }
 
-    drawButton(button: UIButton) {
+    drawButton(button: UIElement) {
+        if (button instanceof UIHorizontalSeparator) {
+            this.ctx.drawImage(this.images["separator"], button.rect.left, button.rect.top);
+            return;
+        }
+
+        if (!(button instanceof UIButton))
+            return;
+
         if (button.hidden)
             return;
 
@@ -372,7 +380,7 @@ export class DrawingHandler {
         // Draw the active brick / mouse pointer (last of all, so that it is on top)
         const maxY = (this.settings.levelHeight - 1) * this.settings.brickHeight + (this.settings.levelHeight - 1) * this.settings.brickSpacing;
 
-        if (!e.levelSelector && e.cursor.y < maxY && e.cursor.x < this.settings.canvasWidth) {
+        if (WindowManager.getInstance().activeWindow === this.editor && e.cursor.y < maxY && e.cursor.x < this.settings.canvasWidth) {
             // Cursor is in the level area
             if (e.setSymmetryCenter) {
                 let pos = snapSymmetryCenter(this.editor.cursor, this.settings);
@@ -422,6 +430,7 @@ export class DrawingHandler {
 
     drawTooltips() {
         for (let button of this.editor.toolbarButtons) {
+            if (!(button instanceof UIButton)) continue;
             if (button.rect.isInsideRect(this.editor.cursor)) {
                 this.ctx.beginPath();
                 this.ctx.font = "14px Arial";

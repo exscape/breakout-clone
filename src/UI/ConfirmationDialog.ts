@@ -59,8 +59,8 @@ export class ConfirmationDialog implements AcceptsInput {
     onmousedown(e: MouseEvent) {
         const cursor = WindowManager.getInstance().cursor;
         if (this.positiveButton.rect.isInsideRect(cursor))
-            this.positiveButton.clickCallback(true);
+            this.positiveButton.clickCallback(this.positiveButton);
         else if (this.negativeButton.rect.isInsideRect(cursor))
-            this.negativeButton.clickCallback(true);
+            this.negativeButton.clickCallback(this.negativeButton);
     }
 }

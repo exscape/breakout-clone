@@ -35,7 +35,7 @@ export class LevelSelector {
     cancelCallback: (() => void);
     readonly validCharacters: string[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-".split("");
     readonly maxLevelnameLength = 28;
-    readonly ourSaveCallback = (_: boolean) => {
+    readonly ourSaveCallback = () => {
         if (this.saveButton)
             this.saveButton.enabled = false;
 
@@ -189,7 +189,7 @@ export class LevelSelector {
             const cancelRect = new Rect(this.width - this.padding - 2 * buttonWidth - 2 * this.padding, levelNameY, buttonWidth, buttonHeight);
 
             this.saveButton = new UIButton(saveRect, null, "Save", this.enableOkButton, false, this.ourSaveCallback);
-            this.cancelButton = new UIButton(cancelRect, null, "Cancel", true, false, (_: boolean) => {
+            this.cancelButton = new UIButton(cancelRect, null, "Cancel", true, false, (_: UIButton) => {
                 console.log("Cancel");
                 this.cancelCallback();
             });
@@ -266,7 +266,7 @@ export class LevelSelector {
                 const levelRect = this.levelRects[i];
                 const img = images["icon_trash"];
                 const deleteRect = new Rect(levelRect.right - offset.x - img.width, levelRect.top - offset.y + this.padding + wtf, img.width, img.height);
-                const button = new UIButton(deleteRect, "icon_trash", "Delete level", true, false, (enabled: boolean) => {
+                const button = new UIButton(deleteRect, "icon_trash", "Delete level", true, false, () => {
                     const levelIndex = this.levelIndexFromRectIndex(this.currentPage, i);
                     let level = this.levelList[levelIndex];
                     createConfirmationDialog(`Delete level "${level.name}"?\nThis cannot be undone.`, "Delete", "Cancel", this.settings, () => {
@@ -480,7 +480,7 @@ export class LevelSelector {
             offsetCursor.x -= this.pos.x;
             offsetCursor.y -= this.pos.y;
             if (button.rect.isInsideRect(offsetCursor) && button.enabled && !button.hidden) {
-                button.clickCallback(true);
+                button.clickCallback(button);
                 return;
             }
         }
@@ -501,7 +501,7 @@ export class LevelSelector {
         if ((ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
             this.levelName = this.levelName.substring(0, this.levelName.length - 1);
         else if (ev.key == "Enter") {
-            this.ourSaveCallback(true);
+            this.ourSaveCallback();
         }
         else if (ev.key == "Escape") {
             ev.preventDefault();

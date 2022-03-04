@@ -38,22 +38,35 @@ export class Rect {
     }
 }
 
-export class UIButton {
+export abstract class UIElement {
+    rect: Rect;
+
+    constructor(rect: Rect) {
+        this.rect = rect;
+    }
+}
+
+export class UIHorizontalSeparator extends UIElement {
+    constructor(rect: Rect) {
+        super(rect);
+    }
+}
+
+export class UIButton extends UIElement {
     image: string | null;
-    clickCallback: (enabled: boolean) => void;
+    clickCallback: (button: UIButton) => void;
     tooltip: string;
     enabled: boolean;
     hidden: boolean = false;
-    rect: Rect;
     drawBackground: boolean;
 
-    constructor(rect: Rect, image: string | null, text: string, initiallyEnabled: boolean, drawBackground: boolean, clickCallback: (enabled: boolean) => void) {
+    constructor(rect: Rect, image: string | null, text: string, initiallyEnabled: boolean, drawBackground: boolean, clickCallback: (button: UIButton) => void) {
+        super(rect);
         this.image = image;
         this.clickCallback = clickCallback;
         this.enabled = initiallyEnabled;
         this.drawBackground = drawBackground;
         this.tooltip = text;
-        this.rect = rect;
     }
 }
 

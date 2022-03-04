@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, uploadLevel, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, createConfirmationDialog, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./UI/LevelSelector";
@@ -35,7 +35,7 @@ export class Editor implements AcceptsInput {
     altDown: boolean = false;
     ctrlDown: boolean = false;
 
-    toolbarButtons: UIButton[] = [];
+    toolbarButtons: UIElement[] = [];
     verticalSymmetry: boolean = false;
     horizontalSymmetry: boolean = false;
     setSymmetryCenter: boolean = false;
@@ -75,6 +75,34 @@ export class Editor implements AcceptsInput {
         })
         .catch(error => {
             alert("Failed to check login status: " + error);
+        });
+    }
+
+    showLoadDialog() {
+        // Set up callbacks first...
+        const loadCallback = (selectedLevel: LevelMetadata | string) => {
+            // Should never, ever happen for loading, but the compiler doesn't realize that.
+            if (typeof selectedLevel === "string") return;
+
+            WindowManager.getInstance().removeWindow(this.levelSelector);
+            WindowManager.getInstance().setActiveWindow(this);
+            alert("Load level: " + selectedLevel.name);
+        };
+        const cancelCallback = () => {
+            WindowManager.getInstance().removeWindow(this.levelSelector);
+            WindowManager.getInstance().setActiveWindow(this);
+            this.levelSelector = null;
+        };
+
+        createLoadingScreen("Loading level list...", this.settings);
+
+        fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
+            // Success callback
+            WindowManager.getInstance().removeLoadingScreen(this);
+            this.levelSelector = new LevelSelector("load", levels, this.cursor, this.settings, loadCallback, cancelCallback);
+        }, () => {
+            // Failure callback
+            WindowManager.getInstance().removeLoadingScreen(this);
         });
     }
 
@@ -137,6 +165,29 @@ export class Editor implements AcceptsInput {
         });
     }
 
+    newLevel() {
+        if (this.changesMade)
+            createConfirmationDialog("Discard changes and create a new level?\nYour changes won't be saved.", "New level", "Cancel", this.settings, () => {
+                WindowManager.getInstance().removeConfirmationDialog(this);
+                this.clearLevel();
+            }, () => {
+                WindowManager.getInstance().removeConfirmationDialog(this);
+            });
+    }
+
+    loadLevel() {
+        if (this.changesMade) {
+            createConfirmationDialog("Discard changes and load a different level?\nYour changes won't be saved.", "Load level", "Cancel", this.settings, () => {
+                WindowManager.getInstance().removeConfirmationDialog(this);
+                this.showLoadDialog();
+            }, () => {
+                WindowManager.getInstance().removeConfirmationDialog(this);
+            });
+        }
+        else
+            this.showLoadDialog();
+    }
+
     clearLevel() {
         this.bricks.length = 0;
         this.bricks = Array(this.settings.levelHeight).fill(undefined).map(_ => Array(this.settings.levelWidth).fill(undefined));
@@ -151,25 +202,50 @@ export class Editor implements AcceptsInput {
         const x = this.settings.canvasWidth;
         let y = 4;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_grid", "Show grid", false, true, (enabled: boolean) => {
-            this.shouldDrawGrid = enabled;
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_new", "New level", false, true, (button: UIButton) => {
+            this.newLevel();
+            button.enabled = false;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_hsymmetry", "Horizontal symmetry", false, true, (enabled: boolean) => {
-            this.horizontalSymmetry = enabled;
+        // TODO: This is a bit weird -- it asks if you want to discard changes, but if the load dialog is opened and then cancelled, nothing really changes.
+        // TODO: It should perhaps warn at a later stage, when actually loading?
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_load", "Load level (Ctrl+L)", false, true, (button: UIButton) => {
+            this.loadLevel();
+            button.enabled = false;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_vsymmetry", "Vertical symmetry", false, true, (enabled: boolean) => {
-            this.verticalSymmetry = enabled;
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_save", "Save level (Ctrl+S)", false, true, (button: UIButton) => {
+            this.showSaveDialog();
+            button.enabled = false;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_symmetry_center", "Set symmetry centerpoint", false, true, (enabled: boolean) => {
-            this.setSymmetryCenter = enabled;
+        y += 6;
+        this.toolbarButtons.push(new UIHorizontalSeparator(new Rect(x, y, 48, 2)));
+        y += 6 + 2; // 6 spacing, 2 for the separator itself
+
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_grid", "Show grid", false, true, (button: UIButton) => {
+            this.shouldDrawGrid = button.enabled;
         }));
-        this.symmetryCenterButton = this.toolbarButtons[this.toolbarButtons.length - 1];
+        y += 48;
+
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_hsymmetry", "Horizontal symmetry", false, true, (button: UIButton) => {
+            this.horizontalSymmetry = button.enabled;
+        }));
+        y += 48;
+
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_vsymmetry", "Vertical symmetry", false, true, (button: UIButton) => {
+            this.verticalSymmetry = button.enabled;
+        }));
+        y += 48;
+
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_symmetry_center", "Set symmetry centerpoint", false, true, (button: UIButton) => {
+            this.setSymmetryCenter = button.enabled;
+        }));
+        y += 48;
+        this.symmetryCenterButton = this.toolbarButtons[this.toolbarButtons.length - 1] as UIButton;
     }
 
     selectBrickAtCursor(selectOrDeselect: "select" | "deselect" = "select") {
@@ -323,6 +399,10 @@ export class Editor implements AcceptsInput {
             ev.preventDefault();
             this.game.exitEditor();
         }
+        else if (ev.ctrlKey && (ev.key == "l" || ev.key == "L")) {
+            ev.preventDefault();
+            this.loadLevel();
+        }
         else if (ev.ctrlKey && (ev.key == "s" || ev.key == "S")) {
             ev.preventDefault();
             this.showSaveDialog();
@@ -400,9 +480,12 @@ export class Editor implements AcceptsInput {
         // Handle toolbar clicks
         if (this.cursor.x >= this.settings.canvasWidth) {
             for (let button of this.toolbarButtons) {
+                if (!(button instanceof UIButton))
+                    continue;
+
                 if (button.rect.isInsideRect(this.cursor)) {
                     button.enabled = !button.enabled;
-                    button.clickCallback(button.enabled);
+                    button.clickCallback(button);
                     return;
                 }
             }
