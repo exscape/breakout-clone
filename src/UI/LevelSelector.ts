@@ -94,7 +94,15 @@ export class LevelSelector {
         this.cancelCallback = cancelCallback;
 
         this.currentPage = 0;
-        this.totalPages = Math.ceil(levelList.length / 3);
+        if (type === "load")
+            this.totalPages = Math.ceil(levelList.length / 3);
+        else {
+            // Handle the offset due to the "New level" icon taking up one slot on the first page
+            if (this.levelList.length < 2)
+                this.totalPages = 1;
+            else
+                this.totalPages = Math.ceil((levelList.length - 2) / 3) + 1;
+        }
     }
 
     draw(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>): boolean {
