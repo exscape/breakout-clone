@@ -351,6 +351,10 @@ export function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: 
     return lines;
 }
 
+export function splitText(text: string): string[] {
+    return text.split(/\r?\n/);
+}
+
 export function createConfirmationDialog(text: string, positiveText: string, negativeText: string, settings: Settings, positiveCallback: () => void, negativeCallback: () => void) {
     let confirmationDialog = new ConfirmationDialog(text, positiveText, negativeText, settings, positiveCallback, negativeCallback);
     WindowManager.getInstance().addWindow(confirmationDialog, true);

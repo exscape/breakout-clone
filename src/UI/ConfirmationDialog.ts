@@ -1,4 +1,4 @@
-import { Rect, UIButton, wrapText } from "../Utils";
+import { Rect, splitText, UIButton, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
 import { AcceptsInput, WindowManager } from "../WindowManager";
 import { Settings } from "../Settings";
@@ -43,7 +43,8 @@ export class ConfirmationDialog implements AcceptsInput {
 
         ctx.fillRect(this.pos.x, this.pos.y, this.width, this.height);
         ctx.strokeRect(this.pos.x, this.pos.y, this.width, this.height);
-        let lines = wrapText(ctx, this.text, this.width - 2 * this.buttonSpacing);
+        // let lines = wrapText(ctx, this.text, this.width - 2 * this.buttonSpacing);
+        let lines = splitText(this.text);
 
         ctx.fillStyle = "black";
         let y = this.settings.canvasHeight / 2 - this.height / 4;
