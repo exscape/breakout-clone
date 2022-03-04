@@ -29,6 +29,7 @@ export class LevelSelector {
     levelList: LevelMetadata[];
     currentPage: number = 0;
     totalPages: number = 1;
+    selectedLevelBrickSource: BrickOrEmpty[][] = [];
 
     okCallback: ((metadataOrName: LevelMetadata | string) => void);
     cancelCallback: (() => void);
@@ -99,6 +100,9 @@ export class LevelSelector {
         this.okCallback = saveCallback;
         this.cancelCallback = cancelCallback;
 
+        if (this.selectorType === "load")
+            this.selectedLevelBrickSource = generateEmptyBrickArray(this.settings);
+
         this.levelListUpdated();
         this.updateLevelSelection(0);
     }
@@ -122,7 +126,7 @@ export class LevelSelector {
             this.updateLevelSelection(this.selectedRect - 1);
     }
 
-    draw(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>): boolean {
+    draw(ctx: CanvasRenderingContext2D, editorBrickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>): boolean {
         // Full window
         ctx.beginPath();
         ctx.textAlign = "start";
@@ -157,6 +161,7 @@ export class LevelSelector {
         previewSettings.brickHeight = this.settings.brickHeight / 2;
         previewSettings.brickWidth = this.settings.brickWidth / 2;
         previewSettings.brickSpacing = this.settings.brickSpacing / 2;
+        const brickSource = (this.selectorType === "load") ? this.selectedLevelBrickSource : editorBrickSource;
         this.drawLevelPreview(ctx, brickSource, images, previewSettings, new Vec2(this.padding, levelPreviewY));
 
         // Label, textedit, buttons
@@ -429,6 +434,13 @@ export class LevelSelector {
             this.levelName = "Untitled";
         else // For both save and load, in every other case
             this.levelName = this.levelList[this.levelIndexFromRectIndex(this.currentPage, rectIndex)].name;
+
+        if (this.selectorType === "load") {
+            const level = this.selectedLevel();
+            if (!level)
+                return;
+            loadBricksFromLevelText(level.leveltext, this.selectedLevelBrickSource, this.settings);
+        }
     }
 
     private selectedLevel() {
