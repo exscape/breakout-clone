@@ -85,11 +85,11 @@ export class LevelSelector {
     // For saving: disabled if the name is already used, name is empty, or name is Untitled
     enableOkButton: boolean = false;
 
-    constructor(type: "load" | "save", levelList: LevelMetadata[], cursor: Vec2, settings: Settings, saveCallback: (selectedLevel: LevelMetadata | string) => void, cancelCallback: () => void) {
+    constructor(type: "load" | "save", levelList: LevelMetadata[], initiallyHighlightLevel: LevelMetadata | null, settings: Settings, saveCallback: (selectedLevel: LevelMetadata | string) => void, cancelCallback: () => void) {
         this.windowTitle = (type === "load") ? "Load level" : "Save level";
         this.levelList = levelList;
         this.settings = settings;
-        this.cursor = cursor;
+        this.cursor = WindowManager.getInstance().getCursor();
         this.pos = new Vec2(Math.floor((this.settings.canvasWidth - this.width) / 2), Math.floor((this.settings.canvasHeight - this.height) / 2));
         if (type === "save")
             this.levelName = "Untitled";
@@ -104,7 +104,18 @@ export class LevelSelector {
             this.selectedLevelBrickSource = generateEmptyBrickArray(this.settings);
 
         this.levelListUpdated();
-        this.updateLevelSelection(0);
+
+        // If we were editing a level, pre-select that again now.
+        let rectToSelect = 0;
+        if (initiallyHighlightLevel) {
+            const index = this.levelList.findIndex(lev => lev.level_id === initiallyHighlightLevel.level_id);
+            if (index >= 0) {
+                this.currentPage = this.pageFromLevelIndex(index);
+                rectToSelect = this.rectIndexFromLevelIndex(index);
+            }
+        }
+
+        this.updateLevelSelection(rectToSelect);
     }
 
     levelListUpdated() {
@@ -400,16 +411,26 @@ export class LevelSelector {
             return Math.min(3 * (pageNumber + 1), this.levelList.length);
     }
 
+    // On which page (0-indexed) is this level located?
+    private pageFromLevelIndex(index: number) {
+        if (this.selectorType === "load")
+            return Math.floor(index / 3);
+        else if (index <= 1)
+            return 0; // Take care of "New level" offset
+        else
+            return Math.floor((index - 2) / 3) + 1;
+    }
+
     // In which level slot (0 - 2) should we draw the level with this index?
     private rectIndexFromLevelIndex(index: number) {
-        // For page 0: index 1 and 2 are valid
-        // For other pages: indexes 0, 1, 2 are valid
-        // 0 -> 1, 1 -> 2; after that: 2 -> 0, 3 -> 1, 4 -> 2, 5 -> 0, 6 -> 1, 7 -> 2, 8 -> 0, ...
         if (this.selectorType === "load") {
             return index % 3;
         }
 
-        // else we are saving, take care of the offset due to the "New level" icon taking the first slot on page 1
+        // Else we are saving, take care of the offset due to the "New level" icon taking the first slot on page 1
+        // For page 0: index 1 and 2 are valid
+        // For other pages: indexes 0, 1, 2 are valid
+        // 0 -> 1, 1 -> 2; after that: 2 -> 0, 3 -> 1, 4 -> 2, 5 -> 0, 6 -> 1, 7 -> 2, 8 -> 0, ...
         if (index <= 1)
             return index + 1;
         else

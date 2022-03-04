@@ -19,6 +19,7 @@ export class Editor implements AcceptsInput {
     brickPalette: string[] = ["_delete", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "_indestructible"];
 
     bricks: (Brick | undefined)[][] = [];
+    mostRecentlyLoadedLevel: LevelMetadata | null = null;
     changesMade: boolean = false;
 
     // Drag stuff
@@ -88,6 +89,7 @@ export class Editor implements AcceptsInput {
             WindowManager.getInstance().setActiveWindow(this);
             this.levelSelector = null;
             this.loadLevelText(selectedLevel.leveltext);
+            this.mostRecentlyLoadedLevel = selectedLevel;
         };
         const cancelCallback = () => {
             WindowManager.getInstance().removeWindow(this.levelSelector);
@@ -100,7 +102,7 @@ export class Editor implements AcceptsInput {
         fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
             // Success callback
             WindowManager.getInstance().removeLoadingScreen(this);
-            this.levelSelector = new LevelSelector("load", levels, this.cursor, this.settings, loadCallback, cancelCallback);
+            this.levelSelector = new LevelSelector("load", levels, this.mostRecentlyLoadedLevel, this.settings, loadCallback, cancelCallback);
         }, () => {
             // Failure callback
             WindowManager.getInstance().removeLoadingScreen(this);
@@ -142,6 +144,7 @@ export class Editor implements AcceptsInput {
                 else {
                     alert("Level upload successful!"); // TODO: Change to something less annoying than an alert!
                     this.levelSelector = null;
+                    this.changesMade = false;
                 }
             }).catch(reason => {
                 WindowManager.getInstance().removeLoadingScreen(this);
@@ -159,7 +162,7 @@ export class Editor implements AcceptsInput {
         fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
             // Success callback
             WindowManager.getInstance().removeLoadingScreen(this);
-            this.levelSelector = new LevelSelector("save", levels, this.cursor, this.settings, saveCallback, cancelCallback);
+            this.levelSelector = new LevelSelector("save", levels, this.mostRecentlyLoadedLevel, this.settings, saveCallback, cancelCallback);
         }, () => {
             // Failure callback
             WindowManager.getInstance().removeLoadingScreen(this);
@@ -197,6 +200,7 @@ export class Editor implements AcceptsInput {
         this.bricks = generateEmptyBrickArray(this.settings);
         this.bricksBeforeDrag = generateEmptyBrickArray(this.settings);
         this.loadLevelText(this.emptyLevelText);
+        this.mostRecentlyLoadedLevel = null;
     }
 
     loadLevelText(levelText: string) {
