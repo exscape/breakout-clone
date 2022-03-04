@@ -43,12 +43,15 @@ export class UIButton {
     clickCallback: (enabled: boolean) => void;
     tooltip: string;
     enabled: boolean;
+    hidden: boolean = false;
     rect: Rect;
+    drawBackground: boolean;
 
-    constructor(rect: Rect, image: string | null, text: string, initiallyEnabled: boolean, clickCallback: (enabled: boolean) => void) {
+    constructor(rect: Rect, image: string | null, text: string, initiallyEnabled: boolean, drawBackground: boolean, clickCallback: (enabled: boolean) => void) {
         this.image = image;
         this.clickCallback = clickCallback;
         this.enabled = initiallyEnabled;
+        this.drawBackground = drawBackground;
         this.tooltip = text;
         this.rect = rect;
     }

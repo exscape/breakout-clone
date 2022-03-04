@@ -294,11 +294,18 @@ export class DrawingHandler {
     }
 
     drawButton(button: UIButton) {
+        if (button.hidden)
+            return;
+
         if (button.image) {
             // Draw an icon-based button
             const foregroundImage = this.images[button.image];
-            const backgroundImage = button.enabled ? this.images["button_pushed"] : this.images["button_unpushed"];
-            this.ctx.drawImage(backgroundImage, button.rect.left, button.rect.top);
+
+            if (button.drawBackground) {
+                const backgroundImage = button.enabled ? this.images["button_pushed"] : this.images["button_unpushed"];
+                this.ctx.drawImage(backgroundImage, button.rect.left, button.rect.top, foregroundImage.width, foregroundImage.height);
+            }
+
             this.ctx.drawImage(foregroundImage, button.rect.left, button.rect.top);
         }
         else {

@@ -178,8 +178,8 @@ export class LevelSelector {
             const saveRect = new Rect(this.width - this.padding - buttonWidth, levelNameY, buttonWidth, buttonHeight);
             const cancelRect = new Rect(this.width - this.padding - 2 * buttonWidth - 2 * this.padding, levelNameY, buttonWidth, buttonHeight);
 
-            this.saveButton = new UIButton(saveRect, null, "Save", this.enableOkButton, this.ourSaveCallback);
-            this.cancelButton = new UIButton(cancelRect, null, "Cancel", true, (_: boolean) => {
+            this.saveButton = new UIButton(saveRect, null, "Save", this.enableOkButton, false, this.ourSaveCallback);
+            this.cancelButton = new UIButton(cancelRect, null, "Cancel", true, false, (_: boolean) => {
                 console.log("Cancel");
                 this.cancelCallback();
             });
@@ -241,10 +241,10 @@ export class LevelSelector {
             const nextRect = new Rect(this.levelRects[2].left - offset.x + this.padding,               this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
             const endRect  = new Rect(this.levelRects[2].left - offset.x + this.padding + buttonWidth, this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
 
-            this.homeButton = new UIButton(homeRect, null, "<<<", false, () => { this.currentPage = 0; this.updateLevelSelection(0); });
-            this.prevButton = new UIButton(prevRect, null, "<<", false, () => { this.currentPage = clamp(this.currentPage - 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
-            this.nextButton = new UIButton(nextRect, null, ">>", false, () => { this.currentPage = clamp(this.currentPage + 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
-            this.endButton = new UIButton(endRect, null, ">>>", false, () => { this.currentPage = this.totalPages - 1; this.updateLevelSelection(0); });
+            this.homeButton = new UIButton(homeRect, null, "<<<", false, false, () => { this.currentPage = 0; this.updateLevelSelection(0); });
+            this.prevButton = new UIButton(prevRect, null, "<<", false, false, () => { this.currentPage = clamp(this.currentPage - 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
+            this.nextButton = new UIButton(nextRect, null, ">>", false, false, () => { this.currentPage = clamp(this.currentPage + 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
+            this.endButton = new UIButton(endRect, null, ">>>", false, false, () => { this.currentPage = this.totalPages - 1; this.updateLevelSelection(0); });
 
             this.buttons.push(this.homeButton);
             this.buttons.push(this.prevButton);

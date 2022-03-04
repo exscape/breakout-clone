@@ -151,22 +151,22 @@ export class Editor implements AcceptsInput {
         const x = this.settings.canvasWidth;
         let y = 4;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_grid", "Show grid", false, (enabled: boolean) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_grid", "Show grid", false, true, (enabled: boolean) => {
             this.shouldDrawGrid = enabled;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_hsymmetry", "Horizontal symmetry", false, (enabled: boolean) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_hsymmetry", "Horizontal symmetry", false, true, (enabled: boolean) => {
             this.horizontalSymmetry = enabled;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_vsymmetry", "Vertical symmetry", false, (enabled: boolean) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_vsymmetry", "Vertical symmetry", false, true, (enabled: boolean) => {
             this.verticalSymmetry = enabled;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_symmetry_center", "Set symmetry centerpoint", false, (enabled: boolean) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_symmetry_center", "Set symmetry centerpoint", false, true, (enabled: boolean) => {
             this.setSymmetryCenter = enabled;
         }));
         this.symmetryCenterButton = this.toolbarButtons[this.toolbarButtons.length - 1];

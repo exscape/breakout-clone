@@ -24,8 +24,8 @@ export class ConfirmationDialog implements AcceptsInput {
 
         const positiveRect = new Rect(this.pos.x + this.buttonSpacing, this.pos.y + this.height - this.buttonHeight - this.buttonSpacing, this.buttonWidth, this.buttonHeight);
         const negativeRect = new Rect(this.pos.x + this.width - this.buttonSpacing - this.buttonWidth, this.pos.y + this.height - this.buttonHeight - this.buttonSpacing, this.buttonWidth, this.buttonHeight);
-        this.positiveButton = new UIButton(positiveRect, null, positiveText, true, positiveCallback);
-        this.negativeButton = new UIButton(negativeRect, null, negativeText, true, negativeCallback);
+        this.positiveButton = new UIButton(positiveRect, null, positiveText, true, false, positiveCallback);
+        this.negativeButton = new UIButton(negativeRect, null, negativeText, true, false, negativeCallback);
     }
 
     draw(ctx: CanvasRenderingContext2D) {
