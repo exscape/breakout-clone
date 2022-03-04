@@ -33,7 +33,7 @@ export class LevelSelector {
 
     saveCallback: ((metadataOrName: LevelMetadata | string) => void);
     cancelCallback: (() => void);
-    readonly validCharacters: string[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-".split("");
+    readonly validCharacters: string[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789. +()[]{}-!?#%=".split("");
     readonly maxLevelnameLength = 28;
     readonly ourSaveCallback = () => {
         if (this.saveButton)
