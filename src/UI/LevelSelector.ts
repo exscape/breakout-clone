@@ -2,7 +2,7 @@ import _ from "lodash";
 import { WindowManager } from "../WindowManager";
 import { BrickOrEmpty } from "../Brick";
 import { Settings } from "../Settings";
-import { clamp, createConfirmationDialog, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "../Utils";
+import { clamp, createConfirmationDialog, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, isAdmin, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, userId, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
 import { LoadingScreen } from "./LoadingScreen";
 
@@ -347,8 +347,8 @@ export class LevelSelector {
             ctx.drawImage(img, Math.floor(this.levelRects[0].left - offset.x + (this.levelRects[0].width - img.width) / 2),
                                Math.floor(this.levelRects[0].top - offset.y + (this.levelRects[0].height - img.height) / 2) + 5);
         }
-        else if (this.selectorType === "save" && this.deleteButtons.length > 0)
-            this.deleteButtons[0].hidden = false;
+        else if (this.deleteButtons.length > 0)
+            this.deleteButtons[0].hidden = !this.mayModifyLevelAtRectIndex(0);
 
         const oldFont = ctx.font;
 
@@ -360,8 +360,7 @@ export class LevelSelector {
             loadBricksFromLevelText(level.leveltext, levelBricks, this.settings);
             this.drawLevelThumbnail(offset, this.levelRects[rectIndex], ctx, levelBricks, images);
 
-            if (this.selectorType === "save")
-                this.deleteButtons[rectIndex].hidden = false;
+            this.deleteButtons[rectIndex].hidden = !this.mayModifyLevelAtRectIndex(rectIndex);
 
             let y = 2 * this.padding;
             ctx.font = "14px Arial";
@@ -446,6 +445,17 @@ export class LevelSelector {
             return (page === 0) ? rectIndex - 1 : 2 + ((page - 1) * 3) + rectIndex;
         else
             return page * 3 + rectIndex;
+    }
+
+    // Decides whether the delete icon will be visible or not, and whether these levels will be visible in the save dialog.
+    // Note that the backend enforces these checks regardless of what the client does or claims.
+    private mayModifyLevelAtRectIndex(rectIndex: number) {
+        if (userId() === undefined)
+            return false;
+
+        const levelIndex = this.levelIndexFromRectIndex(this.currentPage, rectIndex);
+        const level = this.levelList[levelIndex];
+        return (level.author_id === userId()) || isAdmin();
     }
 
     private updateLevelSelection(rectIndex: number) {

@@ -6,7 +6,7 @@ import { BrickPosition, Vec2 } from "./Vec2";
 import { WindowManager } from "./WindowManager";
 
 export type LevelType = "campaign" | "standalone";
-export type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, leveltext: string, author: string };
+export type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, leveltext: string, author: string, author_id: number };
 export type LevelIndexResult = { "campaign": LevelMetadata[], "standalone": LevelMetadata[] };
 export type Mode = "game" | "editor";
 
@@ -392,4 +392,25 @@ export function createConfirmationDialog(text: string, positiveText: string, neg
 export function createLoadingScreen(text: string, settings: Settings) {
     let loadingScreen = new LoadingScreen(text, settings);
     WindowManager.getInstance().addWindow(loadingScreen, true);
+}
+
+function readCookieValue(name: string): number | undefined {
+    let cookies = document.cookie.split(/; */);
+    for (let cookie of cookies) {
+        let [key, value] = cookie.split("=");
+        if (key === name)
+            return parseInt(value);
+    }
+
+    return undefined;
+}
+
+// Note: These cookies have no value security-wise; forging them can't give any access to the backend.
+export function userId(): number | undefined {
+    return readCookieValue("userinfo_id");
+}
+
+// Note: These cookies have no value security-wise; forging them can't give any access to the backend.
+export function isAdmin(): boolean {
+    return readCookieValue("userinfo_is_admin") === 1;
 }
