@@ -262,6 +262,19 @@ export function uploadLevel(level: LevelMetadata) {
     .then(response => response.json());
 }
 
+export function deleteLevel(level: LevelMetadata) {
+    let formData = new FormData();
+    formData.append("action", "delete");
+    formData.append("id", level.level_id.toString());
+
+    return fetch('/game/level_upload.php', {
+        method: "POST",
+        cache: 'no-cache',
+        body: formData
+    })
+    .then(response => response.json());
+}
+
 export function loadBricksFromLevelText(levelText: string, target: BrickOrEmpty[][], settings: Settings): boolean {
     let level2D: string[][] = [];
 

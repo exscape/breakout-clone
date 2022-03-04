@@ -2,9 +2,10 @@ import _ from "lodash";
 import { WindowManager } from "../WindowManager";
 import { BrickOrEmpty } from "../Brick";
 import { Settings } from "../Settings";
-import { clamp, createConfirmationDialog, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "../Utils";
+import { clamp, createConfirmationDialog, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
 import { ConfirmationDialog } from "./ConfirmationDialog";
+import { LoadingScreen } from "./LoadingScreen";
 
 // BEWARE: This code is by FAR the worst in this codebase as of when it's being written.
 // I don't have the patience to write a proper windowing system for a single dialog, so this is FULL of
@@ -27,8 +28,8 @@ export class LevelSelector {
     deleteButtons: UIButton[] = []; // One for each rect
 
     levelList: LevelMetadata[];
-    currentPage: number;
-    totalPages: number;
+    currentPage: number = 0;
+    totalPages: number = 1;
 
     saveCallback: ((metadataOrName: LevelMetadata | string) => void);
     cancelCallback: (() => void);
@@ -94,16 +95,24 @@ export class LevelSelector {
         this.saveCallback = saveCallback;
         this.cancelCallback = cancelCallback;
 
-        this.currentPage = 0;
-        if (type === "load")
-            this.totalPages = Math.ceil(levelList.length / 3);
+        this.levelListUpdated();
+    }
+
+    levelListUpdated() {
+        if (this.selectorType === "load")
+            this.totalPages = Math.ceil(this.levelList.length / 3);
         else {
             // Handle the offset due to the "New level" icon taking up one slot on the first page
             if (this.levelList.length < 2)
                 this.totalPages = 1;
             else
-                this.totalPages = Math.ceil((levelList.length - 2) / 3) + 1;
+                this.totalPages = Math.ceil((this.levelList.length - 2) / 3) + 1;
         }
+
+        this.currentPage = clamp(this.currentPage, 0, this.totalPages - 1);
+
+        if (!(this.currentPage === 0 && this.selectedRect === 0) && this.levelIndexFromRectIndex(this.currentPage, this.selectedRect) >= this.levelList.length)
+            this.updateLevelSelection(this.selectedRect - 1);
     }
 
     draw(ctx: CanvasRenderingContext2D, brickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>): boolean {
@@ -258,7 +267,17 @@ export class LevelSelector {
                 const img = images["icon_trash"];
                 const deleteRect = new Rect(levelRect.right - offset.x - img.width, levelRect.top - offset.y + this.padding + wtf, img.width, img.height);
                 const button = new UIButton(deleteRect, "icon_trash", "Delete level", true, false, (enabled: boolean) => {
-                    console.log("Delete for rect " + i + " = level " + this.levelIndexFromRectIndex(this.currentPage, i));
+                    const levelIndex = this.levelIndexFromRectIndex(this.currentPage, i);
+                    let level = this.levelList[levelIndex];
+                    createConfirmationDialog(`Delete level "${level.name}"?\nThis cannot be undone.`, "Delete", "Cancel", this.settings, () => {
+                        // Delete was clicked
+                        WindowManager.getInstance().removeConfirmationDialog(this);
+                        this.deleteLevel(level);
+                    },
+                    () => {
+                        // Cancel was clicked
+                        WindowManager.getInstance().removeConfirmationDialog(this);
+                    });
                 });
 
                 this.buttons.push(button);
@@ -400,6 +419,29 @@ export class LevelSelector {
         else
             return this.levelList[this.levelIndexFromRectIndex(this.currentPage, this.selectedRect)];
     }
+
+    private deleteLevel(level: LevelMetadata) {
+        let loadingScreen = new LoadingScreen(`Deleting level "${level.name}"...`, this.settings);
+        WindowManager.getInstance().addWindow(loadingScreen, true);
+
+        const id = level.level_id;
+
+        deleteLevel(level).then(json => {
+            WindowManager.getInstance().removeLoadingScreen(this);
+
+            if ("type" in json && json.type === "error")
+                alert("Level deletion failed: " + json.message);
+            else {
+                this.levelList = this.levelList.filter(l => l.level_id !== id);
+                this.levelListUpdated();
+                alert("The level was deleted."); // TODO: Change to something less annoying than an alert!
+            }
+        }).catch(reason => {
+            WindowManager.getInstance().removeLoadingScreen(this);
+            alert("Level deletion failed: " + reason.message);
+        });
+    }
+
     private drawLevelThumbnail(offset: Vec2, rect: Rect, ctx: CanvasRenderingContext2D, currentLevelBrickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>) {
         let previewSettings = _.clone(this.settings);
         previewSettings.brickHeight = this.settings.brickHeight / 7;
