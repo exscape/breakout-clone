@@ -414,3 +414,7 @@ export function userId(): number | undefined {
 export function isAdmin(): boolean {
     return readCookieValue("userinfo_is_admin") === 1;
 }
+
+export function userMayModifyLevel(level: LevelMetadata): boolean {
+    return (level.author_id === userId()) || isAdmin();
+}

@@ -2,7 +2,7 @@ import _ from "lodash";
 import { WindowManager } from "../WindowManager";
 import { BrickOrEmpty } from "../Brick";
 import { Settings } from "../Settings";
-import { clamp, createConfirmationDialog, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, isAdmin, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, userId, wrapText } from "../Utils";
+import { clamp, createConfirmationDialog, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, isAdmin, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, userId, userMayModifyLevel, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
 import { LoadingScreen } from "./LoadingScreen";
 
@@ -26,7 +26,9 @@ export class LevelSelector {
     selectedRect: 0 | 1 | 2 = 0;
     deleteButtons: UIButton[] = []; // One for each rect
 
+    // levelList is filtered when saving, to only show levels the current user can overwrite.
     levelList: LevelMetadata[];
+    fullLevelList: LevelMetadata[];
     currentPage: number = 0;
     totalPages: number = 1;
     selectedLevelBrickSource: BrickOrEmpty[][] = [];
@@ -87,7 +89,7 @@ export class LevelSelector {
 
     constructor(type: "load" | "save", levelList: LevelMetadata[], initiallyHighlightLevel: LevelMetadata | null, settings: Settings, saveCallback: (selectedLevel: LevelMetadata | string) => void, cancelCallback: () => void) {
         this.windowTitle = (type === "load") ? "Load level" : "Save level";
-        this.levelList = levelList;
+        this.fullLevelList = _.clone(levelList);
         this.settings = settings;
         this.cursor = WindowManager.getInstance().getCursor();
         this.pos = new Vec2(Math.floor((this.settings.canvasWidth - this.width) / 2), Math.floor((this.settings.canvasHeight - this.height) / 2));
@@ -102,6 +104,8 @@ export class LevelSelector {
 
         if (this.selectorType === "load")
             this.selectedLevelBrickSource = generateEmptyBrickArray(this.settings);
+
+        this.levelList = (this.selectorType === "load") ? levelList : levelList.filter(lev => userMayModifyLevel(lev));
 
         this.levelListUpdated();
 
@@ -201,7 +205,7 @@ export class LevelSelector {
         if (this.selectorType === "load")
             this.enableOkButton = true;
         else {
-            const nameUsedByOtherLevel = this.levelList.some(lev => lev.level_id !== this.selectedLevel()?.level_id && lev.name.trim() === this.levelName.trim());
+            const nameUsedByOtherLevel = this.fullLevelList.some(lev => lev.level_id !== this.selectedLevel()?.level_id && lev.name.trim() === this.levelName.trim());
 
             this.enableOkButton = (this.levelName.length > 0 && this.levelName != "Untitled") &&
                                 !nameUsedByOtherLevel;
@@ -329,7 +333,7 @@ export class LevelSelector {
         ctx.textBaseline = "middle";
         ctx.font = "14px Arial";
 
-        const first = this.firstLevelOnPage(this.currentPage);
+        const first = Math.min(this.firstLevelOnPage(this.currentPage), this.levelList.length);
         const last = this.lastLevelOnPage(this.currentPage);
         const text = (first !== last) ? `Levels ${first}-${last} of ${this.levelList.length}` : `Level ${first} of ${this.levelList.length}`;
         ctx.fillText(text, this.levelRects[1].horizontalCenter - offset.x, this.levelRects[1].bottom - offset.y + buttonHeight / 2 + 2);
@@ -455,7 +459,7 @@ export class LevelSelector {
 
         const levelIndex = this.levelIndexFromRectIndex(this.currentPage, rectIndex);
         const level = this.levelList[levelIndex];
-        return (level.author_id === userId()) || isAdmin();
+        return userMayModifyLevel(level);
     }
 
     private updateLevelSelection(rectIndex: number) {
