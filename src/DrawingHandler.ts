@@ -489,18 +489,22 @@ export class DrawingHandler {
 
     drawBricks() {
         const brickSource = (this.game.currentMode === "game") ? this.game.level.bricks : this.editor.bricks;
-        for (let brick of _.flatten(brickSource)) {
-            if (brick === undefined)
-                continue;
-            this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
 
-            if (brick.selected) {
-                this.ctx.beginPath();
-                this.ctx.strokeStyle = "blue";
-                this.ctx.globalAlpha = 1.0;
-                this.ctx.lineWidth = 2;
-                const pos = brick.upperLeft;
-                this.ctx.strokeRect(pos.x - 2, pos.y - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
+        for (let y = 0; y < this.settings.levelHeight; y++) {
+            for (let x = 0; x < this.settings.levelWidth; x++) {
+                const brick = brickSource[y][x];
+                if (brick === undefined)
+                    continue;
+                this.ctx.drawImage(this.images[brick.name], brick.upperLeft.x, brick.upperLeft.y, this.settings.brickWidth, this.settings.brickHeight);
+
+                if (brick.selected) {
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = "blue";
+                    this.ctx.globalAlpha = 1.0;
+                    this.ctx.lineWidth = 2;
+                    const pos = brick.upperLeft;
+                    this.ctx.strokeRect(pos.x - 2, pos.y - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
+                }
             }
         }
 
