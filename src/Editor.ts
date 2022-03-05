@@ -261,6 +261,15 @@ export class Editor implements AcceptsInput {
         }));
         y += 48;
         this.symmetryCenterButton = this.toolbarButtons[this.toolbarButtons.length - 1] as UIButton;
+
+        y += 6;
+        this.toolbarButtons.push(new UIHorizontalSeparator(new Rect(x, y, 48, 2)));
+        y += 6 + 2; // 6 spacing, 2 for the separator itself
+
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_return", "Exit back to game (Ctrl+X)", false, true, (button: UIButton) => {
+            this.game.exitEditor();
+            button.enabled = false;
+        }));
     }
 
     selectBrickAtCursor(selectOrDeselect: "select" | "deselect" = "select") {

@@ -571,7 +571,7 @@ export class LevelSelector {
     keyUp(ev: KeyboardEvent) {
     }
     keyDown(ev: KeyboardEvent) {
-        if ((ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
+        if (this.selectorType === "save" && (ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
             this.levelName = this.levelName.substring(0, this.levelName.length - 1);
         else if (ev.key == "Enter" && this.enableOkButton) {
             this.ourOkCallback();
@@ -580,7 +580,7 @@ export class LevelSelector {
             ev.preventDefault();
             this.cancelCallback();
         }
-        else if (this.validCharacters.includes(ev.key) && this.levelName.length < this.maxLevelnameLength)
+        else if (this.selectorType === "save" && this.validCharacters.includes(ev.key) && this.levelName.length < this.maxLevelnameLength)
             this.levelName += ev.key;
         else
             console.log("Invalid key: " + ev.key);

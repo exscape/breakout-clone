@@ -86,7 +86,7 @@ export class DrawingHandler {
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
                               "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete",
                               "button_pushed", "button_unpushed", "icon_grid", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center", "new_level",
-                              "icon_trash", "icon_new", "icon_load", "icon_save", "separator"];
+                              "icon_trash", "icon_new", "icon_load", "icon_save", "separator", "icon_return"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -149,6 +149,10 @@ export class DrawingHandler {
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
         this.ctx.beginPath();
 
+        // Draw a temporary background in the status bar, so that it's not black while loading
+        this.sctx.fillStyle = this.settings.canvasBackground;
+        this.sctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.statusbarHeight);
+
         if (!this.game.imageLoadingCompleted && !this.game.loadingFailed) {
             this.drawText("Loading images...", "30px Arial", "#ee3030", "center", 0, 400);
             return;
@@ -164,6 +168,8 @@ export class DrawingHandler {
             this.drawConfirmationDialog();
             this.drawLoadingScreen();
             this.drawCursor("cursor_regular", false);
+
+            this.sctx.drawImage(this.images["statusbar"], 0, 0, this.settings.canvasWidth, this.settings.statusbarHeight);
             return;
         }
 

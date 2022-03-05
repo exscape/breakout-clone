@@ -26,7 +26,7 @@ export class Game implements AcceptsInput {
     settings: Settings;
     collisionHandler: CollisionHandler;
 
-    readonly GAME_HELP_TEXT = "Move the mouse to control the paddle. Click to launch. Press P to pause.";
+    readonly GAME_HELP_TEXT = "Move the mouse to control the paddle. Click to launch. Press P to pause. Ctrl+E to enter the level editor.";
     readonly EDITOR_HELP_TEXT = "Left-click to place bricks, right-click to remove.<br>Shift+click to select bricks, alt+click to deselect.<br>Click+drag a selected brick to move the selected bricks; hold ctrl to copy.";
 
     lastRender: number;
