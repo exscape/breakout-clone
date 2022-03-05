@@ -143,6 +143,8 @@ export class LevelSelector {
         if (!(this.selectorType === "save" && this.currentPage === 0 && this.selectedRect === 0) &&
             this.levelIndexFromRectIndex(this.currentPage, this.selectedRect) >= this.levelList.length)
             this.updateLevelSelection(this.selectedRect - 1);
+        else if (this.selectorType === "load")
+            this.updateLevelSelection(this.selectedRect); // Ensure the preview thumbnail always matches the selected level (needed on level delete)
     }
 
     draw(ctx: CanvasRenderingContext2D, editorBrickSource: BrickOrEmpty[][], images: Record<string, HTMLImageElement>): boolean {
