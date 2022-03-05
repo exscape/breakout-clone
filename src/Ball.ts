@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import { Vec2 } from './Vec2';
 import { Settings } from './Settings';
+import { Vec2 } from './Vec2';
 
 export class Ball {
     velocity: Vec2;

@@ -1,9 +1,9 @@
 import _ from "lodash";
 import { Editor } from "./Editor";
 import { Game } from "./Game";
-import { LevelSelector } from "./UI/LevelSelector";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
+import { LevelSelector } from "./UI/LevelSelector";
 import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { WindowManager } from "./WindowManager";

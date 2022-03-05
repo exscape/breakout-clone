@@ -1,5 +1,5 @@
-import { AcceptsInput } from "../WindowManager";
 import { Settings } from "../Settings";
+import { AcceptsInput } from "../WindowManager";
 
 export class LoadingScreen implements AcceptsInput {
     message: string;

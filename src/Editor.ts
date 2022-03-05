@@ -1,15 +1,11 @@
-import { flatten } from "lodash";
+import _, { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, createConfirmationDialog, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
-import { BrickPosition, Vec2 } from "./Vec2";
-import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./UI/LevelSelector";
-import { LoadingScreen } from "./UI/LoadingScreen";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clearBrickArray, copyBrickArray, createConfirmationDialog, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
+import { BrickPosition, Vec2 } from "./Vec2";
 import { AcceptsInput, WindowManager } from "./WindowManager";
-import _ from "lodash";
-import { ConfirmationDialog } from "./UI/ConfirmationDialog";
 
 export class Editor implements AcceptsInput {
     game: Game;

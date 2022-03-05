@@ -1,8 +1,8 @@
 import { Ball } from './Ball';
 import { Brick } from './Brick';
 import { Settings } from './Settings';
-import { Vec2 } from './Vec2';
 import { debugAlert, generatePairs } from './Utils';
+import { Vec2 } from './Vec2';
 
 export enum CollisionFrom {
     None,

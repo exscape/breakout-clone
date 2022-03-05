@@ -1,7 +1,7 @@
-import { Rect, splitText, UIButton, wrapText } from "../Utils";
+import { Settings } from "../Settings";
+import { Rect, splitText, UIButton } from "../Utils";
 import { Vec2 } from "../Vec2";
 import { AcceptsInput, WindowManager } from "../WindowManager";
-import { Settings } from "../Settings";
 
 export class ConfirmationDialog implements AcceptsInput {
     text: string;

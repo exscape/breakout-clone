@@ -1,6 +1,6 @@
-import { Vec2 } from './Vec2';
 import { Settings } from './Settings';
 import { drawCoordsFromBrickCoords } from './Utils';
+import { Vec2 } from './Vec2';
 
 export type BrickOrEmpty = Brick | undefined;
 

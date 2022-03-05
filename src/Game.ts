@@ -1,15 +1,15 @@
 import _ from 'lodash';
-import { Settings } from './Settings';
-import { Paddle } from "./Paddle";
-import { Brick, BrickOrEmpty } from "./Brick";
 import { Ball } from "./Ball";
-import { Vec2 } from "./Vec2";
+import { BrickOrEmpty } from "./Brick";
 import { CollisionHandler } from './CollisionHandler';
 import { DrawingHandler } from './DrawingHandler';
-import { Powerup, StickyPowerup, MultiballPowerup, TimeLimitedPowerup, RepetitionLimitedPowerup, PowerupType, FireballPowerup, ExtraLifePowerup, InstantEffectPowerup, UltrawidePowerup } from './Powerups';
-import { debugAlert, drawCoordsFromBrickCoords, lerp, Mode, LevelType, LevelIndexResult, LevelMetadata, fetchLevelIndex, loadBricksFromLevelText, generateEmptyBrickArray } from './Utils';
 import { Editor } from './Editor';
-import { WindowManager, AcceptsInput } from './WindowManager';
+import { Paddle } from "./Paddle";
+import { ExtraLifePowerup, FireballPowerup, InstantEffectPowerup, MultiballPowerup, Powerup, PowerupType, StickyPowerup, TimeLimitedPowerup, UltrawidePowerup } from './Powerups';
+import { Settings } from './Settings';
+import { debugAlert, fetchLevelIndex, generateEmptyBrickArray, lerp, LevelMetadata, loadBricksFromLevelText, Mode } from './Utils';
+import { Vec2 } from "./Vec2";
+import { AcceptsInput, WindowManager } from './WindowManager';
 
 export class LevelTemp {
     bricks: BrickOrEmpty[][] = [];

@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { Ball } from './Ball';
 import { Vec2 } from './Vec2';
 import { Settings } from './Settings';
