@@ -2,7 +2,7 @@ import { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, createConfirmationDialog, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, clearBrickArray, createConfirmationDialog, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { copyBrickArray } from './Utils';
 import { LevelSelector } from "./UI/LevelSelector";
@@ -110,6 +110,12 @@ export class Editor implements AcceptsInput {
     }
 
     showSaveDialog() {
+        // Only logged in users can save ANY level. Permission checks for whether they can overwrite existing levels are made later.
+        if (userId() === undefined) {
+            alert("You are not logged in! Please log in (in a separate browser tab) and try again.");
+            return;
+        }
+
         // Set up callbacks first...
         const saveCallback = (selectedLevel: LevelMetadata | string) => {
             WindowManager.getInstance().removeWindow(this.levelSelector);
