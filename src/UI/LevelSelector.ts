@@ -86,8 +86,10 @@ export class LevelSelector {
     // For loading: disabled if no valid level is selected
     // For saving: disabled if the name is already used, name is empty, or name is Untitled
     enableOkButton: boolean = false;
+    enableCancelButton: boolean = true;
 
-    constructor(type: "load" | "save", levelList: LevelMetadata[], initiallyHighlightLevel: LevelMetadata | null, settings: Settings, saveCallback: (selectedLevel: LevelMetadata | string) => void, cancelCallback: () => void) {
+    constructor(type: "load" | "save", levelList: LevelMetadata[], initiallyHighlightLevel: LevelMetadata | null, settings: Settings,
+                saveCallback: (selectedLevel: LevelMetadata | string) => void, cancelCallback: () => void, allowCancel: boolean = true) {
         this.windowTitle = (type === "load") ? "Load level" : "Save level";
         this.fullLevelList = _.clone(levelList);
         this.settings = settings;
@@ -98,6 +100,8 @@ export class LevelSelector {
         else
             this.levelName = "";
         this.selectorType = type;
+
+        this.enableCancelButton = allowCancel;
 
         this.okCallback = saveCallback;
         this.cancelCallback = cancelCallback;
@@ -220,7 +224,7 @@ export class LevelSelector {
 
             const text = (this.selectorType === "load") ? "Load" : "Save";
             this.okButton = new UIButton(saveRect, null, text, this.enableOkButton, false, this.ourOkCallback);
-            this.cancelButton = new UIButton(cancelRect, null, "Cancel", true, false, (_: UIButton) => {
+            this.cancelButton = new UIButton(cancelRect, null, "Cancel", this.enableCancelButton, false, (_: UIButton) => {
                 this.cancelCallback();
             });
 
@@ -228,8 +232,12 @@ export class LevelSelector {
             this.buttons.push(this.cancelButton);
             this.okCancelButtonsInitialized = true;
         }
-        else if (this.okButton)
-            this.okButton.enabled = this.enableOkButton;
+        else {
+            if (this.okButton)
+                this.okButton.enabled = this.enableOkButton;
+            if (this.cancelButton)
+                this.cancelButton.enabled = this.enableCancelButton;
+        }
 
         return true;
     }
@@ -563,10 +571,10 @@ export class LevelSelector {
     keyDown(ev: KeyboardEvent) {
         if ((ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
             this.levelName = this.levelName.substring(0, this.levelName.length - 1);
-        else if (ev.key == "Enter" && this.okButton?.enabled) {
+        else if (ev.key == "Enter" && this.enableOkButton) {
             this.ourOkCallback();
         }
-        else if (ev.key == "Escape") {
+        else if (ev.key == "Escape" && this.enableCancelButton) {
             ev.preventDefault();
             this.cancelCallback();
         }

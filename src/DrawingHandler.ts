@@ -149,12 +149,21 @@ export class DrawingHandler {
         this.ctx.fillRect(0, 0, this.settings.canvasWidth, this.settings.canvasHeight);
         this.ctx.beginPath();
 
-        if (!this.game.loadingCompleted && !this.game.loadingFailed) {
+        if (!this.game.imageLoadingCompleted && !this.game.loadingFailed) {
             this.drawText("Loading images...", "30px Arial", "#ee3030", "center", 0, 400);
             return;
         }
         else if (this.game.loadingFailed) {
             this.drawText("Loading failed!", "30px Arial", "#ee3030", "center", 0, 400);
+            return;
+        }
+
+        // Handle the initial level load
+        if (!this.game.levelLoadingCompleted && this.game.levelSelector) {
+            this.drawLevelSelector(this.game.levelSelector);
+            this.drawConfirmationDialog();
+            this.drawLoadingScreen();
+            this.drawCursor("cursor_regular", false);
             return;
         }
 

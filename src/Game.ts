@@ -7,7 +7,8 @@ import { Editor } from './Editor';
 import { Paddle } from "./Paddle";
 import { ExtraLifePowerup, FireballPowerup, InstantEffectPowerup, MultiballPowerup, Powerup, PowerupType, StickyPowerup, TimeLimitedPowerup, UltrawidePowerup } from './Powerups';
 import { Settings } from './Settings';
-import { debugAlert, fetchLevelIndex, generateEmptyBrickArray, lerp, LevelMetadata, loadBricksFromLevelText, Mode } from './Utils';
+import { LevelSelector } from './UI/LevelSelector';
+import { createLoadingScreen, debugAlert, fetchLevelIndex, generateEmptyBrickArray, lerp, LevelMetadata, loadBricksFromLevelText, Mode } from './Utils';
 import { Vec2 } from "./Vec2";
 import { AcceptsInput, WindowManager } from './WindowManager';
 
@@ -46,15 +47,18 @@ export class Game implements AcceptsInput {
     loadingFailed: boolean = false;
 
     levelText: string | undefined;
+    levelSelector: LevelSelector | null = null;
 
     totalGameTime: number = 0;
     livesRemaining: number = 0;
     score: number = 0;
     lastBrickBreak: number = 0;
 
+    mouseDownSeen: boolean = false;
     devMenuOpen: boolean = false;
 
     drawingHandler: DrawingHandler;
+    windowManager: WindowManager;
 
     currentMode: Mode = "game";
     editor: Editor;
@@ -64,16 +68,17 @@ export class Game implements AcceptsInput {
         this.canvas = canvas;
         this.statusbarCanvas = statusbarCanvas;
         this.helpElement = document.getElementById("helptext")! as HTMLHeadingElement;
+        this.helpElement.innerHTML = this.GAME_HELP_TEXT;
 
-        WindowManager.getInstance().addWindow(this, true);
+        this.windowManager = WindowManager.getInstance();
+        this.windowManager.addWindow(this, true);
         this.editor = new Editor(this, settings);
-        WindowManager.getInstance().addWindow(this.editor);
+        this.windowManager.addWindow(this.editor);
 
         this.drawingHandler = new DrawingHandler(this, this.editor, canvas, statusbarCanvas, settings, () => {
             this.imageLoadingCompleted = true;
             if (this.levelLoadingCompleted) {
                 this.loadingCompleted = true;
-                this.init();
             }
         });
 
@@ -82,6 +87,13 @@ export class Game implements AcceptsInput {
         this.paddle = new Paddle(settings);
         this.collisionHandler = new CollisionHandler(settings);
 
+        this.windowManager.cursorFrozen = false;
+
+        window.requestAnimationFrame((dt) => this.mainLoop(dt));
+        this.lastRender = 0;
+
+        this.showLoadDialog();
+        /*
         fetchLevelIndex("campaign", (levels: LevelMetadata[]) => {
             // Success callback
             if (levels.length <= 0) {
@@ -99,21 +111,16 @@ export class Game implements AcceptsInput {
             // Failure callback
             // Alert is showed by fetchLevelIndex, so we don't need to do much
         });
-
-        this.lastRender = 0;
+        */
     }
 
-    init() {
-        this.reset();
-        window.requestAnimationFrame((dt) => this.mainLoop(dt));
-    }
 
     reset() {
         // If the game is still active and lives remain, we do a partial reset.
         // Otherwise, reset everything -- i.e. restart the game entirely.
 
         if (!this.levelText)
-            alert("Reset called with lastLevel undefined");
+            alert("Reset called with levelText undefined");
 
         let partialReset = !this.gameLost && !this.gameWon && this.livesRemaining > 0;
 
@@ -148,9 +155,43 @@ export class Game implements AcceptsInput {
         let ball = new Ball(new Vec2(), new Vec2());
         this.balls.push(ball);
         this.paddle.setStuckBall(ball);
+    }
 
-        if (!partialReset)
-            this.enterEditor();
+    showLoadDialog() {
+        // Set up callbacks first...
+        const loadCallback = (selectedLevel: LevelMetadata | string) => {
+            // Should never, ever happen for loading, but the compiler doesn't realize that.
+            if (typeof selectedLevel === "string") return;
+
+            this.windowManager.removeWindow(this.levelSelector);
+            this.windowManager.setActiveWindow(this);
+            this.windowManager.cursorFrozen = true;
+            this.levelSelector = null;
+            this.levelText = selectedLevel.leveltext;
+
+            this.levelLoadingCompleted = true;
+            if (this.imageLoadingCompleted) {
+                this.loadingCompleted = true;
+                this.reset();
+            }
+        };
+        const cancelCallback = () => {
+            this.windowManager.removeWindow(this.levelSelector);
+            this.windowManager.setActiveWindow(this);
+            this.levelSelector = null;
+        };
+
+        createLoadingScreen("Loading level list...", this.settings);
+
+        fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
+            // Success callback
+            this.windowManager.removeLoadingScreen(this);
+            this.levelSelector = new LevelSelector("load", levels, null, this.settings, loadCallback, cancelCallback, false);
+            this.windowManager.addWindow(this.levelSelector, true);
+        }, () => {
+            // Failure callback
+            this.windowManager.removeLoadingScreen(this);
+        });
     }
 
     win() {
@@ -158,16 +199,21 @@ export class Game implements AcceptsInput {
     }
 
     mouseMoved(e: MouseEvent) {
-        if (!this.gamePaused && !this.gameLost && !this.gameWon && !this.lifeLost)
+        if (this.windowManager.cursorFrozen && !this.gamePaused && !this.gameLost && !this.gameWon && !this.lifeLost)
             this.paddle.move(e.movementX, this.shouldDrawAimLine() ? e.movementY : 0);
     }
 
     onmousedown(e: MouseEvent) {
         if (e.button !== 0)
             return;
+
+        this.mouseDownSeen = true;
     }
 
     onmouseup(e: MouseEvent) {
+        // Bit of a hack... If you click "Load" in the load dialog, the mouseup usually ends up back here, and so the game starts instantly on load.
+        if (!this.mouseDownSeen)
+            return;
         if (e.button !== 0)
             return;
 
@@ -248,10 +294,9 @@ export class Game implements AcceptsInput {
         this.helpElement.innerHTML = this.EDITOR_HELP_TEXT;
         this.canvas.width = this.settings.canvasWidth + this.settings.editorToolbarWidth;
 
-        let inputManager = WindowManager.getInstance();
-        inputManager.setActiveWindow(this.editor);
-        inputManager.setMaxWidth(this.settings.canvasWidth + this.settings.editorToolbarWidth);
-        inputManager.cursorFrozen = false;
+        this.windowManager.setActiveWindow(this.editor);
+        this.windowManager.setMaxWidth(this.settings.canvasWidth + this.settings.editorToolbarWidth);
+        this.windowManager.cursorFrozen = false;
     }
 
     exitEditor() {
@@ -261,10 +306,9 @@ export class Game implements AcceptsInput {
         this.helpElement.innerHTML = this.GAME_HELP_TEXT;
         this.canvas.width = this.settings.canvasWidth;
 
-        let inputManager = WindowManager.getInstance();
-        inputManager.setActiveWindow(this);
-        inputManager.setMaxWidth(this.settings.canvasWidth);
-        inputManager.cursorFrozen = true;
+        this.windowManager.setActiveWindow(this);
+        this.windowManager.setMaxWidth(this.settings.canvasWidth);
+        this.windowManager.cursorFrozen = true;
     }
 
     togglePause() { this.gamePaused = !this.gamePaused; }

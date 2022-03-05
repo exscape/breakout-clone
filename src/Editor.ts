@@ -99,6 +99,7 @@ export class Editor implements AcceptsInput {
             // Success callback
             WindowManager.getInstance().removeLoadingScreen(this);
             this.levelSelector = new LevelSelector("load", levels, this.mostRecentlyLoadedLevel, this.settings, loadCallback, cancelCallback);
+            WindowManager.getInstance().addWindow(this.levelSelector, true);
         }, () => {
             // Failure callback
             WindowManager.getInstance().removeLoadingScreen(this);
@@ -165,6 +166,7 @@ export class Editor implements AcceptsInput {
             // Success callback
             WindowManager.getInstance().removeLoadingScreen(this);
             this.levelSelector = new LevelSelector("save", levels, this.mostRecentlyLoadedLevel, this.settings, saveCallback, cancelCallback);
+            WindowManager.getInstance().addWindow(this.levelSelector, true);
         }, () => {
             // Failure callback
             WindowManager.getInstance().removeLoadingScreen(this);
@@ -400,10 +402,6 @@ export class Editor implements AcceptsInput {
     }
 
     keyDown(ev: KeyboardEvent) {
-        if (this.levelSelector) {
-            this.levelSelector.keyDown(ev);
-            return;
-        }
         if (ev.shiftKey) this.shiftDown = true;
         if (ev.ctrlKey) this.ctrlDown = true;
         if (ev.altKey) { ev.preventDefault(); this.altDown = true; }
@@ -434,19 +432,12 @@ export class Editor implements AcceptsInput {
     }
 
     keyUp(ev: KeyboardEvent) {
-        if (this.levelSelector) {
-            this.levelSelector.keyUp(ev);
-            return;
-        }
         if (!ev.shiftKey) this.shiftDown = false;
         if (!ev.ctrlKey) this.ctrlDown = false;
         if (!ev.altKey) { ev.preventDefault(); this.altDown = false; }
     }
 
     mouseMoved(e: MouseEvent) {
-        if (this.levelSelector)
-            return;
-
         if (this.cursor.x < this.settings.canvasWidth && (this.leftButtonDown || this.rightButtonDown) && !this.setSymmetryCenter) {
             if (this.currentlyDragging)
                 this.dragMoved();
@@ -460,10 +451,6 @@ export class Editor implements AcceptsInput {
     }
 
     onmouseup(e: MouseEvent) {
-        if (this.levelSelector) {
-            this.levelSelector.onmouseup(e);
-            return;
-        }
         if (e.button === 0)
             this.leftButtonDown = false;
         else if (e.button === 2)
@@ -481,10 +468,6 @@ export class Editor implements AcceptsInput {
     }
 
     onmousedown(e: MouseEvent) {
-        if (this.levelSelector) {
-            this.levelSelector.onmousedown(e);
-            return;
-        }
         if (e.button === 0)
             this.leftButtonDown = true;
         else if (e.button === 2)
