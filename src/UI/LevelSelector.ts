@@ -219,11 +219,11 @@ export class LevelSelector {
         if (!this.okCancelButtonsInitialized) {
             const buttonWidth = 80;
             const buttonHeight = 20;
-            const saveRect = new Rect(this.width - this.padding - buttonWidth, levelNameY, buttonWidth, buttonHeight);
-            const cancelRect = new Rect(this.width - this.padding - 2 * buttonWidth - 2 * this.padding, levelNameY, buttonWidth, buttonHeight);
+            const cancelRect = new Rect(this.width - this.padding - buttonWidth, levelNameY, buttonWidth, buttonHeight);
+            const okRect = new Rect(this.width - this.padding - 2 * buttonWidth - 2 * this.padding, levelNameY, buttonWidth, buttonHeight);
 
             const text = (this.selectorType === "load") ? "Load" : "Save";
-            this.okButton = new UIButton(saveRect, null, text, this.enableOkButton, false, this.ourOkCallback);
+            this.okButton = new UIButton(okRect, null, text, this.enableOkButton, false, this.ourOkCallback);
             this.cancelButton = new UIButton(cancelRect, null, "Cancel", this.enableCancelButton, false, (_: UIButton) => {
                 this.cancelCallback();
             });
