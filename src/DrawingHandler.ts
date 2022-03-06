@@ -612,7 +612,7 @@ export class DrawingHandler {
                 if (remaining < powerup.originalMaxTimeActive / 5 || remaining < 1500)
                     drawRed = true;
             }
-            else if (powerup instanceof RepetitionLimitedPowerup && (powerup.maxRepetitions - powerup.repetitions) <= 1)
+            else if (powerup instanceof RepetitionLimitedPowerup && (powerup.repetitionLimit - powerup.repetitions) <= 1)
                 drawRed = true;
 
             if (draw)
@@ -622,7 +622,7 @@ export class DrawingHandler {
             if (powerup instanceof TimeLimitedPowerup)
                 ratio = (powerup.maxTimeActive - powerup.activeTime) / powerup.maxTimeActive;
             else if (powerup instanceof RepetitionLimitedPowerup)
-                ratio = (powerup.maxRepetitions - powerup.repetitions) / powerup.maxRepetitions;
+                ratio = (powerup.repetitionLimit - powerup.repetitions) / powerup.repetitionLimit;
 
             if (ratio && draw) {
                 this.sctx.beginPath();

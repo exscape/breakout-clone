@@ -86,25 +86,25 @@ export abstract class InstantEffectPowerup extends Powerup {
 }
 
 export abstract class RepetitionLimitedPowerup extends Powerup {
-    readonly originalMaxRepetitions: number;
-    maxRepetitions: number;
+    readonly originalRepetitionLimit: number;
+    repetitionLimit: number;
     repetitions = 0;
 
-    constructor(type: PowerupType, position: Vec2, pickupScore: number, maxRepetitions: number) {
+    constructor(type: PowerupType, position: Vec2, pickupScore: number, repetitionLimit: number) {
         super(type, position, pickupScore);
-        this.maxRepetitions = maxRepetitions;
-        this.originalMaxRepetitions = maxRepetitions;
+        this.repetitionLimit = repetitionLimit;
+        this.originalRepetitionLimit = repetitionLimit;
     }
 
     trigger() {
         this.repetitions++;
-        if (this.repetitions >= this.maxRepetitions)
+        if (this.repetitions >= this.repetitionLimit)
             this.expire();
     }
 
     addInstance() {
         // Called when we pick up another copy of this powerup while it's still active
-        this.maxRepetitions += this.originalMaxRepetitions;
+        this.repetitionLimit += this.originalRepetitionLimit;
     }
 }
 
