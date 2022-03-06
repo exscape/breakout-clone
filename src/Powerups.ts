@@ -1,3 +1,4 @@
+import { clamp } from "./Utils";
 import { Vec2 } from "./Vec2";
 
 export type PowerupType = "sticky" | "multiball" | "fireball" | "extralife" | "ultrawide";
@@ -55,13 +56,15 @@ export abstract class Powerup {
 
 export abstract class TimeLimitedPowerup extends Powerup {
     activeTime: number = 0;
-    maxTimeActive: number;
-    readonly originalMaxTimeActive: number;
+    effectTime: number;
+    readonly instanceEffectTime: number;
+    readonly effectTimeCap: number;
 
-    constructor(type: PowerupType, position: Vec2, pickupScore: number, maxTimeActive: number) {
+    constructor(type: PowerupType, position: Vec2, pickupScore: number, effectTime: number, effectTimeCap: number) {
         super(type, position, pickupScore);
-        this.maxTimeActive = maxTimeActive;
-        this.originalMaxTimeActive = maxTimeActive;
+        this.effectTime = effectTime;
+        this.instanceEffectTime = effectTime;
+        this.effectTimeCap = effectTimeCap;
     }
 
     tick(dt: number) {
@@ -69,13 +72,13 @@ export abstract class TimeLimitedPowerup extends Powerup {
             return;
 
         this.activeTime += dt;
-        if (this.activeTime >= this.maxTimeActive)
+        if (this.activeTime >= this.effectTime)
             this.expire();
     }
 
     addInstance() {
         // Called when we pick up another copy of this powerup while it's still active
-        this.maxTimeActive += this.originalMaxTimeActive;
+        this.effectTime = clamp(this.effectTime + this.instanceEffectTime, 0, this.effectTimeCap);
     }
 }
 
@@ -86,14 +89,19 @@ export abstract class InstantEffectPowerup extends Powerup {
 }
 
 export abstract class RepetitionLimitedPowerup extends Powerup {
-    readonly originalRepetitionLimit: number;
+    // Number of repetitions per powerup; e.g. 3 for one pickup, 6 for two, 9 for three.
+    readonly instanceRepetitionLimit: number;
+
+    // Max number of repetitions, i.e. a cap. With a cap of 5, the above would look like 3, 5, 5.
+    readonly repetitionCap: number;
     repetitionLimit: number;
     repetitions = 0;
 
-    constructor(type: PowerupType, position: Vec2, pickupScore: number, repetitionLimit: number) {
+    constructor(type: PowerupType, position: Vec2, pickupScore: number, repetitionLimit: number, repetitionCap: number) {
         super(type, position, pickupScore);
         this.repetitionLimit = repetitionLimit;
-        this.originalRepetitionLimit = repetitionLimit;
+        this.instanceRepetitionLimit = repetitionLimit;
+        this.repetitionCap = repetitionCap;
     }
 
     trigger() {
@@ -104,31 +112,31 @@ export abstract class RepetitionLimitedPowerup extends Powerup {
 
     addInstance() {
         // Called when we pick up another copy of this powerup while it's still active
-        this.repetitionLimit += this.originalRepetitionLimit;
+        this.repetitionLimit = clamp(this.repetitionLimit + this.instanceRepetitionLimit, 0, this.repetitionCap);
     }
 }
 
 export class StickyPowerup extends RepetitionLimitedPowerup {
     constructor(position: Vec2) {
-        super("sticky", position, 75, 5);
+        super("sticky", position, 75, 3, 6);
     }
 }
 
 export class MultiballPowerup extends RepetitionLimitedPowerup {
     constructor(position: Vec2) {
-        super("multiball", position, 100, 4);
+        super("multiball", position, 100, 3, 6);
     }
 }
 
 export class FireballPowerup extends TimeLimitedPowerup {
     constructor(position: Vec2) {
-        super("fireball", position, 125, 8000);
+        super("fireball", position, 125, 7500, 15000);
     }
 }
 
 export class UltrawidePowerup extends TimeLimitedPowerup {
     constructor(position: Vec2) {
-        super("ultrawide", position, 100, 15000);
+        super("ultrawide", position, 100, 12500, 25000);
     }
 }
 

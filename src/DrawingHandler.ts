@@ -606,10 +606,10 @@ export class DrawingHandler {
 
             if (powerup instanceof TimeLimitedPowerup) {
                 // Blink when the time is running out
-                const remaining = powerup.maxTimeActive - powerup.activeTime;
+                const remaining = powerup.effectTime - powerup.activeTime;
                 if ((remaining < 1000 && remaining >= 750) || (remaining < 500 && remaining >= 250))
                     draw = false;
-                if (remaining < powerup.originalMaxTimeActive / 5 || remaining < 1500)
+                if (remaining < powerup.instanceEffectTime / 5 || remaining < 1500)
                     drawRed = true;
             }
             else if (powerup instanceof RepetitionLimitedPowerup && (powerup.repetitionLimit - powerup.repetitions) <= 1)
@@ -620,7 +620,7 @@ export class DrawingHandler {
 
             let ratio: number | undefined;
             if (powerup instanceof TimeLimitedPowerup)
-                ratio = (powerup.maxTimeActive - powerup.activeTime) / powerup.maxTimeActive;
+                ratio = (powerup.effectTime - powerup.activeTime) / powerup.effectTime;
             else if (powerup instanceof RepetitionLimitedPowerup)
                 ratio = (powerup.repetitionLimit - powerup.repetitions) / powerup.repetitionLimit;
 
