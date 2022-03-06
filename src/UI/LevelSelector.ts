@@ -204,7 +204,8 @@ export class LevelSelector {
         ctx.fillText(labelText, this.padding, textY);
         ctx.fillStyle = "black";
         const reallyFakeCursor = (this.selectorType === "save") ? "_" : "";
-        ctx.fillText(this.levelName + reallyFakeCursor, 3 * this.padding + width, textY);
+        const textX = (this.selectorType === "save") ? 3 * this.padding + width : this.padding + width;
+        ctx.fillText(this.levelName + reallyFakeCursor, textX, textY);
 
         ctx.textBaseline = old;
 
