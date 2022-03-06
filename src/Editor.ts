@@ -56,8 +56,6 @@ export class Editor implements AcceptsInput {
         this.setupToolbarButtons();
 
         this.clearLevel();
-
-        this.testLogin();
     }
 
     testLogin() {

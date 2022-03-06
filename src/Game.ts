@@ -26,7 +26,7 @@ export class Game implements AcceptsInput {
     settings: Settings;
     collisionHandler: CollisionHandler;
 
-    readonly GAME_HELP_TEXT = "Move the mouse to control the paddle. Click to launch. Press P to pause. Ctrl+E to enter the level editor.";
+    readonly GAME_HELP_TEXT = "Move the mouse to control the paddle. Click to launch. Press P to pause.<br>Ctrl+E to enter the level editor.";
     readonly EDITOR_HELP_TEXT = "Left-click to place bricks, right-click to remove.<br>Shift+click to select bricks, alt+click to deselect. Ctrl+A to select all, Ctrl+D deselect all. Del to delete selected.<br>Click+drag a selected brick to move the selected bricks; hold ctrl to copy.";
 
     lastRender: number;
@@ -298,6 +298,8 @@ export class Game implements AcceptsInput {
         this.windowManager.setActiveWindow(this.editor);
         this.windowManager.setMaxWidth(this.settings.canvasWidth + this.settings.editorToolbarWidth);
         this.windowManager.cursorFrozen = false;
+
+        this.editor.testLogin();
     }
 
     exitEditor() {
