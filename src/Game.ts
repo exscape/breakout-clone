@@ -89,10 +89,11 @@ export class Game implements AcceptsInput {
 
         this.windowManager.cursorFrozen = false;
 
+        this.showLoadDialog();
+
         window.requestAnimationFrame((dt) => this.mainLoop(dt));
         this.lastRender = 0;
 
-        this.showLoadDialog();
         /*
         fetchLevelIndex("campaign", (levels: LevelMetadata[]) => {
             // Success callback
