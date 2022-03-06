@@ -86,7 +86,7 @@ export class DrawingHandler {
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
                               "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete",
                               "button_pushed", "button_unpushed", "icon_grid", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center", "new_level",
-                              "icon_trash", "icon_new", "icon_load", "icon_save", "separator", "icon_return"];
+                              "icon_trash", "icon_new", "icon_load", "icon_save", "separator", "icon_return", "icon_marquee"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 
@@ -386,6 +386,9 @@ export class DrawingHandler {
             return;
         }
 
+        if (this.editor.marqueeActive && this.editor.marqueeStart)
+            this.drawMarquee();
+
         this.drawConfirmationDialog();
         this.drawLoadingScreen();
 
@@ -401,6 +404,8 @@ export class DrawingHandler {
                 let pos = snapSymmetryCenter(this.editor.cursor, this.settings);
                 this.drawCursor("icon_symmetry_center", true, pos);
             }
+            else if (e.marqueeActive)
+                this.drawCursor("cursor_select", true);
             else if (e.shiftDown)
                 this.drawCursor("cursor_select", true);
             else if (e.altDown)
@@ -428,6 +433,26 @@ export class DrawingHandler {
         else
             this.drawCursor("cursor_regular", false);
 
+    }
+
+    drawMarquee() {
+        if (!this.editor.marqueeStart) return;
+        let start = this.editor.marqueeStart;
+        let end = this.editor.cursor;
+
+        this.ctx.lineWidth = 2;
+        this.ctx.lineCap = "butt";
+        this.ctx.setLineDash([8, 3]);
+        this.ctx.strokeStyle = "black";
+
+        const x = Math.min(start.x, end.x);
+        const y = Math.min(start.y, end.y);
+        const w = Math.abs(start.x - end.x);
+        const h = Math.abs(start.y - end.y);
+        this.ctx.strokeRect(x, y, w, h);
+
+        this.ctx.setLineDash([]);
+        this.ctx.lineWidth = 1;
     }
 
     drawLevelSelector(sel: LevelSelector) {

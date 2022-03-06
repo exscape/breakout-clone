@@ -36,6 +36,13 @@ export class Rect {
         return pos.x >= this.left && pos.x < this.right &&
                pos.y >= this.top && pos.y < this.bottom;
     }
+
+    intersectsWith(other: Rect): boolean {
+        return this.left < other.right &&
+               this.right > other.left &&
+               this.top < other.bottom &&
+               this.bottom > other.top;
+    }
 }
 
 export abstract class UIElement {

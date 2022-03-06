@@ -24,6 +24,9 @@ export class Editor implements AcceptsInput {
     dragStartPos: BrickPosition = new BrickPosition();
     lastDragPos: BrickPosition = new BrickPosition();
 
+    marqueeActive: boolean = false;
+    marqueeStart: Vec2 | undefined;
+
     activeBrick: string = "brick1";
 
     leftButtonDown: boolean = false;
@@ -39,6 +42,7 @@ export class Editor implements AcceptsInput {
     shouldDrawGrid: boolean = false;
     symmetryCenter: Vec2 = new Vec2();
     symmetryCenterButton: UIButton | undefined;
+    marqueeButton: UIButton | undefined;
 
     // Level selector/UI stuff
     levelSelector: LevelSelector | null = null;
@@ -241,6 +245,12 @@ export class Editor implements AcceptsInput {
         this.toolbarButtons.push(new UIHorizontalSeparator(new Rect(x, y, 48, 2)));
         y += 6 + 2; // 6 spacing, 2 for the separator itself
 
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_marquee", "Rectangular marquee", false, true, (button: UIButton) => {
+            this.marqueeActive = button.enabled;
+        }));
+        this.marqueeButton = this.toolbarButtons[this.toolbarButtons.length - 1] as UIButton;
+        y += 48;
+
         this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_grid", "Show grid", false, true, (button: UIButton) => {
             this.shouldDrawGrid = button.enabled;
         }));
@@ -410,6 +420,41 @@ export class Editor implements AcceptsInput {
         }
     }
 
+    updateMarquee() {
+        const start = this.marqueeStart;
+        const end = this.cursor;
+        if (!start) {
+            return;
+        }
+
+        const upperLeft = new Vec2(Math.min(start.x, end.x), Math.min(start.y, end.y));
+        const bottomRight = new Vec2(Math.max(start.x, end.x), Math.max(start.y, end.y));
+
+        // Select the blocks inside the rect -- we want to select every block that intersects at all.
+        for (let brick of _.flatten(this.bricks)) {
+            if (!brick)
+                continue;
+
+            if (new Rect(upperLeft.x, upperLeft.y, bottomRight.x - upperLeft.x, bottomRight.y - upperLeft.y).intersectsWith(
+                new Rect(brick.upperLeft.x, brick.upperLeft.y, brick.bottomRight.x - brick.upperLeft.x, brick.bottomRight.y - brick.upperLeft.y)))
+                {
+                    brick.selected = true;
+            }
+            else {
+                // TODO: Add other modes?
+                brick.selected = false;
+            }
+        }
+    }
+
+    endMarquee() {
+        this.marqueeActive = false;
+        this.marqueeStart = undefined;
+        if (this.marqueeButton)
+            this.marqueeButton.enabled = false;
+    }
+
+
     keyDown(ev: KeyboardEvent) {
         if (ev.shiftKey) this.shiftDown = true;
         if (ev.ctrlKey) this.ctrlDown = true;
@@ -447,7 +492,12 @@ export class Editor implements AcceptsInput {
     }
 
     mouseMoved(e: MouseEvent) {
-        if (this.cursor.x < this.settings.canvasWidth && (this.leftButtonDown || this.rightButtonDown) && !this.setSymmetryCenter) {
+        if (this.marqueeActive && this.marqueeStart) {
+            this.updateMarquee();
+            return;
+        }
+
+        if (this.cursor.x < this.settings.canvasWidth && (this.leftButtonDown || this.rightButtonDown) && !this.setSymmetryCenter && !this.marqueeActive) {
             if (this.currentlyDragging)
                 this.dragMoved();
             else if (this.shiftDown)
@@ -464,6 +514,10 @@ export class Editor implements AcceptsInput {
             this.leftButtonDown = false;
         else if (e.button === 2)
             this.rightButtonDown = false;
+
+        if (this.marqueeActive && this.marqueeStart) {
+            this.endMarquee();
+        }
 
         if (this.setSymmetryCenter && this.cursor.x < this.settings.canvasWidth && this.cursor.y < this.settings.paletteY) {
             this.symmetryCenter = snapSymmetryCenter(this.cursor, this.settings);
@@ -498,6 +552,11 @@ export class Editor implements AcceptsInput {
             // Return even if no button was clicked
             return;
          }
+
+        if (this.marqueeActive) {
+            this.marqueeStart = _.clone(this.cursor);
+            return;
+        }
 
         const index = brickCoordsFromDrawCoords("x", this.cursor.x, this.settings);
         if (this.cursor.y >= this.settings.paletteY && this.cursor.y < this.settings.paletteY + this.settings.brickHeight) {
