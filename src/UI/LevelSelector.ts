@@ -225,8 +225,8 @@ export class LevelSelector {
             const okRect = new Rect(this.width - this.padding - 2 * buttonWidth - 2 * this.padding, levelNameY, buttonWidth, buttonHeight);
 
             const text = (this.selectorType === "load") ? "Load" : "Save";
-            this.okButton = new UIButton(okRect, null, text, this.enableOkButton, false, this.ourOkCallback);
-            this.cancelButton = new UIButton(cancelRect, null, "Cancel", this.enableCancelButton, false, (_: UIButton) => {
+            this.okButton = new UIButton(okRect, null, text, "Enter", this.enableOkButton, false, this.ourOkCallback);
+            this.cancelButton = new UIButton(cancelRect, null, "Cancel", "Escape", this.enableCancelButton, false, (_: UIButton) => {
                 this.cancelCallback();
             });
 
@@ -291,10 +291,10 @@ export class LevelSelector {
             const nextRect = new Rect(this.levelRects[2].left - offset.x + this.padding,               this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
             const endRect  = new Rect(this.levelRects[2].left - offset.x + this.padding + buttonWidth, this.levelRects[0].bottom - offset.y + wtf, buttonWidth, buttonHeight);
 
-            this.homeButton = new UIButton(homeRect, null, "<<<", false, false, () => { this.currentPage = 0; this.updateLevelSelection(0); });
-            this.prevButton = new UIButton(prevRect, null, "<<", false, false, () => { this.currentPage = clamp(this.currentPage - 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
-            this.nextButton = new UIButton(nextRect, null, ">>", false, false, () => { this.currentPage = clamp(this.currentPage + 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
-            this.endButton = new UIButton(endRect, null, ">>>", false, false, () => { this.currentPage = this.totalPages - 1; this.updateLevelSelection(0); });
+            this.homeButton = new UIButton(homeRect, null, "<<<", null, false, false, () => { this.currentPage = 0; this.updateLevelSelection(0); });
+            this.prevButton = new UIButton(prevRect, null, "<<", null, false, false, () => { this.currentPage = clamp(this.currentPage - 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
+            this.nextButton = new UIButton(nextRect, null, ">>", null, false, false, () => { this.currentPage = clamp(this.currentPage + 1, 0, this.totalPages - 1); this.updateLevelSelection(0); });
+            this.endButton = new UIButton(endRect, null, ">>>", null, false, false, () => { this.currentPage = this.totalPages - 1; this.updateLevelSelection(0); });
 
             this.buttons.push(this.homeButton);
             this.buttons.push(this.prevButton);
@@ -306,7 +306,7 @@ export class LevelSelector {
                 const levelRect = this.levelRects[i];
                 const img = images["icon_trash"];
                 const deleteRect = new Rect(levelRect.right - offset.x - img.width, levelRect.top - offset.y + this.padding + wtf, img.width, img.height);
-                const button = new UIButton(deleteRect, "icon_trash", "Delete level", true, false, () => {
+                const button = new UIButton(deleteRect, "icon_trash", "Delete level", null, true, false, () => {
                     const levelIndex = this.levelIndexFromRectIndex(this.currentPage, i);
                     let level = this.levelList[levelIndex];
                     createConfirmationDialog(`Delete level "${level.name}"?\nThis cannot be undone.`, "Delete", "Cancel", this.settings, () => {
@@ -571,6 +571,7 @@ export class LevelSelector {
     keyUp(ev: KeyboardEvent) {
     }
     keyDown(ev: KeyboardEvent) {
+        // TODO: Shortcuts specified in UIButtons are ignored (but some are implemented here manually)
         if (this.selectorType === "save" && (ev.key == "Delete" || ev.key == "Backspace") && this.levelName.length > 0)
             this.levelName = this.levelName.substring(0, this.levelName.length - 1);
         else if (ev.key == "Enter" && this.enableOkButton) {

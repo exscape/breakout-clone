@@ -221,7 +221,7 @@ export class Editor implements AcceptsInput {
         const x = this.settings.canvasWidth;
         let y = 4;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_new", "New level", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_new", "New level", null, false, true, (button: UIButton) => {
             this.newLevel();
             button.enabled = false;
         }));
@@ -229,13 +229,13 @@ export class Editor implements AcceptsInput {
 
         // TODO: This is a bit weird -- it asks if you want to discard changes, but if the load dialog is opened and then cancelled, nothing really changes.
         // TODO: It should perhaps warn at a later stage, when actually loading?
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_load", "Load level (Ctrl+L)", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_load", "Load level (Ctrl+L)", "^L", false, true, (button: UIButton) => {
             this.loadLevel();
             button.enabled = false;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_save", "Save level (Ctrl+S)", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_save", "Save level (Ctrl+S)", "^S", false, true, (button: UIButton) => {
             this.showSaveDialog();
             button.enabled = false;
         }));
@@ -245,28 +245,28 @@ export class Editor implements AcceptsInput {
         this.toolbarButtons.push(new UIHorizontalSeparator(new Rect(x, y, 48, 2)));
         y += 6 + 2; // 6 spacing, 2 for the separator itself
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_marquee", "Rectangular marquee", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_marquee", "Rectangular marquee (M)", "m", false, true, (button: UIButton) => {
             this.marqueeActive = button.enabled;
         }));
         this.marqueeButton = this.toolbarButtons[this.toolbarButtons.length - 1] as UIButton;
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_grid", "Show grid", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_grid", "Show grid (G)", "g", false, true, (button: UIButton) => {
             this.shouldDrawGrid = button.enabled;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_hsymmetry", "Horizontal symmetry", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_hsymmetry", "Horizontal symmetry (H)", "h", false, true, (button: UIButton) => {
             this.horizontalSymmetry = button.enabled;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_vsymmetry", "Vertical symmetry", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_vsymmetry", "Vertical symmetry (V)", "v", false, true, (button: UIButton) => {
             this.verticalSymmetry = button.enabled;
         }));
         y += 48;
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_symmetry_center", "Set symmetry centerpoint", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_symmetry_center", "Set symmetry centerpoint (C)", "c", false, true, (button: UIButton) => {
             this.setSymmetryCenter = button.enabled;
         }));
         y += 48;
@@ -276,7 +276,7 @@ export class Editor implements AcceptsInput {
         this.toolbarButtons.push(new UIHorizontalSeparator(new Rect(x, y, 48, 2)));
         y += 6 + 2; // 6 spacing, 2 for the separator itself
 
-        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_return", "Exit back to game (Ctrl+X)", false, true, (button: UIButton) => {
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_return", "Exit back to game (Ctrl+X)", "^X", false, true, (button: UIButton) => {
             this.game.exitEditor();
             button.enabled = false;
         }));
@@ -457,20 +457,25 @@ export class Editor implements AcceptsInput {
         if (ev.shiftKey) this.shiftDown = true;
         if (ev.ctrlKey) this.ctrlDown = true;
         if (ev.altKey) { ev.preventDefault(); this.altDown = true; }
-        if (ev.ctrlKey && (ev.key == "x" || ev.key == "X")) {
-            // TODO: add checks about modified data / ask about saving etc.
-            ev.preventDefault();
-            this.game.exitEditor();
+
+        // Handle shortcuts for the toolbar buttons
+        for (let button of this.toolbarButtons) {
+            if (!(button instanceof UIButton) || !button.shortcut)
+                continue;
+
+            if (ev.shiftKey === button.shortcut.includes("+") &&
+                ev.altKey === button.shortcut.includes("!") &&
+                ev.ctrlKey === button.shortcut.includes("^") &&
+                ev.key === button.shortcut.toLowerCase().replace(/[!+^]/g, ""))
+                {
+                    button.enabled = !button.enabled;
+                    button.clickCallback(button);
+                    ev.preventDefault();
+                    return;
+            }
         }
-        else if (ev.ctrlKey && (ev.key == "l" || ev.key == "L")) {
-            ev.preventDefault();
-            this.loadLevel();
-        }
-        else if (ev.ctrlKey && (ev.key == "s" || ev.key == "S")) {
-            ev.preventDefault();
-            this.showSaveDialog();
-        }
-        else if (ev.ctrlKey && (ev.key == "a" || ev.key == "A")) {
+
+        if (ev.ctrlKey && (ev.key == "a" || ev.key == "A")) {
             ev.preventDefault();
             this.selectAll();
         }

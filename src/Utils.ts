@@ -66,14 +66,16 @@ export class UIButton extends UIElement {
     enabled: boolean;
     hidden: boolean = false;
     drawBackground: boolean;
+    shortcut: string | null = null;
 
-    constructor(rect: Rect, image: string | null, text: string, initiallyEnabled: boolean, drawBackground: boolean, clickCallback: (button: UIButton) => void) {
+    constructor(rect: Rect, image: string | null, text: string, shortcut: string | null, initiallyEnabled: boolean, drawBackground: boolean, clickCallback: (button: UIButton) => void) {
         super(rect);
         this.image = image;
         this.clickCallback = clickCallback;
         this.enabled = initiallyEnabled;
         this.drawBackground = drawBackground;
         this.tooltip = text;
+        this.shortcut = shortcut;
     }
 }
 
