@@ -374,7 +374,6 @@ export class Editor implements AcceptsInput {
         // Step 1: copy UNSELECTED bricks that should remain where they are
         clearBrickArray(this.bricks);
         copyBrickArray(this.bricksBeforeDrag, this.bricks, false, true);
-        console.log(`dragMoved: now at (${pos.x},${pos.y}), dragOffset = (${dragOffset.x},${dragOffset.y})`);
 
         // Step 2: find all bricks that were SELECTED when the drag started, and copy them to their new position
         for (let y = 0; y < this.settings.levelHeight; y++) {
@@ -388,7 +387,6 @@ export class Editor implements AcceptsInput {
                         const brick = this.bricksBeforeDrag[y][x]!.copy();
                         brick.setUpperLeft(new Vec2(drawCoordsFromBrickCoords("x", x + dragOffset.x, this.settings), drawCoordsFromBrickCoords("y", y + dragOffset.y, this.settings)));
                         this.bricks[y + dragOffset.y][x + dragOffset.x] = brick;
-                        console.log(`  Moved to (${x + dragOffset.x},${y + dragOffset.y}); brick = ${this.bricksBeforeDrag[y][x] === undefined ? "clear" : this.bricksBeforeDrag[y][x]!.name}`);
                 }
             }
         }
