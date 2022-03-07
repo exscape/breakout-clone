@@ -541,6 +541,15 @@ export class DrawingHandler {
                 const spacing = 4;
                 let xCoord = spacing + x * (this.settings.brickWidth + (x > 0 ? spacing : 0));
                 this.ctx.drawImage(this.images[name], xCoord, this.settings.paletteY, this.settings.brickWidth, this.settings.brickHeight);
+
+                if (this.editor.activeBrick === name) {
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = "blue";
+                    this.ctx.globalAlpha = 1.0;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.strokeRect(xCoord - 2, this.settings.paletteY - 2, this.settings.brickWidth + 4, this.settings.brickHeight + 4);
+                }
+
                 x++;
             }
         }
