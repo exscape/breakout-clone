@@ -26,6 +26,7 @@ export class Editor implements AcceptsInput {
 
     marqueeActive: boolean = false;
     marqueeStart: Vec2 | undefined;
+    playTestMode: boolean = false;
 
     activeBrick: string = "brick1";
 
@@ -273,6 +274,11 @@ export class Editor implements AcceptsInput {
         y += 6;
         this.toolbarButtons.push(new UIHorizontalSeparator(new Rect(x, y, 48, 2)));
         y += 6 + 2; // 6 spacing, 2 for the separator itself
+
+        this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_playtest", "Play test mode (Ctrl+P)", "^P", false, true, (button: UIButton) => {
+            this.playTestMode = button.enabled;
+        }));
+        y += 48;
 
         this.toolbarButtons.push(new UIButton(new Rect(x, y, 48, 48), "icon_return", "Exit back to game (Ctrl+X)", "^X", false, true, (button: UIButton) => {
             this.game.exitEditor();

@@ -86,7 +86,7 @@ export class DrawingHandler {
                               "ball", "powerup_sticky", "powerup_multiball", "powerup_fireball", "powerup_extralife", "powerup_ultrawide",
                               "fireball", "statusbar", "heart", "score", "clock", "cursor_regular", "cursor_select", "cursor_deselect", "brick_delete",
                               "button_pushed", "button_unpushed", "icon_grid", "icon_hsymmetry", "icon_vsymmetry", "icon_symmetry_center", "new_level",
-                              "icon_trash", "icon_new", "icon_load", "icon_save", "separator", "icon_return", "icon_marquee"];
+                              "icon_trash", "icon_new", "icon_load", "icon_save", "separator", "icon_return", "icon_marquee", "icon_playtest"];
         for (let i = 1; i <= 12; i++)
             imageFilenames.push(`brick${i}`);
 

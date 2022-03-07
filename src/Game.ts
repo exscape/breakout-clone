@@ -8,7 +8,7 @@ import { Paddle } from "./Paddle";
 import { ExtraLifePowerup, FireballPowerup, InstantEffectPowerup, MultiballPowerup, Powerup, PowerupType, StickyPowerup, TimeLimitedPowerup, UltrawidePowerup } from './Powerups';
 import { Settings } from './Settings';
 import { LevelSelector } from './UI/LevelSelector';
-import { createLoadingScreen, debugAlert, fetchLevelIndex, generateEmptyBrickArray, lerp, LevelMetadata, loadBricksFromLevelText, Mode } from './Utils';
+import { clearBrickArray, copyBrickArray, createLoadingScreen, debugAlert, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, lerp, LevelMetadata, loadBricksFromLevelText, Mode } from './Utils';
 import { Vec2 } from "./Vec2";
 import { AcceptsInput, WindowManager } from './WindowManager';
 
@@ -116,14 +116,14 @@ export class Game implements AcceptsInput {
     }
 
 
-    reset() {
+    reset(forceFullReset: boolean = false) {
         // If the game is still active and lives remain, we do a partial reset.
         // Otherwise, reset everything -- i.e. restart the game entirely.
 
         if (!this.levelText)
             alert("Reset called with levelText undefined");
 
-        let partialReset = !this.gameLost && !this.gameWon && this.livesRemaining > 0;
+        let partialReset = !forceFullReset && !this.gameLost && !this.gameWon && this.livesRemaining > 0;
 
         this.lifeLost = false;
         this.gameLost = false;
@@ -312,6 +312,12 @@ export class Game implements AcceptsInput {
         this.windowManager.setActiveWindow(this);
         this.windowManager.setMaxWidth(this.settings.canvasWidth);
         this.windowManager.cursorFrozen = true;
+
+        if (this.editor.playTestMode) {
+            console.log("Playtest mode active, copying bricks");
+            this.levelText = generateLevelTextFromBricks(this.editor.bricks, this.settings);
+            this.reset(true);
+        }
     }
 
     togglePause() { this.gamePaused = !this.gamePaused; }
