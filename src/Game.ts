@@ -98,26 +98,6 @@ export class Game implements Window {
 
         window.requestAnimationFrame((dt) => this.mainLoop(dt));
         this.lastRender = 0;
-
-        /*
-        fetchLevelIndex("campaign", (levels: LevelMetadata[]) => {
-            // Success callback
-            if (levels.length <= 0) {
-                alert("No campaign levels found in level index!");
-                return;
-            }
-
-            this.levelText = levels[0].leveltext;
-            this.levelLoadingCompleted = true;
-            if (this.imageLoadingCompleted) {
-                this.loadingCompleted = true;
-                this.init();
-            }
-        }, () => {
-            // Failure callback
-            // Alert is showed by fetchLevelIndex, so we don't need to do much
-        });
-        */
     }
 
 
