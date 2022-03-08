@@ -102,7 +102,7 @@ export class Editor implements Window {
 
         createLoadingScreen("Loading level list...", this.settings);
 
-        fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
+        fetchLevelIndex("standalone", this.settings, (levels: LevelMetadata[]) => {
             // Success callback
             WindowManager.getInstance().removeLoadingScreen(this);
             this.levelSelector = new LevelSelector("load", levels, this.mostRecentlyLoadedLevel, this.settings, loadCallback, cancelCallback);
@@ -168,7 +168,7 @@ export class Editor implements Window {
 
         createLoadingScreen("Loading level list...", this.settings);
 
-        fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
+        fetchLevelIndex("standalone", this.settings, (levels: LevelMetadata[]) => {
             // Success callback
             WindowManager.getInstance().removeLoadingScreen(this);
             this.levelSelector = new LevelSelector("save", levels, this.mostRecentlyLoadedLevel, this.settings, saveCallback, cancelCallback);

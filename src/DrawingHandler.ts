@@ -101,6 +101,8 @@ export class DrawingHandler {
                 }
             });
             img.addEventListener('error', (ev: ErrorEvent) => {
+                // Doesn't use notifyWithButton because I'm not sure it'd work great this early; as of this writing
+                // it wouldn't work, our custom drawing hasn't started yet.
                 alert(`Failed to load image "${name}.png"!` + (ev.message ? ` ${ev.message}` : ""));
             });
             img.src = `img/${name}.png`;

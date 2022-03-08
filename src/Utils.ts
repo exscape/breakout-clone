@@ -234,7 +234,7 @@ export function validBrickPosition(brick: BrickPosition, settings: Settings) {
 
 }
 
-export function fetchLevelIndex(levelType: "standalone" | "campaign", successCallback: (levels: LevelMetadata[]) => void, failureCallback: () => void) {
+export function fetchLevelIndex(levelType: "standalone" | "campaign", settings: Settings, successCallback: (levels: LevelMetadata[]) => void, failureCallback: () => void) {
     fetch('/game/level_index.php', {
             method: "GET",
             cache: 'no-cache'
@@ -242,11 +242,11 @@ export function fetchLevelIndex(levelType: "standalone" | "campaign", successCal
     .then(response => response.json())
     .then(json => {
         if ("type" in json && json.type === "error") {
-            alert("Failed to read level index: " + json.error);
+            notifyWithButton("Failed to read level index: " + json.error, "OK", settings);
             failureCallback();
         }
         else if (!("result" in json)) {
-            alert("Invalid answer from server");
+            notifyWithButton("Invalid answer from server", "OK", settings);
             failureCallback();
         }
 
@@ -258,7 +258,7 @@ export function fetchLevelIndex(levelType: "standalone" | "campaign", successCal
 
     })
     .catch(error => {
-        alert("Failed to download level index: " + error);
+        notifyWithButton("Failed to download level index: " + error, "OK", settings);
         failureCallback();
     });
 }
@@ -309,13 +309,13 @@ export function loadBricksFromLevelText(levelText: string, target: BrickOrEmpty[
 
         let chars = row.split('');
         if (chars.length !== settings.levelWidth) {
-            alert(`Invalid level: one or more lines is not exactly ${settings.levelWidth} characters`);
+            notifyWithButton(`Invalid level: one or more lines is not exactly ${settings.levelWidth} characters`, "OK", settings);
             return false;
         }
         level2D.push(chars);
     }
     if (level2D.length !== settings.levelHeight) {
-        alert(`Invalid level: not exactly ${settings.levelHeight} lines`);
+        notifyWithButton(`Invalid level: not exactly ${settings.levelHeight} lines`, "OK", settings);
         return false;
     }
 
@@ -357,7 +357,7 @@ export function generateLevelTextFromBricks(bricks: BrickOrEmpty[][], settings: 
             else if (name === "_indestructible")
                 line.push("*");
             else
-                alert("BUG: invalid brick type in exportLevel");
+                debugAlert("BUG: invalid brick type in exportLevel");
         }
         line.push("\n");
         lines.push(line.join(""));

@@ -126,7 +126,7 @@ export class Game implements Window {
         // Otherwise, reset everything -- i.e. restart the game entirely.
 
         if (!this.levelText)
-            alert("Reset called with levelText undefined");
+            debugAlert("Reset called with levelText undefined");
 
         let partialReset = !forceFullReset && !this.gameLost && !this.gameWon && this.livesRemaining > 0;
 
@@ -187,7 +187,7 @@ export class Game implements Window {
 
         createLoadingScreen("Loading level list...", this.settings);
 
-        fetchLevelIndex("standalone", (levels: LevelMetadata[]) => {
+        fetchLevelIndex("standalone", this.settings, (levels: LevelMetadata[]) => {
             // Success callback
             this.windowManager.removeLoadingScreen(this);
             this.levelSelector = new LevelSelector("load", levels, null, this.settings, loadCallback, cancelCallback, false);
