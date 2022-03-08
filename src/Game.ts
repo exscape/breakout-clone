@@ -165,7 +165,6 @@ export class Game implements AcceptsInput {
             if (typeof selectedLevel === "string") return;
 
             this.windowManager.removeWindow(this.levelSelector);
-            this.windowManager.setActiveWindow(this);
             this.windowManager.cursorFrozen = true;
             this.levelSelector = null;
             this.levelText = selectedLevel.leveltext;
@@ -178,7 +177,6 @@ export class Game implements AcceptsInput {
         };
         const cancelCallback = () => {
             this.windowManager.removeWindow(this.levelSelector);
-            this.windowManager.setActiveWindow(this);
             this.levelSelector = null;
         };
 

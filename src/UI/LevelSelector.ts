@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { BrickOrEmpty } from "../Brick";
 import { Settings } from "../Settings";
-import { clamp, createConfirmationDialog, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, userId, userMayModifyLevel, wrapText } from "../Utils";
+import { clamp, createConfirmationDialog, debugAlert, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, userId, userMayModifyLevel, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
 import { WindowManager } from "../WindowManager";
 import { LoadingScreen } from "./LoadingScreen";

@@ -85,14 +85,12 @@ export class Editor implements AcceptsInput {
             if (typeof selectedLevel === "string") return;
 
             WindowManager.getInstance().removeWindow(this.levelSelector);
-            WindowManager.getInstance().setActiveWindow(this);
             this.levelSelector = null;
             this.loadLevelText(selectedLevel.leveltext);
             this.mostRecentlyLoadedLevel = selectedLevel;
         };
         const cancelCallback = () => {
             WindowManager.getInstance().removeWindow(this.levelSelector);
-            WindowManager.getInstance().setActiveWindow(this);
             this.levelSelector = null;
         };
 
@@ -119,7 +117,6 @@ export class Editor implements AcceptsInput {
         // Set up callbacks first...
         const saveCallback = (selectedLevel: LevelMetadata | string) => {
             WindowManager.getInstance().removeWindow(this.levelSelector);
-            WindowManager.getInstance().setActiveWindow(this);
             const newLevelText = generateLevelTextFromBricks(this.bricks, this.settings);
 
             // Ensure we can update leveltext without the Save dialog thumbnail updating -- otherwise, it will update prior to the upload
@@ -159,7 +156,6 @@ export class Editor implements AcceptsInput {
         }
         const cancelCallback = () => {
             WindowManager.getInstance().removeWindow(this.levelSelector);
-            WindowManager.getInstance().setActiveWindow(this);
             this.levelSelector = null;
         }
 

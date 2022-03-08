@@ -19,7 +19,7 @@ export class WindowManager implements AcceptsInput {
         this.cursor = new Vec2();
     }
 
-    knownWindows: Set<AcceptsInput> = new Set();
+    knownWindows: AcceptsInput[] = [];
     activeWindow: AcceptsInput | null = null;
     settings: Settings | null = null;
     cursor: Vec2;
@@ -57,19 +57,42 @@ export class WindowManager implements AcceptsInput {
     }
 
     addWindow(window: AcceptsInput, setAsActive: boolean = false) {
-        this.knownWindows.add(window);
+        if (this.knownWindows.includes(window))
+            debugAlert("BUG: addWindow() on previously known window");
 
-        if (setAsActive)
+        if (setAsActive) {
+            this.knownWindows.push(window);
             this.setActiveWindow(window);
+        }
+        else
+            this.knownWindows.splice(this.knownWindows.length - 1, 0, window);
     }
 
-    removeWindow(window: AcceptsInput | null) {
-        if (window)
-            this.knownWindows.delete(window);
+    removeWindow(toRemove: AcceptsInput | null) {
+        // Most of the time, the window being removed is active, and we should
+        // pop back to the previous window in the stack.
+        if (toRemove && toRemove === this.activeWindow) {
+            for (let i = this.knownWindows.length - 1; i >= 0; i--) {
+                let prevActive = this.knownWindows[i];
+                if (prevActive && prevActive !== toRemove) {
+                    this.setActiveWindow(prevActive);
+                    this.knownWindows = this.knownWindows.filter(w => w !== toRemove);
+
+                    return;
+                }
+            }
+        }
+
+        if (toRemove)
+            this.knownWindows = this.knownWindows.filter(w => w !== toRemove);
     }
 
     setActiveWindow(window: AcceptsInput) {
+        // Move this to the top of the window stack, in addition to setting activeWindow
         this.activeWindow = window;
+
+        this.knownWindows = this.knownWindows.filter(w => w !== window);
+        this.knownWindows.push(window);
     }
 
     getLoadingScreen(): LoadingScreen | null {
@@ -82,7 +105,6 @@ export class WindowManager implements AcceptsInput {
     }
 
     removeLoadingScreen(newActiveWindow: AcceptsInput) {
-        this.setActiveWindow(newActiveWindow);
         let window = this.getLoadingScreen();
         if (window)
             this.removeWindow(window);
@@ -98,7 +120,6 @@ export class WindowManager implements AcceptsInput {
     }
 
     removeConfirmationDialog(newActiveWindow: AcceptsInput) {
-        this.setActiveWindow(newActiveWindow);
         let window = this.getConfirmationDialog();
         if (window)
             this.removeWindow(window);
