@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { BrickOrEmpty } from "../Brick";
 import { Settings } from "../Settings";
-import { clamp, createConfirmationDialog, debugAlert, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, userId, userMayModifyLevel, wrapText } from "../Utils";
+import { clamp, createConfirmationDialog, debugAlert, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, notifyWithButton, notifyWithTimeout, Rect, UIButton, userId, userMayModifyLevel, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
 import { WindowManager } from "../WindowManager";
 import { Window } from "../WindowManager";
@@ -72,7 +72,7 @@ export class LevelSelector implements Window {
                 });
             }
             else
-                alert("BUG: selectedLevel() returned null");
+                debugAlert("BUG: selectedLevel() returned null");
         }
     };
     cursor: Vec2;
@@ -391,7 +391,7 @@ export class LevelSelector implements Window {
 
             // TODO: test with too many lines AND too long words!
             // TODO: center vertically? Keep in mind separate centering is required for each case: 1 line or 2 lines
-            let lines = wrapText(ctx, level.name, this.levelRects[rectIndex].width - 2 * this.padding - this.deleteButtons[0].rect.width);
+            let lines = wrapText(ctx, level.name, this.levelRects[rectIndex].width - 2 * this.padding - 2 * this.deleteButtons[0].rect.width);
             for (let line of lines.slice(0,2)) {
                 ctx.fillText(line, this.levelRects[rectIndex].horizontalCenter - offset.x, y)
                 y += parseInt(ctx.font) + 4;
@@ -510,15 +510,15 @@ export class LevelSelector implements Window {
             WindowManager.getInstance().removeLoadingScreen(this);
 
             if ("type" in json && json.type === "error")
-                alert("Level deletion failed: " + json.message);
+                notifyWithButton("Level deletion failed: " + json.message, "OK", this.settings);
             else {
                 this.levelList = this.levelList.filter(l => l.level_id !== id);
                 this.levelListUpdated();
-                alert("The level was deleted."); // TODO: Change to something less annoying than an alert!
+                notifyWithTimeout("The level was deleted.", 2000, this.settings);
             }
         }).catch(reason => {
             WindowManager.getInstance().removeLoadingScreen(this);
-            alert("Level deletion failed: " + reason.message);
+            notifyWithButton("Level deletion failed: " + reason.message, "OK", this.settings);
         });
     }
 

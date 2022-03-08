@@ -4,7 +4,7 @@ import { ConfirmationDialog } from "./UI/ConfirmationDialog";
 import { LoadingScreen } from "./UI/LoadingScreen";
 import { NotificationDialog } from "./UI/NotificationDialog";
 import { BrickPosition, Vec2 } from "./Vec2";
-import { WindowManager } from "./WindowManager";
+import { Window, WindowManager } from "./WindowManager";
 
 export type LevelType = "campaign" | "standalone";
 export type LevelMetadata = { level_id: number, name: string, type: LevelType, levelnumber: number, leveltext: string, author: string, author_id: number };
@@ -432,11 +432,22 @@ export function userMayModifyLevel(level: LevelMetadata): boolean {
 export function createNotificationDialog(text: string, settings: Settings, positiveText: string | null, timeout: number | null,
                                          positiveCallback: (() => void) | null, timeoutCallback: (() => void) | null): NotificationDialog {
     let dialog = new NotificationDialog(text, settings, positiveText, timeout, positiveCallback, timeoutCallback);
-    WindowManager.getInstance().addWindow(dialog, positiveText !== null);
+
+    // Only make this dialog active if it has a button AND it is the only dialog. Otherwise, the oldest one will display,
+    // and the newest will receive input.
+    const notificationDialogCount = WindowManager.getInstance().getWindowsMatching((window: Window) => {
+        return (window instanceof NotificationDialog);
+    }).length;
+
+    WindowManager.getInstance().addWindow(dialog, positiveText !== null && notificationDialogCount === 0);
 
     return dialog;
 }
 
 export function notifyWithTimeout(text: string, timeout: number, settings: Settings) {
     return createNotificationDialog(text, settings, null, timeout, null, null);
+}
+
+export function notifyWithButton(text: string, buttonText: string, settings: Settings) {
+    return createNotificationDialog(text, settings, buttonText, null, null, null);
 }

@@ -7,6 +7,10 @@ export class NotificationDialog extends GenericDialog {
     timeoutCallback: (() => void) | null;
     timerStarted: boolean = false;
 
+    // Tells WindowManager to show the oldest dialog first when multiple have been created;
+    // otherwise, they're shown newest first
+    showOldestFirst = true;
+
     constructor(text: string, settings: Settings, positiveText: string | null, timeout: number | null = null,
                 positiveCallback: (() => void) | null = null, timeoutCallback: (() => void) | null = null) {
         super(text, positiveText, null, settings, (positiveText !== null), (positiveText === null), positiveCallback, null);

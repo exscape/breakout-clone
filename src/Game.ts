@@ -8,7 +8,7 @@ import { Paddle } from "./Paddle";
 import { ExtraLifePowerup, FireballPowerup, InstantEffectPowerup, MultiballPowerup, Powerup, PowerupType, StickyPowerup, TimeLimitedPowerup, UltrawidePowerup } from './Powerups';
 import { Settings } from './Settings';
 import { LevelSelector } from './UI/LevelSelector';
-import { clearBrickArray, copyBrickArray, createLoadingScreen, debugAlert, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, lerp, LevelMetadata, loadBricksFromLevelText, Mode } from './Utils';
+import { clearBrickArray, copyBrickArray, createLoadingScreen, debugAlert, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, lerp, LevelMetadata, loadBricksFromLevelText, Mode, notifyWithButton } from './Utils';
 import { Vec2 } from "./Vec2";
 import { Window, WindowManager } from './WindowManager';
 

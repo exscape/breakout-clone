@@ -14,6 +14,7 @@ export interface Window {
 
     acceptsInput: boolean;
     ignoresInput: boolean;
+    showOldestFirst?: boolean;
 }
 
 // This implements Window because it's an easy way to get access to keyDown, keyUp etc
@@ -74,22 +75,38 @@ export class WindowManager implements Window {
     }
 
     removeWindow(toRemove: Window | null) {
+        const _remove = (toRemove: Window) => { this.knownWindows = this.knownWindows.filter(w => w !== toRemove); }
         // Most of the time, the window being removed is active, and we should
         // pop back to the previous window in the stack.
         if (toRemove && toRemove === this.activeWindow) {
+            // If there are any NotficationDialogs or similar, show them in order, oldest first.
+            const oldestFirst = this.getWindowsMatching((window: Window) => window.showOldestFirst === true && window !== toRemove);
+            for (let dialog of oldestFirst) {
+                if (dialog !== toRemove) {
+                    let test;
+                    if ((dialog as any)['constructor']['name'] === "NotificationDialog")
+                        test = (dialog as any).text;
+                    this.setActiveWindow(dialog);
+                    _remove(toRemove);
+
+                    return;
+                }
+            }
+
+            // No such dialogs, continue as usual.
             for (let i = this.knownWindows.length - 1; i >= 0; i--) {
                 let prevActive = this.knownWindows[i];
                 if (prevActive && prevActive !== toRemove) {
                     this.setActiveWindow(prevActive);
-                    this.knownWindows = this.knownWindows.filter(w => w !== toRemove);
+                    _remove(toRemove);
 
                     return;
                 }
             }
         }
-
-        if (toRemove)
-            this.knownWindows = this.knownWindows.filter(w => w !== toRemove);
+        else if (toRemove) {
+            _remove(toRemove);
+        }
     }
 
     getWindowsMatching(predicate: (window: Window) => boolean) {
@@ -101,11 +118,13 @@ export class WindowManager implements Window {
         if (this.activeWindow && this.activeWindow !== window && this.activeWindow.focusLost)
             this.activeWindow.focusLost();
 
-        // Move this to the top of the window stack, in addition to setting activeWindow
         this.activeWindow = window;
 
-        this.knownWindows = this.knownWindows.filter(w => w !== window);
-        this.knownWindows.push(window);
+        // Move this to the top of the window stack, in addition to setting activeWindow
+        if (window.showOldestFirst !== true) {
+            this.knownWindows = this.knownWindows.filter(w => w !== window);
+            this.knownWindows.push(window);
+        }
     }
 
     getLoadingScreen(): LoadingScreen | null {

@@ -4,7 +4,7 @@ import { Game } from "./Game";
 import { Settings } from "./Settings";
 import { NotificationDialog } from "./UI/NotificationDialog"
 import { LevelSelector } from "./UI/LevelSelector";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clearBrickArray, copyBrickArray, createConfirmationDialog, createLoadingScreen, createNotificationDialog, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, notifyWithTimeout, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clearBrickArray, copyBrickArray, createConfirmationDialog, createLoadingScreen, createNotificationDialog, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, notifyWithButton, notifyWithTimeout, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { Window, WindowManager } from "./WindowManager";
 
@@ -76,10 +76,11 @@ export class Editor implements Window {
         .then(json => {
             // Fetch the campaign level with the lowest levelnumber
             if (!("type" in json && json.type === "success"))
-                alert("Warning: you are not logged in, and won't be able to save your level! Please click the login link below the editor area and reload the page once logged in.");
+                notifyWithButton("Warning: you are not logged in, and won't be able to save your level! " +
+                                 "Please click the login link below the editor area and reload the page once logged in.", "OK", this.settings);
         })
         .catch(error => {
-            alert("Failed to check login status: " + error);
+            notifyWithTimeout("Failed to check login status: " + error, 3000, this.settings);
         });
     }
 
@@ -115,7 +116,7 @@ export class Editor implements Window {
     showSaveDialog() {
         // Only logged in users can save ANY level. Permission checks for whether they can overwrite existing levels are made later.
         if (userId() === undefined) {
-            alert("You are not logged in! Please log in (in a separate browser tab) and try again.");
+            notifyWithButton("You are not logged in! Please log in (in a separate browser tab) and try again.", "OK", this.settings);
             return;
         }
 
@@ -148,15 +149,16 @@ export class Editor implements Window {
                 WindowManager.getInstance().removeLoadingScreen(this);
 
                 if ("type" in json && json.type === "error")
-                    alert("Level upload failed: " + json.message);
+                    notifyWithButton("Level upload failed: " + json.message, "OK", this.settings);
                 else {
-                    alert("Level upload successful!"); // TODO: Change to something less annoying than an alert!
+                    notifyWithTimeout("Level upload successful!", 2000, this.settings);
+
                     this.levelSelector = null;
                     this.changesMade = false;
                 }
             }).catch(reason => {
                 WindowManager.getInstance().removeLoadingScreen(this);
-                alert("Level upload failed: " + reason.message);
+                notifyWithButton("Level upload failed: " + reason.message, "OK", this.settings);
             });
         }
         const cancelCallback = () => {
