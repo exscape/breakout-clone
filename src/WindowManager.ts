@@ -15,6 +15,7 @@ export interface Window {
     acceptsInput: boolean;
     ignoresInput: boolean;
     showOldestFirst?: boolean;
+    cursorFrozen?: boolean;
 }
 
 // This implements Window because it's an easy way to get access to keyDown, keyUp etc
@@ -29,7 +30,6 @@ export class WindowManager implements Window {
     activeWindow: Window | null = null;
     settings: Settings | null = null;
     cursor: Vec2;
-    cursorFrozen: boolean = true;
     acceptsInput = false;
     ignoresInput = false;
 
@@ -170,7 +170,7 @@ export class WindowManager implements Window {
     mouseMoved(e: MouseEvent): void {
         if (!this.settings) return;
 
-        if (!this.cursorFrozen) {
+        if (this.activeWindow?.cursorFrozen !== true) {
             this.cursor.x = clamp(this.cursor.x + e.movementX, 0, this.maxWidth - 3);
             this.cursor.y = clamp(this.cursor.y + e.movementY, 0, this.maxHeight - 1);
         }

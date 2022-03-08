@@ -267,6 +267,8 @@ export class DrawingHandler {
         this.drawConfirmationDialog();
         this.drawLoadingScreen();
         this.drawNotificationDialog();
+        if (WindowManager.getInstance().activeWindow !== this.game)
+            this.drawCursor("cursor_regular", false);
 
         if (this.game.devMenuOpen) {
             this.drawText("1  Sticky", "20px Arial", "black", "left", 10, 500);

@@ -64,6 +64,9 @@ export class Game implements Window {
     acceptsInput = true;
     ignoresInput = false;
 
+    // Specify the cursor shouldn't move while Game is active
+    cursorFrozen = true;
+
     currentMode: Mode = "game";
     editor: Editor;
 
@@ -91,8 +94,6 @@ export class Game implements Window {
 
         this.paddle = new Paddle(settings);
         this.collisionHandler = new CollisionHandler(settings);
-
-        this.windowManager.cursorFrozen = false;
 
         this.showLoadDialog();
 
@@ -150,7 +151,6 @@ export class Game implements Window {
             if (typeof selectedLevel === "string") return;
 
             this.windowManager.removeWindow(this.levelSelector);
-            this.windowManager.cursorFrozen = true;
             this.levelSelector = null;
             this.levelText = selectedLevel.leveltext;
 
@@ -183,7 +183,7 @@ export class Game implements Window {
     }
 
     mouseMoved(e: MouseEvent) {
-        if (this.windowManager.cursorFrozen && !this.gamePaused && !this.gameLost && !this.gameWon && !this.lifeLost)
+        if (!this.gamePaused && !this.gameLost && !this.gameWon && !this.lifeLost)
             this.paddle.move(e.movementX, this.shouldDrawAimLine() ? e.movementY : 0);
     }
 
@@ -280,7 +280,6 @@ export class Game implements Window {
 
         this.windowManager.setActiveWindow(this.editor);
         this.windowManager.setMaxWidth(this.settings.canvasWidth + this.settings.editorToolbarWidth);
-        this.windowManager.cursorFrozen = false;
 
         this.editor.testLogin();
     }
@@ -294,7 +293,6 @@ export class Game implements Window {
 
         this.windowManager.setActiveWindow(this);
         this.windowManager.setMaxWidth(this.settings.canvasWidth);
-        this.windowManager.cursorFrozen = true;
 
         if (this.editor.playTestMode) {
             console.log("Playtest mode active, copying bricks");
@@ -307,6 +305,8 @@ export class Game implements Window {
     pause() { this.gamePaused = true; }
 
     focusLost() {
+        this.mouseDownSeen = false;
+
         if (this.currentMode === "editor") {
             this.editor.focusLost();
             return;
