@@ -59,17 +59,11 @@ export class LevelSelector implements Window {
             if (level) {
                 createConfirmationDialog(`Overwrite existing level "${level.name}"?\nThis cannot be undone.`, "Overwrite", "Cancel", this.settings, () => {
                     // Overwrite was clicked
-                    WindowManager.getInstance().removeConfirmationDialog();
-
                     if (level) {
                         level.name = this.levelName;
                         this.okCallback(level);
                     }
-                },
-                () => {
-                    // Cancel was clicked
-                    WindowManager.getInstance().removeConfirmationDialog();
-                });
+                }, null);
             }
             else
                 debugAlert("BUG: selectedLevel() returned null");
@@ -317,13 +311,8 @@ export class LevelSelector implements Window {
                     let level = this.levelList[levelIndex];
                     createConfirmationDialog(`Delete level "${level.name}"?\nThis cannot be undone.`, "Delete", "Cancel", this.settings, () => {
                         // Delete was clicked
-                        WindowManager.getInstance().removeConfirmationDialog();
                         this.deleteLevel(level);
-                    },
-                    () => {
-                        // Cancel was clicked
-                        WindowManager.getInstance().removeConfirmationDialog();
-                    });
+                    }, null);
                 });
 
                 this.buttons.push(button);

@@ -182,11 +182,8 @@ export class Editor implements Window {
     newLevel() {
         if (this.changesMade) {
             createConfirmationDialog("Discard changes and create a new level?\nYour changes won't be saved.", "New level", "Cancel", this.settings, () => {
-                WindowManager.getInstance().removeConfirmationDialog();
                 this.clearLevel();
-            }, () => {
-                WindowManager.getInstance().removeConfirmationDialog();
-            });
+            }, null);
         }
         else
             this.clearLevel();
@@ -195,11 +192,8 @@ export class Editor implements Window {
     loadLevel() {
         if (this.changesMade) {
             createConfirmationDialog("Discard changes and load a different level?\nYour changes won't be saved.", "Load level", "Cancel", this.settings, () => {
-                WindowManager.getInstance().removeConfirmationDialog();
                 this.showLoadDialog();
-            }, () => {
-                WindowManager.getInstance().removeConfirmationDialog();
-            });
+            }, null);
         }
         else
             this.showLoadDialog();
