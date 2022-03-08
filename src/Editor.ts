@@ -3,11 +3,11 @@ import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
 import { LevelSelector } from "./UI/LevelSelector";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clearBrickArray, copyBrickArray, createConfirmationDialog, createLoadingScreen, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clearBrickArray, copyBrickArray, createConfirmationDialog, createLoadingScreen, createNotificationDialog, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
-import { AcceptsInput, WindowManager } from "./WindowManager";
+import { Window, WindowManager } from "./WindowManager";
 
-export class Editor implements AcceptsInput {
+export class Editor implements Window {
     game: Game;
     settings: Settings;
     cursor: Vec2;
@@ -35,6 +35,10 @@ export class Editor implements AcceptsInput {
     shiftDown: boolean = false;
     altDown: boolean = false;
     ctrlDown: boolean = false;
+
+    // Required by Window
+    acceptsInput = true;
+    ignoresInput = false;
 
     toolbarButtons: UIElement[] = [];
     verticalSymmetry: boolean = false;

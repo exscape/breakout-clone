@@ -1,14 +1,17 @@
 import { Settings } from "../Settings";
 import { Rect, splitText, UIButton } from "../Utils";
 import { Vec2 } from "../Vec2";
-import { AcceptsInput, WindowManager } from "../WindowManager";
+import { Window, WindowManager } from "../WindowManager";
 
-export class GenericDialog implements AcceptsInput {
+export class GenericDialog implements Window {
     text: string;
     positiveButton: UIButton | null = null;
     negativeButton: UIButton | null = null;
     settings: Settings;
     finished: boolean = false;
+
+    acceptsInput: boolean;
+    ignoresInput: boolean;
 
     readonly width = 450;
     readonly height = 150;
@@ -17,11 +20,14 @@ export class GenericDialog implements AcceptsInput {
     readonly buttonHeight = 20;
     pos: Vec2;
 
-    constructor(text: string, positiveText: string | null, negativeText: string | null, settings: Settings,
-                positiveCallback: (() => void) | null, negativeCallback: (() => void) | null ) {
+    constructor(text: string, positiveText: string | null, negativeText: string | null, settings: Settings, acceptsInput: boolean = true, ignoresInput: boolean = false,
+                positiveCallback: (() => void) | null, negativeCallback: (() => void) | null) {
         this.text = text;
         this.settings = settings;
         this.pos = new Vec2(Math.floor((this.settings.canvasWidth - this.width) / 2), Math.floor((this.settings.canvasHeight - this.height) / 2));
+
+        this.acceptsInput = acceptsInput;
+        this.ignoresInput = ignoresInput;
 
         const buttonCount = positiveText ? (negativeText ? 2 : 1) : 0;
 

@@ -4,13 +4,14 @@ import { Settings } from "../Settings";
 import { clamp, createConfirmationDialog, debugAlert, deleteLevel, drawCoordsFromBrickCoords, generateEmptyBrickArray, LevelMetadata, loadBricksFromLevelText, Rect, UIButton, userId, userMayModifyLevel, wrapText } from "../Utils";
 import { Vec2 } from "../Vec2";
 import { WindowManager } from "../WindowManager";
+import { Window } from "../WindowManager";
 import { LoadingScreen } from "./LoadingScreen";
 
 // BEWARE: This code is by FAR the worst in this codebase as of when it's being written.
 // I don't have the patience to write a proper windowing system for a single dialog, so this is FULL of
 // horrifying hacks that I'm ashamed to have created.
 
-export class LevelSelector {
+export class LevelSelector implements Window {
     settings: Settings;
     readonly width = 687;
     readonly height = 623;
@@ -25,6 +26,10 @@ export class LevelSelector {
     levelRects: Rect[] = [];
     selectedRect: 0 | 1 | 2 = 0;
     deleteButtons: UIButton[] = []; // One for each rect
+
+    // Required by Window
+    acceptsInput = true;
+    ignoresInput = true;
 
     // levelList is filtered when saving, to only show levels the current user can overwrite.
     levelList: LevelMetadata[];

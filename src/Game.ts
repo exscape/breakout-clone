@@ -10,13 +10,13 @@ import { Settings } from './Settings';
 import { LevelSelector } from './UI/LevelSelector';
 import { clearBrickArray, copyBrickArray, createLoadingScreen, debugAlert, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, lerp, LevelMetadata, loadBricksFromLevelText, Mode } from './Utils';
 import { Vec2 } from "./Vec2";
-import { AcceptsInput, WindowManager } from './WindowManager';
+import { Window, WindowManager } from './WindowManager';
 
 export class LevelTemp {
     bricks: BrickOrEmpty[][] = [];
 }
 
-export class Game implements AcceptsInput {
+export class Game implements Window {
     canvas: HTMLCanvasElement;
     statusbarCanvas: HTMLCanvasElement;
     helpElement: HTMLHeadingElement;
@@ -60,6 +60,10 @@ export class Game implements AcceptsInput {
     drawingHandler: DrawingHandler;
     windowManager: WindowManager;
 
+    // Required by Window
+    acceptsInput = true;
+    ignoresInput = false;
+
     currentMode: Mode = "game";
     editor: Editor;
 
@@ -71,9 +75,10 @@ export class Game implements AcceptsInput {
         this.helpElement.innerHTML = this.GAME_HELP_TEXT;
 
         this.windowManager = WindowManager.getInstance();
-        this.windowManager.addWindow(this, true);
+        this.windowManager.addWindow(this);
         this.editor = new Editor(this, settings);
         this.windowManager.addWindow(this.editor);
+        this.windowManager.setActiveWindow(this);
 
         this.drawingHandler = new DrawingHandler(this, this.editor, canvas, statusbarCanvas, settings, () => {
             this.imageLoadingCompleted = true;

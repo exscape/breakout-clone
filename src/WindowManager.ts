@@ -4,26 +4,33 @@ import { LoadingScreen } from "./UI/LoadingScreen";
 import { clamp, debugAlert } from "./Utils";
 import { Vec2 } from "./Vec2";
 
-export interface AcceptsInput {
+export interface Window {
     keyDown?(ev: KeyboardEvent): void;
     keyUp?(ev: KeyboardEvent): void;
     mouseMoved?(e: MouseEvent): void;
     onmouseup?(e: MouseEvent): void;
     onmousedown?(e: MouseEvent): void;
     focusLost?(): void;
+
+    acceptsInput: boolean;
+    ignoresInput: boolean;
 }
 
-export class WindowManager implements AcceptsInput {
+// This implements Window because it's an easy way to get access to keyDown, keyUp etc
+// in main.ts; it's pretty much a hack, but I don't see much of a downside.
+export class WindowManager implements Window {
     private static instance: WindowManager;
     private constructor() {
         this.cursor = new Vec2();
     }
 
-    knownWindows: AcceptsInput[] = [];
-    activeWindow: AcceptsInput | null = null;
+    knownWindows: Window[] = [];
+    activeWindow: Window | null = null;
     settings: Settings | null = null;
     cursor: Vec2;
     cursorFrozen: boolean = true;
+    acceptsInput = false;
+    ignoresInput = false;
 
     maxWidth: number = 0;
     maxHeight: number = 0;
@@ -56,19 +63,17 @@ export class WindowManager implements AcceptsInput {
         this.maxHeight = height;
     }
 
-    addWindow(window: AcceptsInput, setAsActive: boolean = false) {
+    addWindow(window: Window, setAsActive: boolean = false) {
         if (this.knownWindows.includes(window))
             debugAlert("BUG: addWindow() on previously known window");
 
-        if (setAsActive) {
-            this.knownWindows.push(window);
+        this.knownWindows.push(window);
+
+        if (setAsActive)
             this.setActiveWindow(window);
-        }
-        else
-            this.knownWindows.splice(this.knownWindows.length - 1, 0, window);
     }
 
-    removeWindow(toRemove: AcceptsInput | null) {
+    removeWindow(toRemove: Window | null) {
         // Most of the time, the window being removed is active, and we should
         // pop back to the previous window in the stack.
         if (toRemove && toRemove === this.activeWindow) {
@@ -87,7 +92,15 @@ export class WindowManager implements AcceptsInput {
             this.knownWindows = this.knownWindows.filter(w => w !== toRemove);
     }
 
-    setActiveWindow(window: AcceptsInput) {
+    getWindowsMatching(predicate: (window: Window) => boolean) {
+        return this.knownWindows.filter(predicate);
+    }
+
+    setActiveWindow(window: Window) {
+        // Send a focusLost to the currently active window
+        if (this.activeWindow && this.activeWindow !== window && this.activeWindow.focusLost)
+            this.activeWindow.focusLost();
+
         // Move this to the top of the window stack, in addition to setting activeWindow
         this.activeWindow = window;
 
@@ -104,7 +117,7 @@ export class WindowManager implements AcceptsInput {
         return null;
     }
 
-    removeLoadingScreen(newActiveWindow: AcceptsInput) {
+    removeLoadingScreen(newActiveWindow: Window) {
         let window = this.getLoadingScreen();
         if (window)
             this.removeWindow(window);
@@ -119,7 +132,7 @@ export class WindowManager implements AcceptsInput {
         return null;
     }
 
-    removeConfirmationDialog(newActiveWindow: AcceptsInput) {
+    removeConfirmationDialog(newActiveWindow: Window) {
         let window = this.getConfirmationDialog();
         if (window)
             this.removeWindow(window);

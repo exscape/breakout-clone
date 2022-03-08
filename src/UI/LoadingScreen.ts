@@ -1,10 +1,13 @@
 import { Settings } from "../Settings";
-import { AcceptsInput } from "../WindowManager";
+import { Window } from "../WindowManager";
 
-export class LoadingScreen implements AcceptsInput {
+export class LoadingScreen implements Window {
     message: string;
     settings: Settings;
     finished: boolean = false;
+
+    acceptsInput = true;
+    ignoresInput = true;
 
     constructor(message: string, settings: Settings) {
         this.message = message;
