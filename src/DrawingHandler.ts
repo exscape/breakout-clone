@@ -138,8 +138,10 @@ export class DrawingHandler {
         if (dialog) {
             this.dim(0.2);
             dialog.draw(this.ctx);
-            this.drawButton(dialog.positiveButton);
-            this.drawButton(dialog.negativeButton);
+            if (dialog.positiveButton)
+                this.drawButton(dialog.positiveButton);
+            if (dialog.negativeButton)
+                this.drawButton(dialog.negativeButton);
         }
     }
 
