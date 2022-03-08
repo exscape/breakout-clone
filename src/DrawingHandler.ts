@@ -165,8 +165,10 @@ export class DrawingHandler {
         }
 
         // Handle the initial level load
-        if (!this.game.levelLoadingCompleted && this.game.levelSelector) {
-            this.drawLevelSelector(this.game.levelSelector);
+        if (!this.game.levelLoadingCompleted) {
+            if (this.game.levelSelector)
+                this.drawLevelSelector(this.game.levelSelector);
+
             this.drawConfirmationDialog();
             this.drawLoadingScreen();
             this.drawCursor("cursor_regular", false);

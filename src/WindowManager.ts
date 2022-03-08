@@ -1,7 +1,7 @@
 import { Settings } from "./Settings";
 import { ConfirmationDialog } from "./UI/ConfirmationDialog";
 import { LoadingScreen } from "./UI/LoadingScreen";
-import { clamp } from "./Utils";
+import { clamp, debugAlert } from "./Utils";
 import { Vec2 } from "./Vec2";
 
 export interface AcceptsInput {
