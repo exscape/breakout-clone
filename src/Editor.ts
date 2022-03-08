@@ -104,12 +104,12 @@ export class Editor implements Window {
 
         fetchLevelIndex("standalone", this.settings, (levels: LevelMetadata[]) => {
             // Success callback
-            WindowManager.getInstance().removeLoadingScreen(this);
+            WindowManager.getInstance().removeLoadingScreen();
             this.levelSelector = new LevelSelector("load", levels, this.mostRecentlyLoadedLevel, this.settings, loadCallback, cancelCallback);
             WindowManager.getInstance().addWindow(this.levelSelector, true);
         }, () => {
             // Failure callback
-            WindowManager.getInstance().removeLoadingScreen(this);
+            WindowManager.getInstance().removeLoadingScreen();
         });
     }
 
@@ -146,7 +146,7 @@ export class Editor implements Window {
             // Note: this uses a Promise returned by fetch, so this code
             // is asynchronous and will most likely finish *after* we return from this method.
             uploadLevel(selectedLevel).then(json => {
-                WindowManager.getInstance().removeLoadingScreen(this);
+                WindowManager.getInstance().removeLoadingScreen();
 
                 if ("type" in json && json.type === "error")
                     notifyWithButton("Level upload failed: " + json.message, "OK", this.settings);
@@ -157,7 +157,7 @@ export class Editor implements Window {
                     this.changesMade = false;
                 }
             }).catch(reason => {
-                WindowManager.getInstance().removeLoadingScreen(this);
+                WindowManager.getInstance().removeLoadingScreen();
                 notifyWithButton("Level upload failed: " + reason.message, "OK", this.settings);
             });
         }
@@ -170,22 +170,22 @@ export class Editor implements Window {
 
         fetchLevelIndex("standalone", this.settings, (levels: LevelMetadata[]) => {
             // Success callback
-            WindowManager.getInstance().removeLoadingScreen(this);
+            WindowManager.getInstance().removeLoadingScreen();
             this.levelSelector = new LevelSelector("save", levels, this.mostRecentlyLoadedLevel, this.settings, saveCallback, cancelCallback);
             WindowManager.getInstance().addWindow(this.levelSelector, true);
         }, () => {
             // Failure callback
-            WindowManager.getInstance().removeLoadingScreen(this);
+            WindowManager.getInstance().removeLoadingScreen();
         });
     }
 
     newLevel() {
         if (this.changesMade) {
             createConfirmationDialog("Discard changes and create a new level?\nYour changes won't be saved.", "New level", "Cancel", this.settings, () => {
-                WindowManager.getInstance().removeConfirmationDialog(this);
+                WindowManager.getInstance().removeConfirmationDialog();
                 this.clearLevel();
             }, () => {
-                WindowManager.getInstance().removeConfirmationDialog(this);
+                WindowManager.getInstance().removeConfirmationDialog();
             });
         }
         else
@@ -195,10 +195,10 @@ export class Editor implements Window {
     loadLevel() {
         if (this.changesMade) {
             createConfirmationDialog("Discard changes and load a different level?\nYour changes won't be saved.", "Load level", "Cancel", this.settings, () => {
-                WindowManager.getInstance().removeConfirmationDialog(this);
+                WindowManager.getInstance().removeConfirmationDialog();
                 this.showLoadDialog();
             }, () => {
-                WindowManager.getInstance().removeConfirmationDialog(this);
+                WindowManager.getInstance().removeConfirmationDialog();
             });
         }
         else

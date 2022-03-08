@@ -59,7 +59,7 @@ export class LevelSelector implements Window {
             if (level) {
                 createConfirmationDialog(`Overwrite existing level "${level.name}"?\nThis cannot be undone.`, "Overwrite", "Cancel", this.settings, () => {
                     // Overwrite was clicked
-                    WindowManager.getInstance().removeConfirmationDialog(this);
+                    WindowManager.getInstance().removeConfirmationDialog();
 
                     if (level) {
                         level.name = this.levelName;
@@ -68,7 +68,7 @@ export class LevelSelector implements Window {
                 },
                 () => {
                     // Cancel was clicked
-                    WindowManager.getInstance().removeConfirmationDialog(this);
+                    WindowManager.getInstance().removeConfirmationDialog();
                 });
             }
             else
@@ -317,12 +317,12 @@ export class LevelSelector implements Window {
                     let level = this.levelList[levelIndex];
                     createConfirmationDialog(`Delete level "${level.name}"?\nThis cannot be undone.`, "Delete", "Cancel", this.settings, () => {
                         // Delete was clicked
-                        WindowManager.getInstance().removeConfirmationDialog(this);
+                        WindowManager.getInstance().removeConfirmationDialog();
                         this.deleteLevel(level);
                     },
                     () => {
                         // Cancel was clicked
-                        WindowManager.getInstance().removeConfirmationDialog(this);
+                        WindowManager.getInstance().removeConfirmationDialog();
                     });
                 });
 
@@ -507,7 +507,7 @@ export class LevelSelector implements Window {
         const id = level.level_id;
 
         deleteLevel(level).then(json => {
-            WindowManager.getInstance().removeLoadingScreen(this);
+            WindowManager.getInstance().removeLoadingScreen();
 
             if ("type" in json && json.type === "error")
                 notifyWithButton("Level deletion failed: " + json.message, "OK", this.settings);
@@ -517,7 +517,7 @@ export class LevelSelector implements Window {
                 notifyWithTimeout("The level was deleted.", 2000, this.settings);
             }
         }).catch(reason => {
-            WindowManager.getInstance().removeLoadingScreen(this);
+            WindowManager.getInstance().removeLoadingScreen();
             notifyWithButton("Level deletion failed: " + reason.message, "OK", this.settings);
         });
     }

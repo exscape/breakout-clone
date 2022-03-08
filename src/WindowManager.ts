@@ -136,7 +136,7 @@ export class WindowManager implements Window {
         return null;
     }
 
-    removeLoadingScreen(newActiveWindow: Window) {
+    removeLoadingScreen() {
         let window = this.getLoadingScreen();
         if (window)
             this.removeWindow(window);
@@ -151,7 +151,7 @@ export class WindowManager implements Window {
         return null;
     }
 
-    removeConfirmationDialog(newActiveWindow: Window) {
+    removeConfirmationDialog() {
         let window = this.getConfirmationDialog();
         if (window)
             this.removeWindow(window);

@@ -169,12 +169,12 @@ export class Game implements Window {
 
         fetchLevelIndex("standalone", this.settings, (levels: LevelMetadata[]) => {
             // Success callback
-            this.windowManager.removeLoadingScreen(this);
+            this.windowManager.removeLoadingScreen();
             this.levelSelector = new LevelSelector("load", levels, null, this.settings, loadCallback, cancelCallback, false);
             this.windowManager.addWindow(this.levelSelector, true);
         }, () => {
             // Failure callback
-            this.windowManager.removeLoadingScreen(this);
+            this.windowManager.removeLoadingScreen();
         });
     }
 
