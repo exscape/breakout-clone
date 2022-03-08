@@ -2,6 +2,7 @@ import { Brick, BrickOrEmpty } from "./Brick";
 import { Settings } from "./Settings";
 import { ConfirmationDialog } from "./UI/ConfirmationDialog";
 import { LoadingScreen } from "./UI/LoadingScreen";
+import { NotificationDialog } from "./UI/NotificationDialog";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { WindowManager } from "./WindowManager";
 
@@ -426,4 +427,16 @@ export function isAdmin(): boolean {
 
 export function userMayModifyLevel(level: LevelMetadata): boolean {
     return (level.author_id === userId()) || isAdmin();
+}
+
+export function createNotificationDialog(text: string, settings: Settings, positiveText: string | null, timeout: number | null,
+                                         positiveCallback: (() => void) | null, timeoutCallback: (() => void) | null): NotificationDialog {
+    let dialog = new NotificationDialog(text, settings, positiveText, timeout, positiveCallback, timeoutCallback);
+    WindowManager.getInstance().addWindow(dialog, positiveText !== null);
+
+    return dialog;
+}
+
+export function notifyWithTimeout(text: string, timeout: number, settings: Settings) {
+    return createNotificationDialog(text, settings, null, timeout, null, null);
 }

@@ -2,8 +2,9 @@ import _, { flatten } from "lodash";
 import { Brick, BrickOrEmpty } from "./Brick";
 import { Game } from "./Game";
 import { Settings } from "./Settings";
+import { NotificationDialog } from "./UI/NotificationDialog"
 import { LevelSelector } from "./UI/LevelSelector";
-import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clearBrickArray, copyBrickArray, createConfirmationDialog, createLoadingScreen, createNotificationDialog, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
+import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clearBrickArray, copyBrickArray, createConfirmationDialog, createLoadingScreen, createNotificationDialog, drawCoordsFromBrickCoords, fetchLevelIndex, generateEmptyBrickArray, generateLevelTextFromBricks, levelCenter, LevelMetadata, loadBricksFromLevelText, notifyWithTimeout, Rect, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, uploadLevel, userId, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { Window, WindowManager } from "./WindowManager";
 

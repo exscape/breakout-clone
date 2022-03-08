@@ -64,7 +64,7 @@ export class GenericDialog implements Window {
         ctx.fillStyle = "black";
 
         // Offset text if this dialog has buttons, otherwise center it
-        let y = (this.positiveButton) ? this.settings.canvasHeight / 2 - this.height / 4 : this.height / 2;
+        let y = (this.positiveButton) ? this.settings.canvasHeight / 2 - this.height / 4 : this.settings.canvasHeight / 2;
 
         for (let line of lines) {
             ctx.fillText(line, this.settings.canvasWidth / 2, y);
@@ -77,13 +77,23 @@ export class GenericDialog implements Window {
     onmousedown(e: MouseEvent) {
         const cursor = WindowManager.getInstance().cursor;
         if (this.positiveButton && this.positiveButton.rect.isInsideRect(cursor))
-            this.positiveButton.clickCallback(this.positiveButton);
+            this.positiveButtonClicked();
         else if (this.negativeButton && this.negativeButton.rect.isInsideRect(cursor))
-            this.negativeButton.clickCallback(this.negativeButton);
+            this.negativeButtonClicked();
     }
 
     keyDown(ev: KeyboardEvent) {
         if (this.positiveButton && !this.negativeButton && ev.key === "Enter")
+            this.positiveButtonClicked();
+    }
+
+    positiveButtonClicked() {
+        if (this.positiveButton?.clickCallback)
             this.positiveButton.clickCallback(this.positiveButton);
+    }
+
+    negativeButtonClicked() {
+        if (this.negativeButton?.clickCallback)
+            this.negativeButton.clickCallback(this.negativeButton);
     }
 }

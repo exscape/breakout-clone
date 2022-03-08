@@ -4,6 +4,7 @@ import { Game } from "./Game";
 import { RepetitionLimitedPowerup, TimeLimitedPowerup } from "./Powerups";
 import { Settings } from "./Settings";
 import { LevelSelector } from "./UI/LevelSelector";
+import { NotificationDialog } from "./UI/NotificationDialog";
 import { brickCoordsFromDrawCoords, calculateSymmetricPositions, clamp, drawCoordsFromBrickCoords, formatTime, levelCenter, snapSymmetryCenter, UIButton, UIElement, UIHorizontalSeparator, validBrickPosition } from "./Utils";
 import { BrickPosition, Vec2 } from "./Vec2";
 import { Window, WindowManager } from "./WindowManager";
@@ -263,6 +264,7 @@ export class DrawingHandler {
 
         this.drawConfirmationDialog();
         this.drawLoadingScreen();
+        this.drawNotificationDialog();
 
         if (this.game.devMenuOpen) {
             this.drawText("1  Sticky", "20px Arial", "black", "left", 10, 500);
@@ -386,6 +388,7 @@ export class DrawingHandler {
 //            this.drawText(`FPS: ${Math.floor(this.game.lastFPS)}`, "18px Arial", "#ee3030", "right", this.settings.canvasWidth - 10, 20);
             this.drawConfirmationDialog();
             this.drawLoadingScreen();
+            this.drawNotificationDialog();
             this.drawCursor("cursor_regular", false);
             return;
         }
@@ -395,6 +398,7 @@ export class DrawingHandler {
 
         this.drawConfirmationDialog();
         this.drawLoadingScreen();
+        this.drawNotificationDialog();
 
         // Draw tooltips on toolbar icon hover
         this.drawTooltips();
@@ -437,6 +441,26 @@ export class DrawingHandler {
         else
             this.drawCursor("cursor_regular", false);
 
+    }
+
+    drawNotificationDialog() {
+        let dialogs = WindowManager.getInstance().getWindowsMatching((window: Window) => {
+            return (window instanceof NotificationDialog);
+        });
+
+        for (let dialog of dialogs) {
+            let notificationDialog = dialog as NotificationDialog;
+            notificationDialog.draw(this.ctx);
+
+            if (notificationDialog.positiveButton)
+                this.drawButton(notificationDialog.positiveButton);
+            if (notificationDialog.negativeButton)
+                this.drawButton(notificationDialog.negativeButton);
+
+            // Only draw the first/oldest dialog for now. When it times out or is removed by the user,
+            // we draw the next one, until there are none left.
+            return;
+        }
     }
 
     drawMarquee() {
