@@ -5,7 +5,7 @@ import { Settings } from './Settings';
 let gameCanvasElement: HTMLCanvasElement | null = null;
 let statusCanvasElement: HTMLCanvasElement | null = null;
 
-let inputManager: WindowManager | undefined;
+let windowManager: WindowManager | undefined;
 let game: Game | undefined;
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -57,7 +57,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     let onmousedownhandler = (e: MouseEvent) => {
         if (document.pointerLockElement === gameCanvasElement)
-            inputManager?.onmousedown(e);
+            windowManager?.onmousedown(e);
     };
 
     let onmouseuphandler = (e: MouseEvent) => {
@@ -67,24 +67,24 @@ window.addEventListener('DOMContentLoaded', () => {
             gameCanvasElement!!.requestPointerLock();
         }
         else
-            inputManager?.onmouseup(e);
+            windowManager?.onmouseup(e);
     };
 
-    inputManager = WindowManager.getInstance();
+    windowManager = WindowManager.getInstance();
     game = new Game(gameCanvasElement!!, statusCanvasElement, settings);
-    inputManager.setSettings(settings);
-    inputManager.setMaxWidth(settings.canvasWidth);
-    inputManager.setMaxHeight(settings.canvasHeight);
+    windowManager.setSettings(settings);
+    windowManager.setMaxWidth(settings.canvasWidth);
+    windowManager.setMaxHeight(settings.canvasHeight);
 
     gameCanvasElement.onmousedown = onmousedownhandler;
     gameCanvasElement.onmouseup = onmouseuphandler;
 
     gameCanvasElement.onkeydown = (ev: KeyboardEvent) => {
-        inputManager?.keyDown(ev);
+        windowManager?.keyDown(ev);
     }
 
     gameCanvasElement.onkeyup = (ev: KeyboardEvent) => {
-        inputManager?.keyUp(ev);
+        windowManager?.keyUp(ev);
     }
 
     gameCanvasElement.tabIndex = 0
@@ -92,7 +92,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 let mouseMovedHandler = (e: MouseEvent) => {
-    inputManager?.mouseMoved(e)
+    windowManager?.mouseMoved(e)
 };
 
 function pointerLockChange() {
@@ -100,6 +100,6 @@ function pointerLockChange() {
         document.addEventListener("mousemove", mouseMovedHandler, false);
     else {
         document.removeEventListener("mousemove", mouseMovedHandler, false);
-        inputManager?.focusLost();
+        windowManager?.focusLost();
     }
 }
