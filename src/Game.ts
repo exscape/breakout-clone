@@ -301,7 +301,14 @@ export class Game implements Window {
         }
     }
 
-    togglePause() { this.gamePaused = !this.gamePaused; }
+    togglePause() {
+        // Ignore unpause requests if the game isn't focused; otherwise, it's likely the player will unpause, realize the mouse won't work,
+        // and lose a life.
+        if (this.gamePaused && document.pointerLockElement !== this.canvas)
+            return;
+
+        this.gamePaused = !this.gamePaused;
+    }
     pause() { this.gamePaused = true; }
 
     focusLost() {
