@@ -43,29 +43,12 @@ export class CollisionHandler {
     }
 
     brickCollision(ball: Ball, brick: Brick, dt: number): boolean {
-        // Calculates whether the ball and brick are colliding.
-        let {x, y} = ball.position;
-
-        if (ball.position.x <= brick.upperLeft.x) {
-            x = brick.upperLeft.x;
-        }
-        else if (ball.position.x > brick.upperLeft.x + this.settings.brickWidth) {
-            x = brick.upperLeft.x + this.settings.brickWidth;
-        }
-
-        if (ball.position.y <= brick.upperLeft.y) {
-            y = brick.upperLeft.y;
-        }
-        else if (ball.position.y > brick.upperLeft.y + this.settings.brickHeight) {
-            y = brick.upperLeft.y + this.settings.brickHeight;
-        }
-
-        // Note: If the ball (center) is inside the brick, i.e. the above if statements aren't run,
-        // the default x/y values will make this expression zero, and so still register a collision.
-        let dist = Math.sqrt((ball.position.x - x)**2 + (ball.position.y - y)**2);
+        let NearestX = Math.max(brick.upperLeft.x, Math.min(ball.position.x, brick.bottomRight.x));
+        let NearestY = Math.max(brick.upperLeft.y, Math.min(ball.position.y, brick.bottomRight.y));
+        let distVector = new Vec2(ball.position.x - NearestX, ball.position.y - NearestY);
 
         // If true, there was no collision.
-        if (dist > this.settings.ballRadius)
+        if (distVector.mag() > this.settings.ballRadius)
             return false;
         else if (ball.fireball && !brick.indestructible) // Don't bother calculating anything further
             return true;
