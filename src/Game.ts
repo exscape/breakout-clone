@@ -489,7 +489,7 @@ export class Game implements Window {
             this.bricksRemaining--;
 
             if (_.random(1, 100) <= this.settings.powerupProbability) {
-                let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
+                let spawnPosition = new Vec2(brick.center);
                 this.spawnRandomPowerup(spawnPosition);
             }
 

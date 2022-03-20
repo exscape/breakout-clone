@@ -11,11 +11,12 @@ export class Brick {
     indestructible: boolean;
     settings: Settings;
 
-    // The other corners are used by the collision checking code
-    upperLeft: Vec2;
-    upperRight: Vec2;
-    bottomLeft: Vec2;
-    bottomRight: Vec2;
+    // The other corners/positions are used by the collision checking code
+    upperLeft!: Vec2;
+    upperRight!: Vec2;
+    bottomLeft!: Vec2;
+    bottomRight!: Vec2;
+    center!: Vec2;
 
     // Only used in the editor
     selected: boolean = false;
@@ -28,12 +29,7 @@ export class Brick {
         this.settings = settings;
         this.selected = selected;
 
-        // Sigh; not sure how to prevent this. The compiler doesn't realize these are ALWAYS set if we call this.setUpperLeft() instead
-        // of duplicating it here...
-        this.upperLeft = new Vec2(position);
-        this.upperRight = new Vec2(position.x + this.settings.brickWidth, position.y);
-        this.bottomLeft = new Vec2(position.x, position.y + this.settings.brickHeight);
-        this.bottomRight = new Vec2(position.x + this.settings.brickWidth, position.y + this.settings.brickHeight);
+        this.setUpperLeft(position);
     }
 
     setUpperLeft(upperLeft: Vec2) {
@@ -41,6 +37,7 @@ export class Brick {
         this.upperRight = new Vec2(upperLeft.x + this.settings.brickWidth, upperLeft.y);
         this.bottomLeft = new Vec2(upperLeft.x, upperLeft.y + this.settings.brickHeight);
         this.bottomRight = new Vec2(upperLeft.x + this.settings.brickWidth, upperLeft.y + this.settings.brickHeight);
+        this.center = new Vec2(upperLeft.x + this.settings.brickWidth / 2, upperLeft.y + this.settings.brickHeight / 2);
     }
 
     copy(): Brick {

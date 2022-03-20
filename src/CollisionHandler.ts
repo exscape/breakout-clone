@@ -131,18 +131,16 @@ export class CollisionHandler {
         // It will be detected as a collision from above, even through the ball may be moving upwards; it is therefore reflected downwards, *towards the block*.
         // The code below fixes this issue by taking the direction into account properly.
         if ((direction == CollisionFrom.Top && Math.sign(ball.velocity.y) != 1) || (direction == CollisionFrom.Bottom && Math.sign(ball.velocity.y) != -1)) {
-            if (ball.position.x < brick.upperLeft.x + this.settings.brickWidth / 2)
+            if (ball.position.x < brick.center.x)
                 direction = CollisionFrom.Left;
             else
                 direction = CollisionFrom.Right;
         }
         else if ((direction == CollisionFrom.Left && Math.sign(ball.velocity.x) != 1) || direction == CollisionFrom.Right && Math.sign(ball.velocity.x) != -1) {
-            if (ball.position.y < brick.upperLeft.y + this.settings.brickHeight / 2) {
+            if (ball.position.y < brick.center.y)
                 direction = CollisionFrom.Top;
-            }
-            else {
+            else
                 direction = CollisionFrom.Bottom;
-            }
         }
 
         return direction;
