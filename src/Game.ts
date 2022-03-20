@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Ball } from "./Ball";
-import { BrickOrEmpty } from "./Brick";
-import { CollisionHandler } from './CollisionHandler';
+import { Brick, BrickOrEmpty } from "./Brick";
+import { CollisionFrom, CollisionHandler } from './CollisionHandler';
 import { DrawingHandler } from './DrawingHandler';
 import { Editor } from './Editor';
 import { Paddle } from "./Paddle";
@@ -464,51 +464,116 @@ export class Game implements Window {
         }
     }
 
+    collideWithBrickAt(x: number, y: number, ball: Ball) {
+        let brick = this.level.bricks[y][x];
+        if (brick === undefined) return;
+
+        if (!brick.indestructible && !ball.fireball)
+            brick.health--;
+        else if (!brick.indestructible && ball.fireball)
+            brick.health = 0;
+
+        if (brick.health <= 0) {
+            let delta = (Date.now() - this.lastBrickBreak) / 1000;
+
+            let multiplier = 1;
+            if (delta < 0.1)
+                multiplier = 1.3; // Likely fireball
+            else if (delta < 0.35)
+                multiplier = 1.5; // E.g. tight bouncing between top and bricks
+            else if (delta < 1.2)
+                multiplier = 1.2; // Standard bouncing paddle-brick-paddle-brick
+
+            this.score += Math.floor(multiplier * brick.score);
+            this.level.bricks[y][x] = undefined;
+            this.bricksRemaining--;
+
+            if (_.random(1, 100) <= this.settings.powerupProbability) {
+                let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
+                this.spawnRandomPowerup(spawnPosition);
+            }
+
+            this.lastBrickBreak = Date.now();
+        }
+
+        if (this.bricksRemaining <= 0)
+            this.win();
+    }
+
     handleBrickCollisions(ball: Ball, dt: number) {
-        for (let y = 0; y < this.settings.levelHeight; y++) {
-            for (let x = 0; x < this.settings.levelWidth; x++) {
-                let brick = this.level.bricks[y][x];
-                if (brick === undefined) continue;
 
-                if (!this.collisionHandler.brickCollision(ball, brick, dt))
-                    continue;
+        // Find which bricks the ball is colliding with.
+        // If there are multiple, we'll choose the one that will cause the least amount of issues.
+        let intersectingBricks = this.collisionHandler.findIntersectingBricks(this.level.bricks, ball);
 
-                ball.collided = true;
+        if (intersectingBricks.length === 0)
+            return;
 
-                if (!brick.indestructible && !ball.fireball)
-                    brick.health--;
-                else if (!brick.indestructible && ball.fireball)
-                    brick.health = 0;
+        // There is at least one collision. Move the ball back and interpolate until we have a collision again.
+        // This will reduce the number of 2-brick collisions, meaning we no longer need to figure out which it collided with first.
+        // Perhaps more importantly, it will also make the collision direction calculation more accurate.
 
-                if (brick.health <= 0) {
-                    let delta = (Date.now() - this.lastBrickBreak) / 1000;
+        ball.position.x -= ball.velocity.x * dt;
+        ball.position.y -= ball.velocity.y * dt;
 
-                    let multiplier = 1;
-                    if (delta < 0.1)
-                        multiplier = 1.3; // Likely fireball
-                    else if (delta < 0.35)
-                        multiplier = 1.5; // E.g. tight bouncing between top and bricks
-                    else if (delta < 1.2)
-                        multiplier = 1.2; // Standard bouncing paddle-brick-paddle-brick
+        do {
+            ball.position.x += ball.velocity.x * dt * 0.1;
+            ball.position.y += ball.velocity.y * dt * 0.1;
+            intersectingBricks = this.collisionHandler.findIntersectingBricks(this.level.bricks, ball);
+        } while (intersectingBricks.length === 0);
 
-                    this.score += Math.floor(multiplier * brick.score);
-                    this.level.bricks[y][x] = undefined;
-                    this.bricksRemaining--;
+        // Select the brick that we collided with. In most cases this will select the ONLY brick, but
+        // in rare cases we may have collided with multiple at the same time.
+        let intersection;
+        if (intersectingBricks.length === 2) {
+            /*
+            We can't just pick a random brick here.
+            Major issues result if we pick the wrong one (see collision_bug_explanation.png if it still exists).
+            In short, the ball can end up such that it:
+            1) Intersects the side of two bricks at the same time
+            2) Is located above (or below) both collision test lines (the diagonals used in isAboveLine()) for one of the bricks.
 
-                    if (_.random(1, 100) <= this.settings.powerupProbability) {
-                        let spawnPosition = new Vec2(brick.bottomLeft.x + this.settings.brickWidth / 2, brick.upperLeft.y + this.settings.brickHeight / 2);
-                        this.spawnRandomPowerup(spawnPosition);
-                    }
+            In such a case, it can happen that it is placed such that the collision code detects ONE of them as left,
+            and the other as from ABOVE or BELOW. In that case, we need to choose the one that is LEFT, or the ball will be
+            reflected incorrectly, and collide with the other brick the next frame, which reflects in along both axes, returning
+            the ball along the exact opposite of the velocity vector that it had to begin with.
+            We only want it to bounce back towards the LEFT in this example, and NOT have its y velocity flipped as well.
 
-                    this.lastBrickBreak = Date.now();
-                }
+            In this example, if we check the collision direction on the BOTTOM block, it will return "from above", and reflect incorrectly.
+            So in this case, we need to treat this as a collision with the UPPER block, with the collisino being from the LEFT,
+            even though it intersects both.
+            */
 
-                if (this.bricksRemaining <= 0)
-                    this.win();
+            const [a, b] = [intersectingBricks[0], intersectingBricks[1]];
+            if (a.x === b.x && Math.abs(a.y - b.y) === 1) {
+                // Uh oh!
+                const aDir = this.collisionHandler.collisionDirection(ball, a.brick);
+                const bDir = this.collisionHandler.collisionDirection(ball, b.brick);
+                const aHorizontal = (aDir === CollisionFrom.Left || aDir === CollisionFrom.Right);
+                const bHorizontal = (bDir === CollisionFrom.Left || bDir === CollisionFrom.Right);
 
-                break; // Limit collisions to the first block tested
+                if (aHorizontal && !bHorizontal)
+                    intersection = a;
+                else if (bHorizontal && !aHorizontal)
+                    intersection = b;
+                else // It shouldn't be important which is chosen here, we just need to pick one
+                    intersection = a;
+            }
+            else {
+                // Not an important case; either choice should be perfectly fine, so just pick the first one.
+                intersection = intersectingBricks[0];
             }
         }
+        else {
+            // Almost every time, this is exactly 1 brick intersecting. However, it could be 3.
+            // Those cases are extremely rare, AND should be handled correctly *every* time by interpolating the ball position
+            // as done above, so we probably don't need to worry about it here.
+            intersection = intersectingBricks[0];
+        }
+
+        ball.collided = true;
+        this.collideWithBrickAt(intersection.x, intersection.y, ball);
+        this.collisionHandler.brickCollision(ball, intersection.brick, dt);
     }
 
     private handlePowerupPickups(paddleTopY: number, paddleLeftmostX: number, paddleRightmostX: number) {

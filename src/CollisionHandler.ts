@@ -1,7 +1,7 @@
 import { Ball } from './Ball';
-import { Brick } from './Brick';
+import { Brick, BrickOrEmpty } from './Brick';
 import { Settings } from './Settings';
-import { debugAlert, generatePairs } from './Utils';
+import { brickCoordsFromDrawCoords, clamp, debugAlert, generatePairs } from './Utils';
 import { Vec2 } from './Vec2';
 
 export enum CollisionFrom {
@@ -11,6 +11,12 @@ export enum CollisionFrom {
     Top,
     Bottom
 }
+
+export type Intersection = {
+    x: number,
+    y: number,
+    brick: Brick
+};
 
 function isAboveLine(corner: Vec2, oppositeCorner: Vec2, ballCenter: Vec2) {
     return ((oppositeCorner.x - corner.x) * (ballCenter.y - corner.y) - (oppositeCorner.y - corner.y) * (ballCenter.x - corner.x)) > 0;
@@ -42,22 +48,38 @@ export class CollisionHandler {
         }
     }
 
-    brickCollision(ball: Ball, brick: Brick, dt: number): boolean {
-        let NearestX = Math.max(brick.upperLeft.x, Math.min(ball.position.x, brick.bottomRight.x));
-        let NearestY = Math.max(brick.upperLeft.y, Math.min(ball.position.y, brick.bottomRight.y));
-        let distVector = new Vec2(ball.position.x - NearestX, ball.position.y - NearestY);
+    differenceVector(point: Vec2, brick: Brick): Vec2 {
+        let NearestX = Math.max(brick.upperLeft.x, Math.min(point.x, brick.bottomRight.x));
+        let NearestY = Math.max(brick.upperLeft.y, Math.min(point.y, brick.bottomRight.y));
+        return new Vec2(point.x - NearestX, point.y - NearestY);
+    }
 
-        // If true, there was no collision.
-        if (distVector.mag() > this.settings.ballRadius)
-            return false;
-        else if (ball.fireball && !brick.indestructible) // Don't bother calculating anything further
+    findIntersectingBricks(bricks: BrickOrEmpty[][], ball: Ball): Intersection[] {
+        // Calculate which bricks intersect with the ball, and return a list.
+        const minX = clamp(brickCoordsFromDrawCoords("x", ball.position.x, this.settings) - 1, 0, this.settings.levelWidth - 1);
+        const maxX = clamp(minX + 2, 0, this.settings.levelWidth - 1);
+        const minY = clamp(brickCoordsFromDrawCoords("y", ball.position.y, this.settings) - 1, 0, this.settings.levelHeight - 1);
+        const maxY = clamp(minY + 2, 0, this.settings.levelHeight - 1);
+
+        let intersections: Intersection[] = [];
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                let brick = bricks[y][x];
+                if (brick === undefined) continue;
+                let distVector = this.differenceVector(ball.position, brick);
+                if (distVector.mag() <= this.settings.ballRadius)
+                    intersections.push({ x, y, brick });
+            }
+        }
+
+        return intersections;
+    }
+
+    brickCollision(ball: Ball, brick: Brick, dt: number): boolean {
+        if (ball.fireball && !brick.indestructible) // Don't bother calculating anything further
             return true;
 
-        // There was a collision. Figure out the direction and bounce the ball.
         let direction = this.collisionDirection(ball, brick);
-
-        // TODO: ensure we don't move the ball it into ANOTHER brick instead!!!
-        // TODO: though that SHOULD be impossible -- if we came from e.g. the right, surely the right has no brick?
 
         if (direction == CollisionFrom.Top || direction == CollisionFrom.Bottom) {
             ball.velocity.y = -ball.velocity.y;
@@ -108,7 +130,6 @@ export class CollisionHandler {
         // The above code yields incorrect results in some cases, such as when hitting the upper-left corner from the left side, when the ball center is above a certain point.
         // It will be detected as a collision from above, even through the ball may be moving upwards; it is therefore reflected downwards, *towards the block*.
         // The code below fixes this issue by taking the direction into account properly.
-
         if ((direction == CollisionFrom.Top && Math.sign(ball.velocity.y) != 1) || (direction == CollisionFrom.Bottom && Math.sign(ball.velocity.y) != -1)) {
             if (ball.position.x < brick.upperLeft.x + this.settings.brickWidth / 2)
                 direction = CollisionFrom.Left;

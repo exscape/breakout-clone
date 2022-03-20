@@ -21,7 +21,6 @@ It's certainly not ready to be considered a full game, but it is playable for sh
 
 ## Known issues:
 
-* Some collision bugs, sadly. I thought there was only one (that has happened in literally *two* collisions in weeks of testing), but there is a more common one as well, where the collision direction is miscalculated, and the ball bounces e.g. down when it should bounce left. I'm not sure how to solve this yet, but fairly major edits to the collision code is likely necessary. Interestingly, this bug only causes the ball to bounce *down* instead of left/right; it never bounces up/left/right in error -- unless you reverse the collision check order, in which case it always bounces *up* in error instead.
 * Code quality is varying; some files are shamefully bad as I didn't feel like implementing a full UI toolkit, and went with ugly hacks instead.
 
 ## Build instructions:
